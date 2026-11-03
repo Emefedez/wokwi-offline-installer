@@ -729,10 +729,14 @@
         <svg class="icon"><use href="#i-vscode"/></svg>
         Open in VS Code
       </button>
-      <button id="btn-run-sim" class="primary" onclick="toggleVsCodeSimulation()" title="Control active Wokwi simulation in VS Code via 127.0.0.1:47129">
+      <button id="btn-run-sim" class="primary" onclick="toggleVsCodeSimulation()" title="Launch and control active Wokwi simulation in VS Code (auto-launches VS Code if closed)">
         <svg class="icon" id="sim-btn-icon"><use href="#i-play"/></svg>
         <span id="sim-btn-label">Run Sim</span>
       </button>
+      <button id="btn-local-sim" class="secondary" onclick="toggleLocalToolkitCanSim()" title="Simulate CAN telemetry live directly on this canvas">
+        ⚡ Sim CAN Live
+      </button>
+      <span id="vis-sim-status" class="tag" style="display:none;background:#2e1065;color:#ddd6fe;border-color:#7c3aed;">Sim: Active</span>
       <span id="vis-part-count-badge" class="tag" style="margin-left:auto;">0 parts</span>
     </div>
 
@@ -1710,12 +1714,53 @@
     }
 
     let simActive = false;
-    async function toggleVsCodeSimulation() {
-      const targetDir = document.getElementById('cfg-project-dir').value.trim() || './rc-car-wokwi';
+    let simTimerInterval = null;
+    let simStartTime = 0;
+    let localSimInterval = null;
+
+    function updateSimVisualUi(active, message) {
+      simActive = active;
       const btn = document.getElementById('btn-run-sim');
       const label = document.getElementById('sim-btn-label');
       const icon = document.getElementById('sim-btn-icon');
+      const statusTag = document.getElementById('vis-sim-status');
+      if (label) label.textContent = active ? 'Stop Sim' : 'Run Sim';
+      if (icon) icon.innerHTML = `<use href="#i-${active ? 'stop' : 'play'}"/>`;
+      if (btn) btn.className = active ? 'danger' : 'primary';
+
+      if (active) {
+        simStartTime = Date.now();
+        if (statusTag) {
+          statusTag.style.display = 'inline-block';
+          statusTag.textContent = 'Sim: 00:00';
+        }
+        clearInterval(simTimerInterval);
+        simTimerInterval = setInterval(() => {
+          const sec = Math.floor((Date.now() - simStartTime) / 1000);
+          const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+          const ss = String(sec % 60).padStart(2, '0');
+          if (statusTag) statusTag.textContent = `Sim: ${mm}:${ss}`;
+        }, 1000);
+      } else {
+        clearInterval(simTimerInterval);
+        if (statusTag) statusTag.style.display = 'none';
+      }
+      if (message) showToast(message);
+    }
+
+    async function toggleVsCodeSimulation() {
+      let targetDir = (document.getElementById('vis-file-path')?.value || '').trim();
+      if (!targetDir || targetDir.endsWith('diagram.json')) {
+        targetDir = targetDir ? targetDir.replace(/\/diagram\.json$/, '') : (document.getElementById('cfg-project-dir')?.value || '').trim();
+      }
+      if (!targetDir) targetDir = './rc-car-wokwi';
+
+      const label = document.getElementById('sim-btn-label');
       const action = simActive ? 'stop' : 'start';
+
+      if (!simActive && label) {
+        label.textContent = 'Starting...';
+      }
 
       try {
         const res = await fetch('/api/sim-control', {
@@ -1725,17 +1770,60 @@
         });
         const out = await res.json();
         if (out.ok) {
-          simActive = action === 'start';
-          if (label) label.textContent = simActive ? 'Stop Sim' : 'Run Sim';
-          if (icon) icon.innerHTML = `<use href="#i-${simActive ? 'stop' : 'play'}"/>`;
-          if (btn) btn.className = simActive ? 'danger' : 'primary';
-          showToast(simActive ? 'Wokwi Simulation Running in VS Code!' : 'Simulation Stopped');
+          if (action === 'start') {
+            updateSimVisualUi(true, out.autoLaunched ? 'Launched VS Code · Initializing Wokwi Simulator...' : 'Wokwi Simulation Running in VS Code!');
+            if (out.autoLaunched) {
+              // Poll status to confirm bridge live
+              let tries = 0;
+              const poll = setInterval(async () => {
+                tries++;
+                if (tries > 6 || !simActive) { clearInterval(poll); return; }
+                try {
+                  const check = await fetch('/api/sim-control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'status', projectPath: targetDir }),
+                  });
+                  const s = await check.json();
+                  if (s.vscodeLive && s.active) {
+                    clearInterval(poll);
+                    showToast('Wokwi Bridge Connected & Running!');
+                  }
+                } catch {}
+              }, 1200);
+            }
+          } else {
+            updateSimVisualUi(false, 'Simulation Stopped');
+          }
         } else {
-          showToast(out.error || 'VS Code Bridge not active (open VS Code first)');
+          updateSimVisualUi(false);
+          showToast(out.error || 'Failed to control simulation');
         }
       } catch (err) {
+        updateSimVisualUi(false);
         showToast('VS Code Bridge unreachable: ' + err.message);
       }
+    }
+
+    function toggleLocalToolkitCanSim() {
+      const btn = document.getElementById('btn-local-sim');
+      if (localSimInterval) {
+        clearInterval(localSimInterval);
+        localSimInterval = null;
+        if (btn) btn.textContent = '⚡ Sim CAN Live';
+        showToast('Local CAN Simulation Paused');
+        return;
+      }
+
+      let step = 0;
+      if (btn) btn.textContent = '⏹ Stop CAN Sim';
+      showToast('Local CAN Simulation Active: Injecting telemetry frames...');
+      localSimInterval = setInterval(() => {
+        step = (step + 1) % 4;
+        const angles = [45, 90, 135, 90];
+        const throttles = [25, 60, 95, 40];
+        visCanSendPreset(angles[step], throttles[step]);
+      }, 1600);
     }
 
     function decodeTokMetadataClient(rawText) {

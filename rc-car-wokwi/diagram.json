@@ -8,556 +8,109 @@
       "id": "esp",
       "top": 20,
       "left": 0,
-      "attrs": {
-        "flashSize": "16",
-        "psramSize": "8"
-      }
+      "attrs": { "flashSize": "16", "psramSize": "8" }
     },
-    {
-      "type": "chip-yb_p20m",
-      "id": "servo_ybp20m_1",
-      "top": 0,
-      "left": 190,
-      "attrs": {}
-    },
-    {
-      "type": "chip-yb_p20m",
-      "id": "servo_ybp20m_2",
-      "top": 0,
-      "left": 385,
-      "attrs": {}
-    },
+    { "type": "chip-yb_p20m", "id": "servo_ybp20m_1", "top": 0, "left": 190, "attrs": {} },
+    { "type": "chip-yb_p20m", "id": "servo_ybp20m_2", "top": 0, "left": 385, "attrs": {} },
     {
       "type": "chip-jgb37_520",
       "id": "motor_jgb37_1",
       "top": 0,
       "left": 580,
-      "attrs": {
-        "nominalVoltage": "12"
-      }
+      "attrs": { "nominalVoltage": "12" }
     },
     {
       "type": "chip-jgb37_520",
       "id": "motor_jgb37_2",
       "top": 135,
       "left": 200,
-      "attrs": {
-        "nominalVoltage": "12"
-      }
+      "attrs": { "nominalVoltage": "12" }
     },
     {
       "type": "chip-jgb37_520",
       "id": "motor_jgb37_3",
       "top": 135,
       "left": 385,
-      "attrs": {
-        "nominalVoltage": "12"
-      }
+      "attrs": { "nominalVoltage": "12" }
     },
     {
       "type": "chip-jgb37_520",
       "id": "motor_jgb37_4",
       "top": 135,
       "left": 580,
-      "attrs": {
-        "nominalVoltage": "12"
-      }
+      "attrs": { "nominalVoltage": "12" }
     },
-    {
-      "type": "chip-cjmcu_230",
-      "id": "can_cjmcu230",
-      "top": 270,
-      "left": 190,
-      "attrs": {}
-    },
-    {
-      "type": "chip-can_terminal",
-      "id": "can_term",
-      "top": 270,
-      "left": 385,
-      "attrs": {}
-    },
+    { "type": "chip-cjmcu_230", "id": "can_cjmcu230", "top": 270, "left": 190, "attrs": {} },
+    { "type": "chip-can_terminal", "id": "can_term", "top": 270, "left": 385, "attrs": {} },
     {
       "type": "wokwi-pushbutton",
       "id": "btn",
       "top": 270,
       "left": 580,
-      "attrs": {
-        "color": "purple",
-        "key": "c",
-        "label": "SEND CAN"
-      }
+      "attrs": { "color": "purple", "key": "c", "label": "SEND CAN" }
     },
-    {
-      "type": "chip-irf520_pwm",
-      "id": "mosfet_irf520_1",
-      "top": 405,
-      "left": 190,
-      "attrs": {}
-    },
-    {
-      "type": "chip-irf520_pwm",
-      "id": "mosfet_irf520_2",
-      "top": 405,
-      "left": 385,
-      "attrs": {}
-    },
-    {
-      "type": "chip-irf520_pwm",
-      "id": "mosfet_irf520_3",
-      "top": 405,
-      "left": 580,
-      "attrs": {}
-    },
-    {
-      "type": "chip-irf520_pwm",
-      "id": "mosfet_irf520_4",
-      "top": 540,
-      "left": 190,
-      "attrs": {}
-    },
-    {
-      "type": "chip-ip5306",
-      "id": "pmic_ip5306",
-      "top": 540,
-      "left": 385,
-      "attrs": {}
-    },
-    {
-      "type": "chip-reg_7v",
-      "id": "buck_7v",
-      "top": 540,
-      "left": 580,
-      "attrs": {}
-    },
-    {
-      "type": "chip-weact_213_bw",
-      "id": "epd",
-      "top": 675,
-      "left": 190,
-      "attrs": {}
-    }
+    { "type": "chip-irf520_pwm", "id": "mosfet_irf520_1", "top": 405, "left": 190, "attrs": {} },
+    { "type": "chip-irf520_pwm", "id": "mosfet_irf520_2", "top": 405, "left": 385, "attrs": {} },
+    { "type": "chip-irf520_pwm", "id": "mosfet_irf520_3", "top": 405, "left": 580, "attrs": {} },
+    { "type": "chip-irf520_pwm", "id": "mosfet_irf520_4", "top": 540, "left": 190, "attrs": {} },
+    { "type": "chip-ip5306", "id": "pmic_ip5306", "top": 540, "left": 385, "attrs": {} },
+    { "type": "chip-reg_7v", "id": "buck_7v", "top": 540, "left": 580, "attrs": {} },
+    { "type": "chip-weact_213_bw", "id": "epd", "top": 675, "left": 190, "attrs": {} }
   ],
   "connections": [
-    [
-      "esp:GND.1",
-      "servo_ybp20m_1:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "buck_7v:VOUT_POS",
-      "servo_ybp20m_1:VCC",
-      "orange",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:4",
-      "servo_ybp20m_1:PWM",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "servo_ybp20m_2:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "buck_7v:VOUT_POS",
-      "servo_ybp20m_2:VCC",
-      "orange",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:5",
-      "servo_ybp20m_2:PWM",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "motor_jgb37_1:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:3V3.1",
-      "motor_jgb37_1:VCC",
-      "red",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:6",
-      "motor_jgb37_1:C1",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "motor_jgb37_2:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:3V3.1",
-      "motor_jgb37_2:VCC",
-      "red",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:7",
-      "motor_jgb37_2:C1",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "motor_jgb37_3:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:3V3.1",
-      "motor_jgb37_3:VCC",
-      "red",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:15",
-      "motor_jgb37_3:C1",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "motor_jgb37_4:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:3V3.1",
-      "motor_jgb37_4:VCC",
-      "red",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:16",
-      "motor_jgb37_4:C1",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "can_cjmcu230:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:3V3.1",
-      "can_cjmcu230:VCC",
-      "red",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:4",
-      "can_cjmcu230:D",
-      "cyan",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:5",
-      "can_cjmcu230:R",
-      "purple",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "can_term:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:3V3.1",
-      "can_term:VCC",
-      "red",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "can_term:CANH",
-      "can_cjmcu230:CANH",
-      "yellow",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "can_term:CANL",
-      "can_cjmcu230:CANL",
-      "blue",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "can_term:CANTX",
-      "esp:5",
-      "purple",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "can_term:CANRX",
-      "esp:4",
-      "cyan",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "btn:2.l",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "btn:1.r",
-      "can_term:TRIG",
-      "magenta",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:17",
-      "btn:1.r",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "mosfet_irf520_1:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:3V3.1",
-      "mosfet_irf520_1:VCC",
-      "red",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:18",
-      "mosfet_irf520_1:SIG",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "mosfet_irf520_2:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:3V3.1",
-      "mosfet_irf520_2:VCC",
-      "red",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:8",
-      "mosfet_irf520_2:SIG",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "mosfet_irf520_3:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:3V3.1",
-      "mosfet_irf520_3:VCC",
-      "red",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:9",
-      "mosfet_irf520_3:SIG",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "mosfet_irf520_4:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:3V3.1",
-      "mosfet_irf520_4:VCC",
-      "red",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:10",
-      "mosfet_irf520_4:SIG",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "pmic_ip5306:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "pmic_ip5306:VOUT",
-      "pmic_ip5306:VOUT",
-      "red",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:11",
-      "pmic_ip5306:KEY",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "buck_7v:VOUT_NEG",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "buck_7v:VOUT_POS",
-      "buck_7v:VOUT_POS",
-      "orange",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:12",
-      "buck_7v:EN",
-      "green",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:GND.1",
-      "epd:GND",
-      "black",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:3V3.1",
-      "epd:VCC",
-      "red",
-      [
-        "v0"
-      ]
-    ],
-    [
-      "esp:13",
-      "epd:CS",
-      "green",
-      [
-        "v0"
-      ]
-    ]
+    [ "esp:GND.1", "servo_ybp20m_1:GND", "black", [ "v0" ] ],
+    [ "buck_7v:VOUT_POS", "servo_ybp20m_1:VCC", "orange", [ "v0" ] ],
+    [ "esp:4", "servo_ybp20m_1:PWM", "green", [ "v0" ] ],
+    [ "esp:GND.1", "servo_ybp20m_2:GND", "black", [ "v0" ] ],
+    [ "buck_7v:VOUT_POS", "servo_ybp20m_2:VCC", "orange", [ "v0" ] ],
+    [ "esp:5", "servo_ybp20m_2:PWM", "green", [ "v0" ] ],
+    [ "esp:GND.1", "motor_jgb37_1:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "motor_jgb37_1:VCC", "red", [ "v0" ] ],
+    [ "esp:6", "motor_jgb37_1:C1", "green", [ "v0" ] ],
+    [ "esp:GND.1", "motor_jgb37_2:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "motor_jgb37_2:VCC", "red", [ "v0" ] ],
+    [ "esp:7", "motor_jgb37_2:C1", "green", [ "v0" ] ],
+    [ "esp:GND.1", "motor_jgb37_3:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "motor_jgb37_3:VCC", "red", [ "v0" ] ],
+    [ "esp:15", "motor_jgb37_3:C1", "green", [ "v0" ] ],
+    [ "esp:GND.1", "motor_jgb37_4:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "motor_jgb37_4:VCC", "red", [ "v0" ] ],
+    [ "esp:16", "motor_jgb37_4:C1", "green", [ "v0" ] ],
+    [ "esp:GND.1", "can_cjmcu230:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "can_cjmcu230:VCC", "red", [ "v0" ] ],
+    [ "esp:4", "can_cjmcu230:D", "cyan", [ "v0" ] ],
+    [ "esp:5", "can_cjmcu230:R", "purple", [ "v0" ] ],
+    [ "esp:GND.1", "can_term:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "can_term:VCC", "red", [ "v0" ] ],
+    [ "can_term:CANH", "can_cjmcu230:CANH", "yellow", [ "v0" ] ],
+    [ "can_term:CANL", "can_cjmcu230:CANL", "blue", [ "v0" ] ],
+    [ "can_term:CANTX", "esp:5", "purple", [ "v0" ] ],
+    [ "can_term:CANRX", "esp:4", "cyan", [ "v0" ] ],
+    [ "esp:GND.1", "btn:2.l", "black", [ "v0" ] ],
+    [ "btn:1.r", "can_term:TRIG", "magenta", [ "v0" ] ],
+    [ "esp:17", "btn:1.r", "green", [ "v0" ] ],
+    [ "esp:GND.1", "mosfet_irf520_1:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "mosfet_irf520_1:VCC", "red", [ "v0" ] ],
+    [ "esp:18", "mosfet_irf520_1:SIG", "green", [ "v0" ] ],
+    [ "esp:GND.1", "mosfet_irf520_2:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "mosfet_irf520_2:VCC", "red", [ "v0" ] ],
+    [ "esp:8", "mosfet_irf520_2:SIG", "green", [ "v0" ] ],
+    [ "esp:GND.1", "mosfet_irf520_3:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "mosfet_irf520_3:VCC", "red", [ "v0" ] ],
+    [ "esp:9", "mosfet_irf520_3:SIG", "green", [ "v0" ] ],
+    [ "esp:GND.1", "mosfet_irf520_4:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "mosfet_irf520_4:VCC", "red", [ "v0" ] ],
+    [ "esp:10", "mosfet_irf520_4:SIG", "green", [ "v0" ] ],
+    [ "esp:GND.1", "pmic_ip5306:GND", "black", [ "v0" ] ],
+    [ "pmic_ip5306:VOUT", "pmic_ip5306:VOUT", "red", [ "v0" ] ],
+    [ "esp:11", "pmic_ip5306:KEY", "green", [ "v0" ] ],
+    [ "esp:GND.1", "buck_7v:VOUT_NEG", "black", [ "v0" ] ],
+    [ "buck_7v:VOUT_POS", "buck_7v:VOUT_POS", "orange", [ "v0" ] ],
+    [ "esp:12", "buck_7v:EN", "green", [ "v0" ] ],
+    [ "esp:GND.1", "epd:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "epd:VCC", "red", [ "v0" ] ],
+    [ "esp:13", "epd:CS", "green", [ "v0" ] ]
   ],
-  "serialMonitor": {
-    "display": "always",
-    "newline": "lf"
-  }
+  "serialMonitor": { "display": "always", "newline": "lf" },
+  "dependencies": {}
 }

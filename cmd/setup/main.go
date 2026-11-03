@@ -1002,7 +1002,7 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 		var copied []string
 		hwDir := filepath.Join(root, "hardware")
 		for _, ch := range req.UsedChips {
-			for _, ext := range []string{".chip.wasm", ".chip.json"} {
+			for _, ext := range []string{".chip.wasm", ".chip.json", ".svg"} {
 				fname := ch + ext
 				src := filepath.Join(hwDir, fname)
 				if _, err := os.Stat(src); err == nil {
@@ -1022,6 +1022,22 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 		})
 	})
 
+	launchVsCode := func(target string) error {
+		_ = os.MkdirAll(target, 0755)
+		var err error
+		if runtime.GOOS == "darwin" {
+			err = exec.Command("open", "-a", "Visual Studio Code", target).Start()
+		} else if runtime.GOOS == "windows" {
+			err = exec.Command("cmd.exe", "/c", "code", target).Start()
+		} else {
+			err = exec.Command("code", target).Start()
+		}
+		if err != nil {
+			err = exec.Command("code", target).Start()
+		}
+		return err
+	}
+
 	mux.HandleFunc("/api/open-vscode", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		var req struct {
@@ -1035,22 +1051,9 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 		if !filepath.IsAbs(target) {
 			target = filepath.Join(root, target)
 		}
-		_ = os.MkdirAll(target, 0755)
-
-		var err error
-		if runtime.GOOS == "darwin" {
-			err = exec.Command("open", "-a", "Visual Studio Code", target).Start()
-		} else if runtime.GOOS == "windows" {
-			err = exec.Command("cmd.exe", "/c", "code", target).Start()
-		} else {
-			err = exec.Command("code", target).Start()
-		}
-		if err != nil {
-			// Fallback to "code" command
-			if err2 := exec.Command("code", target).Start(); err2 != nil {
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": fmt.Sprintf("Could not open VS Code: %v", err)})
-				return
-			}
+		if err := launchVsCode(target); err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": fmt.Sprintf("Could not open VS Code: %v", err)})
+			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"ok":        true,
@@ -1070,8 +1073,13 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 			req.Action = "status"
 		}
 		target := expandHome(strings.TrimSpace(req.ProjectPath))
-		if target != "" && !filepath.IsAbs(target) {
+		if target == "" {
+			target = filepath.Join(root, "rc-car-wokwi")
+		} else if !filepath.IsAbs(target) {
 			target = filepath.Join(root, target)
+		}
+		if info, err := os.Stat(target); err == nil && !info.IsDir() {
+			target = filepath.Dir(target)
 		}
 
 		payload, _ := json.Marshal(map[string]interface{}{
@@ -1081,11 +1089,36 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 		client := &http.Client{Timeout: 3 * time.Second}
 		resp, err := client.Post("http://127.0.0.1:47129/mcp", "application/json", bytes.NewReader(payload))
 		if err != nil {
+			// If action was start and VS Code bridge is not yet active, auto-launch VS Code
+			if req.Action == "start" {
+				_ = launchVsCode(target)
+				// Poll bridge for up to 4 seconds
+				for attempt := 0; attempt < 8; attempt++ {
+					time.Sleep(500 * time.Millisecond)
+					r2, err2 := client.Post("http://127.0.0.1:47129/mcp", "application/json", bytes.NewReader(payload))
+					if err2 == nil {
+						defer r2.Body.Close()
+						var out map[string]interface{}
+						_ = json.NewDecoder(r2.Body).Decode(&out)
+						out["vscodeLive"] = true
+						out["autoLaunched"] = true
+						_ = json.NewEncoder(w).Encode(out)
+						return
+					}
+				}
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"ok":           true,
+					"vscodeLive":   false,
+					"autoLaunched": true,
+					"message":      "Launched VS Code with project. Wokwi extension is initializing.",
+				})
+				return
+			}
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"ok":          false,
 				"vscodeLive":  false,
 				"error":       fmt.Sprintf("VS Code bridge (127.0.0.1:47129) not reachable: %v", err),
-				"instruction": "Open VS Code with the Wokwi extension to connect the live simulator bridge.",
+				"instruction": "Click 'Open in VS Code' or 'Run Sim' to launch VS Code automatically.",
 			})
 			return
 		}
@@ -1093,6 +1126,12 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 		var out map[string]interface{}
 		_ = json.NewDecoder(resp.Body).Decode(&out)
 		out["vscodeLive"] = true
+		if req.Action == "start" {
+			// Also ensure VS Code window is frontmost on macOS
+			if runtime.GOOS == "darwin" {
+				_ = exec.Command("open", "-a", "Visual Studio Code").Start()
+			}
+		}
 		_ = json.NewEncoder(w).Encode(out)
 	})
 
@@ -1363,7 +1402,7 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 		for _, p := range diagMap.Parts {
 			if strings.HasPrefix(p.Type, "chip-") {
 				cname := strings.TrimPrefix(p.Type, "chip-")
-				for _, ext := range []string{".chip.wasm", ".chip.json"} {
+				for _, ext := range []string{".chip.wasm", ".chip.json", ".svg"} {
 					src := filepath.Join(hwDir, cname+ext)
 					dst := filepath.Join(targetDir, cname+ext)
 					if _, err := os.Stat(src); err == nil {

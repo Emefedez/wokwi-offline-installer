@@ -120,14 +120,52 @@
         "title": "Wokwi: Send CAN Message (Terminal / TWAI)",
         "category": "Wokwi",
         "icon": "$(radio-tower)"
+      },
+      {
+        "command": "wokwi-vscode.loadDiagramJson",
+        "title": "Wokwi: Load / Select Diagram JSON",
+        "category": "Wokwi",
+        "icon": "$(folder-opened)"
       }
     ],
     "menus": {
       "view/title": [
         {
+          "command": "wokwi-vscode.sendCanMessage",
+          "when": "view == wokwi-explorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "wokwi-vscode.loadDiagramJson",
+          "when": "view == wokwi-explorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "wokwi-vscode.start",
+          "when": "view == wokwi-explorer",
+          "group": "navigation@3"
+        },
+        {
           "command": "wokwi-vscode.refreshExplorer",
           "when": "view == wokwi-explorer",
-          "group": "navigation"
+          "group": "navigation@4"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "wokwi-vscode.start",
+          "when": "resourceExtname == .json || resourceExtname == .toml",
+          "group": "navigation@1"
+        },
+        {
+          "command": "wokwi-vscode.sendCanMessage",
+          "when": "resourceExtname == .json || resourceExtname == .toml",
+          "group": "navigation@2"
+        },
+        {
+          "command": "wokwi-vscode.loadDiagramJson",
+          "when": "resourceExtname == .json || resourceExtname == .toml",
+          "group": "navigation@3"
         }
       ]
     },

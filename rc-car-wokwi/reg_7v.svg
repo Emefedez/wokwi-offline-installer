@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="136" height="76" viewBox="0 0 136 76">
+  <defs>
+    <g id="reg-hole">
+      <circle cx="0" cy="0" r="3.4" fill="#090d14" stroke="#eab308" stroke-width="1.5"/>
+    </g>
+  </defs>
+  <!-- DC-DC 7.0V 3A Buck Converter PCB -->
+  <rect x="2" y="2" width="132" height="72" rx="5" fill="#1e3a8a" stroke="#60a5fa" stroke-width="1.2"/>
+  <text x="68" y="12.5" text-anchor="middle" fill="#bfdbfe" font-family="monospace" font-size="6.6" font-weight="bold">BUCK 7.0V 3A BEC</text>
+  <!-- Left 3 Gold Pads (VIN_POS, VIN_NEG, VOUT_POS) -->
+  <use href="#reg-hole" x="10" y="22"/>
+  <use href="#reg-hole" x="10" y="39"/>
+  <use href="#reg-hole" x="10" y="56"/>
+  <g fill="#eff6ff" font-family="monospace" font-size="6.5" font-weight="bold">
+    <text x="17" y="24.5">VIN_POS</text>
+    <text x="17" y="41.5">VIN_NEG</text>
+    <text x="17" y="58.5">VOUT_POS</text>
+  </g>
+  <!-- Electrolytic Filter Capacitors + 4R7 Shielded Inductor + Bourns Trimmer Pot -->
+  <circle cx="52" cy="27" r="8" fill="#cbd5e1" stroke="#475569" stroke-width="1"/>
+  <path d="M47 21 A8 8 0 0 1 47 33 Z" fill="#1e293b"/>
+  <rect x="64" y="18" width="22" height="22" rx="2.5" fill="#334155" stroke="#94a3b8" stroke-width="0.9"/>
+  <text x="75" y="31.5" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="7" font-weight="bold">4R7</text>
+  <!-- Blue Bourns Multi-Turn Potentiometer -->
+  <rect x="46" y="46" width="40" height="16" rx="1.5" fill="#0284c7" stroke="#7dd3fc" stroke-width="0.8"/>
+  <circle cx="53" cy="54" r="3.5" fill="#eab308" stroke="#713f12" stroke-width="0.7"/>
+  <line x1="51" y1="54" x2="55" y2="54" stroke="#713f12" stroke-width="1"/>
+  <text x="71" y="56.5" text-anchor="middle" fill="#ffffff" font-family="monospace" font-size="6.8" font-weight="bold">7.0V</text>
+  <!-- Right 2 Gold Pads (VOUT_NEG, EN) -->
+  <use href="#reg-hole" x="126" y="22"/>
+  <use href="#reg-hole" x="126" y="39"/>
+  <g fill="#eff6ff" font-family="monospace" font-size="6.5" font-weight="bold" text-anchor="end">
+    <text x="119" y="24.5">VOUT_NEG</text>
+    <text x="119" y="41.5">EN</text>
+  </g>
+</svg>
