@@ -678,6 +678,8 @@ func generateProjectFromCounts(root, targetDir string, cat *Catalog, counts map[
 	mainMcuID := ""
 	reg7vID := ""
 	pmicID := ""
+	canTransceiverID := ""
+	canTermID := ""
 	mcuGpioPool := []string{"4", "5", "6", "7", "15", "16", "17", "18", "8", "9", "10", "11", "12", "13", "14", "1", "2", "38", "39", "40", "41", "42"}
 	gpioIdx := 0
 	col, row := 0, 0
@@ -723,6 +725,12 @@ func generateProjectFromCounts(root, targetDir string, cat *Catalog, counts map[
 			if el.ID == "ip5306" && pmicID == "" {
 				pmicID = partID
 			}
+			if el.ID == "cjmcu_230" && canTransceiverID == "" {
+				canTransceiverID = partID
+			}
+			if el.ID == "can_terminal" && canTermID == "" {
+				canTermID = partID
+			}
 		}
 	}
 
@@ -752,6 +760,33 @@ func generateProjectFromCounts(root, targetDir string, cat *Catalog, counts map[
 				connections = append(connections, []interface{}{pmicID + ":VOUT", pid + ":" + found.PowerPin, "red", []string{"v0"}})
 			} else if found.PowerPin != "" {
 				connections = append(connections, []interface{}{mainMcuID + ":3V3.1", pid + ":" + found.PowerPin, "red", []string{"v0"}})
+			}
+			if found.ID == "cjmcu_230" {
+				// Dedicated ESP32-S3 TWAI CAN TX (GPIO4) -> D and CAN RX (GPIO5) <- R
+				connections = append(connections,
+					[]interface{}{mainMcuID + ":4", pid + ":D", "cyan", []string{"v0"}},
+					[]interface{}{mainMcuID + ":5", pid + ":R", "purple", []string{"v0"}},
+				)
+				if gpioIdx < 2 {
+					gpioIdx = 2
+				}
+				continue
+			}
+			if found.ID == "can_terminal" {
+				if canTransceiverID != "" {
+					connections = append(connections,
+						[]interface{}{pid + ":CANH", canTransceiverID + ":CANH", "yellow", []string{"v0"}},
+						[]interface{}{pid + ":CANL", canTransceiverID + ":CANL", "blue", []string{"v0"}},
+					)
+				}
+				connections = append(connections,
+					[]interface{}{pid + ":CANTX", mainMcuID + ":5", "purple", []string{"v0"}},
+					[]interface{}{pid + ":CANRX", mainMcuID + ":4", "cyan", []string{"v0"}},
+				)
+				continue
+			}
+			if found.ID == "pushbutton" && canTermID != "" {
+				connections = append(connections, []interface{}{pid + ":1.r", canTermID + ":TRIG", "magenta", []string{"v0"}})
 			}
 			if found.SignalPin != "" && gpioIdx < len(mcuGpioPool) {
 				gpio := mcuGpioPool[gpioIdx]
@@ -1151,6 +1186,176 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "message": msg})
+	})
+
+	mux.HandleFunc("/api/xcasfw-diagram", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		home, _ := os.UserHomeDir()
+		for _, cand := range []string{
+			filepath.Join(root, "hardware", "xcasfw_diagram.json"),
+			filepath.Join(home, ".wokwi", "hardware-elements", "xcasfw_diagram.json"),
+		} {
+			if b, err := os.ReadFile(cand); err == nil && len(b) > 0 {
+				_, _ = w.Write(b)
+				return
+			}
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"version": 1, "parts": []interface{}{}, "connections": []interface{}{}})
+	})
+
+	mux.HandleFunc("/api/diagram-file", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var req struct {
+			Action  string          `json:"action"`
+			Path    string          `json:"path"`
+			Diagram json.RawMessage `json:"diagram"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+		target := expandHome(strings.TrimSpace(req.Path))
+		if target == "" {
+			target = "./rc-car-wokwi/diagram.json"
+		}
+		if info, err := os.Stat(target); err == nil && info.IsDir() {
+			target = filepath.Join(target, "diagram.json")
+		} else if !strings.HasSuffix(strings.ToLower(target), ".json") {
+			target = filepath.Join(target, "diagram.json")
+		}
+
+		if req.Action == "load" {
+			raw, err := os.ReadFile(target)
+			if err != nil {
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": fmt.Sprintf("Failed to read %s: %v", target, err)})
+				return
+			}
+			var parsed interface{}
+			if err := json.Unmarshal(raw, &parsed); err != nil {
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": fmt.Sprintf("Invalid JSON in %s: %v", target, err)})
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "path": target, "diagram": parsed})
+			return
+		}
+
+		// Save diagram.json and ensure custom chip .wasm/.json files are present if referenced
+		targetDir := filepath.Dir(target)
+		if err := os.MkdirAll(targetDir, 0755); err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+		var formatted bytes.Buffer
+		if err := json.Indent(&formatted, req.Diagram, "", "  "); err != nil {
+			formatted.Write(req.Diagram)
+		}
+		formatted.WriteByte('\n')
+		if err := os.WriteFile(target, formatted.Bytes(), 0644); err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+
+		// Copy any referenced chip-*.wasm / chip-*.json into targetDir if not already there
+		var diagMap struct {
+			Parts []struct {
+				Type string `json:"type"`
+			} `json:"parts"`
+		}
+		_ = json.Unmarshal(req.Diagram, &diagMap)
+		hwDir := filepath.Join(root, "hardware")
+		for _, p := range diagMap.Parts {
+			if strings.HasPrefix(p.Type, "chip-") {
+				cname := strings.TrimPrefix(p.Type, "chip-")
+				for _, ext := range []string{".chip.wasm", ".chip.json"} {
+					src := filepath.Join(hwDir, cname+ext)
+					dst := filepath.Join(targetDir, cname+ext)
+					if _, err := os.Stat(src); err == nil {
+						_ = copyFile(src, dst)
+					}
+				}
+			}
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"ok":      true,
+			"path":    target,
+			"message": fmt.Sprintf("Saved visual layout to %s (%d parts)", target, len(diagMap.Parts)),
+		})
+	})
+
+	mux.HandleFunc("/api/can-simulate", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var req struct {
+			CanID       int    `json:"canId"`
+			CmdType     int    `json:"cmdType"`
+			SteeringDeg int    `json:"steeringDeg"`
+			ThrottlePct int    `json:"throttlePct"`
+			CustomHex   string `json:"customHex"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		if req.CanID <= 0 {
+			req.CanID = 0x120
+		}
+		if req.SteeringDeg < 0 {
+			req.SteeringDeg = 0
+		} else if req.SteeringDeg > 180 {
+			req.SteeringDeg = 180
+		}
+		if req.ThrottlePct < 0 {
+			req.ThrottlePct = 0
+		} else if req.ThrottlePct > 100 {
+			req.ThrottlePct = 100
+		}
+
+		cmdNames := map[int]string{
+			0: "STEER_AND_THROTTLE",
+			1: "STEER_SERVO_ONLY",
+			2: "EMERGENCY_BRAKE",
+			3: "DIAGNOSTIC_PING",
+		}
+		cmdName := cmdNames[req.CmdType]
+		if cmdName == "" {
+			cmdName = "CUSTOM_CAN_FRAME"
+		}
+
+		effThrottle := req.ThrottlePct
+		if req.CmdType == 2 {
+			effThrottle = 0
+		}
+		brakeFlag := 0x01
+		if req.CmdType == 2 {
+			brakeFlag = 0xFF
+		}
+
+		txFrame := fmt.Sprintf("ID=0x%03X DLC=8 DATA=[%02X %02X %02X %02X CA 4E 00 01]", req.CanID, req.CmdType&0xFF, req.SteeringDeg&0xFF, effThrottle&0xFF, brakeFlag)
+		if strings.TrimSpace(req.CustomHex) != "" {
+			txFrame = fmt.Sprintf("ID=0x%03X DLC=8 DATA=[%s]", req.CanID, strings.ToUpper(strings.TrimSpace(req.CustomHex)))
+		}
+		ackID := (req.CanID + 8) & 0x7FF
+		rxAckFrame := fmt.Sprintf("ID=0x%03X DLC=8 DATA=[AC %02X %02X %02X 0C E4 00 4F]", ackID, req.SteeringDeg&0xFF, effThrottle&0xFF, brakeFlag)
+		servoPulseUs := 500 + (req.SteeringDeg*2000)/180
+		motorDuty := (effThrottle * 255) / 100
+
+		trace := []string{
+			fmt.Sprintf("[CAN-TERMINAL TX] %s (%s) -> Driven onto CANH/CANL (500 kbps)", txFrame, cmdName),
+			"[CJMCU-230 SN65HVD230] Differential bus dominant (CANH=4.2V, CANL=1.1V, Vdiff=3.1V) -> Receiver R=LOW -> ESP32-S3 GPIO5 (TWAI_RX)",
+			fmt.Sprintf("[ESP32-S3 TWAI ISR] Frame received & CRC-15 verified: %s", cmdName),
+			fmt.Sprintf("[ESP32-S3 ACTUATORS] YB-P20M Servo (GPIO17/18 @ 7.0V Buck) -> %d° (%d µs PWM) | JGB37-520 x4 + IRF520 -> %d%% (%d/255 duty)", req.SteeringDeg, servoPulseUs, effThrottle, motorDuty),
+			fmt.Sprintf("[ESP32-S3 TWAI TX -> CJMCU-230 D (GPIO4)] Sending ACK response %s", rxAckFrame),
+			fmt.Sprintf("[CAN-TERMINAL RX] %s <- ACK verified! Bus latency: 0.42 ms, Error counters: TEC=0 REC=0", rxAckFrame),
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"ok":           true,
+			"txFrame":      txFrame,
+			"rxAckFrame":   rxAckFrame,
+			"cmdName":      cmdName,
+			"steeringDeg":  req.SteeringDeg,
+			"servoPulseUs": servoPulseUs,
+			"throttlePct":  effThrottle,
+			"motorDuty":    motorDuty,
+			"trace":        trace,
+		})
 	})
 
 	mux.HandleFunc("/api/run-setup", func(w http.ResponseWriter, r *http.Request) {

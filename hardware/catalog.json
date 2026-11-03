@@ -4,16 +4,18 @@
   "defaultPreset": "rc-car",
   "presets": {
     "rc-car": {
-      "name": "RC Car (ESP32-S3 N16R8 + Servos + Geared Motors + CAN + MOSFETs + 7V Buck + IP5306)",
-      "description": "Primary RC Car configuration from tabla_piezas_voltajes_amperajes.pdf",
+      "name": "RC Car (ESP32-S3 N16R8 + CAN Terminal + CJMCU-230 + Servos + Motors + MOSFETs + 7V Buck + IP5306)",
+      "description": "Primary RC Car configuration with ESP32-S3 CAN Bus (TWAI), Simulated CAN Terminal Injector/Monitor, Servos & Drive Motors",
       "counts": {
         "esp32_s3_n16r8": 1,
         "yb_p20m": 2,
         "jgb37_520": 4,
         "cjmcu_230": 1,
+        "can_terminal": 1,
         "irf520_pwm": 4,
         "ip5306": 1,
         "reg_7v": 1,
+        "pushbutton": 1,
         "esp32_s3_n16r16": 0,
         "weact_213_bw": 0,
         "microsd_card": 0
@@ -27,9 +29,11 @@
         "yb_p20m": 0,
         "jgb37_520": 0,
         "cjmcu_230": 0,
+        "can_terminal": 0,
         "irf520_pwm": 0,
         "ip5306": 0,
         "reg_7v": 0,
+        "pushbutton": 0,
         "esp32_s3_n16r16": 1,
         "weact_213_bw": 1,
         "microsd_card": 1
@@ -134,6 +138,49 @@
         "busVoltageRangeV": "-4V to 6V",
         "ioCurrentRangeMa": "-11mA to +11mA",
         "notes": "Vcc: -0.3V to 6V (3.3V typ) | CANH/CANL: -4V to 6V | VI(D or R): -0.5V to (VCC+0.5)V | Receiver IO: -11mA to 11mA."
+      }
+    },
+    {
+      "id": "can_terminal",
+      "name": "Simulated CAN Bus Terminal (Frame Injector & Bus Analyzer)",
+      "category": "RC Car Telemetry / CAN Bus",
+      "wokwiType": "chip-can_terminal",
+      "chipName": "can_terminal",
+      "chipBinary": "can_terminal.chip.wasm",
+      "chipJson": "can_terminal.chip.json",
+      "idPrefix": "can_term",
+      "defaultCount": 1,
+      "attrs": {},
+      "pins": ["CANH", "CANL", "CANTX", "CANRX", "TRIG", "VCC", "GND"],
+      "signalPin": "CANTX",
+      "powerPin": "VCC",
+      "gndPin": "GND",
+      "powerRail": "3V3",
+      "specs": {
+        "voltageMinV": 3.0,
+        "voltageTypV": 3.3,
+        "voltageMaxV": 5.0,
+        "busSpeedKbps": 500,
+        "notes": "Interactive CAN 2.0A Bus Terminal with live 128x48 status display & controls (CAN ID 0x120, Steering 0-180°, Throttle 0-100%, Manual & Auto Frame Injection). Connects to CJMCU-230 CANH/CANL and ESP32-S3 TWAI GPIO4/GPIO5 to test RC Car CAN commands and ACK responses."
+      }
+    },
+    {
+      "id": "pushbutton",
+      "name": "Tactile Pushbutton (CAN Frame Trigger / User Input Button)",
+      "category": "Input / Controls",
+      "wokwiType": "wokwi-pushbutton",
+      "idPrefix": "btn",
+      "defaultCount": 1,
+      "attrs": { "color": "purple", "label": "SEND CAN", "key": "c" },
+      "pins": ["1.l", "2.l", "1.r", "2.r"],
+      "signalPin": "1.r",
+      "gndPin": "2.l",
+      "powerRail": "3V3",
+      "specs": {
+        "voltageMinV": 0.0,
+        "voltageTypV": 3.3,
+        "voltageMaxV": 5.0,
+        "notes": "Interactive pushbutton in diagram.json (press button or shortcut key 'c'). In RC Car preset, triggers immediate CAN frame injection on can_terminal:TRIG and ESP32 GPIO14."
       }
     },
     {

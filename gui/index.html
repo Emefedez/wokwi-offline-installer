@@ -63,10 +63,13 @@
       margin: 18px auto 0;
       padding: 0 24px;
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 12px;
     }
-    @media (max-width: 900px) {
+    @media (max-width: 1100px) {
+      .stepper { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
       .stepper { grid-template-columns: 1fr; }
     }
     .step-tab {
@@ -450,7 +453,14 @@
       <div class="step-num" id="num-step-3">3</div>
       <div class="step-meta">
         <div class="step-title">Step 3: Choose Hardware &amp; Generate <code>wokwi.toml</code></div>
-        <div class="step-sub" id="sub-step-3">Select N of each component &amp; write <code>wokwi.toml</code> + <code>diagram.json</code></div>
+        <div class="step-sub" id="sub-step-3">Select N of each component (incl. CAN Terminal) &amp; write <code>wokwi.toml</code></div>
+      </div>
+    </button>
+    <button id="nav-step-4" class="step-tab" onclick="goToStep(4)">
+      <div class="step-num" id="num-step-4">4</div>
+      <div class="step-meta">
+        <div class="step-title">Step 4: Visual Layout Editor &amp; CAN Bus Terminal</div>
+        <div class="step-sub" id="sub-step-4">Visually move/add/toggle buttons &amp; test RC Car CAN messages</div>
       </div>
     </button>
   </nav>
@@ -774,8 +784,221 @@
           </div>
 
           <div class="card">
-            <h2>Generated <code>diagram.json</code> Preview</h2>
+            <h2>
+              <span>Generated <code>diagram.json</code> Preview</span>
+              <button class="btn btn-primary" onclick="openVisualEditorWithCurrentDiagram()">
+                ✏️ Open in Visual Layout &amp; Button Editor (Step 4) &rarr;
+              </button>
+            </h2>
             <textarea id="preview-diagram" class="code-box"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- STEP 4: VISUAL LAYOUT & BUTTON EDITOR + SIMULATED CAN BUS TERMINAL      -->
+    <!-- ======================================================================= -->
+    <div id="step-4" class="hidden">
+      <div class="status-banner" style="background:rgba(56,189,248,0.11);border-color:rgba(56,189,248,0.4);">
+        <div>
+          <div style="font-weight:700;font-size:0.96rem;">Visual Layout &amp; Button Manager + RC Car CAN Bus Terminal Simulator</div>
+          <div style="font-size:0.82rem;color:#cbd5e1;margin-top:2px;">
+            Drag any button or component to move its <code>(left, top)</code> position, toggle whether a button/part exists, add new buttons/chips, or test sending CAN 2.0A messages to the ESP32-S3 RC Car setup. (Also unlocked directly inside VS Code's Wokwi Simulator &amp; Diagram Editor!)
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="loadStep3DiagramIntoVisualEditor()">🚗 Load RC Car + CAN Layout</button>
+          <button class="btn" onclick="loadXcasfwIntoVisualEditor()">🧮 Load XCasFW 54-Button Layout</button>
+          <button class="btn btn-success" onclick="saveVisualEditorToDisk()">💾 Save Layout to <code>diagram.json</code></button>
+        </div>
+      </div>
+
+      <div class="grid-2" style="grid-template-columns: 1.45fr 1fr;">
+        <!-- LEFT: INTERACTIVE 2D VISUAL CANVAS + CAN TERMINAL SIMULATOR -->
+        <div>
+          <div class="card">
+            <h2>
+              <span>Interactive 2D Visual Layout Canvas (Drag to Move, Click to Edit)</span>
+              <span class="badge badge-ok" id="vis-part-count-badge">0 parts</span>
+            </h2>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+              <button class="btn btn-primary" onclick="visAddPushbutton()">+ Add Pushbutton (<code>wokwi-pushbutton</code>)</button>
+              <button class="btn" onclick="visAddCanTerminal()">+ Add CAN Terminal (<code>chip-can_terminal</code>)</button>
+              <button class="btn" onclick="visAddPartPrompt()">+ Add Other Part</button>
+              <span style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+                <button class="btn" style="padding:5px 10px;" onclick="visZoom(0.85)" title="Zoom Out">&minus;</button>
+                <span id="vis-zoom-label" style="font-size:0.8rem;color:var(--muted);min-width:46px;text-align:center;">100%</span>
+                <button class="btn" style="padding:5px 10px;" onclick="visZoom(1.18)" title="Zoom In">+</button>
+                <button class="btn" style="padding:5px 10px;" onclick="visFitView()">Fit All</button>
+              </span>
+            </div>
+
+            <div style="position:relative;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#080e1a;">
+              <canvas id="vis-canvas" width="880" height="540" style="width:100%;height:540px;display:block;cursor:grab;"></canvas>
+              <div style="position:absolute;bottom:8px;left:10px;background:rgba(15,23,42,0.88);border:1px solid var(--border);padding:4px 10px;border-radius:6px;font-size:0.75rem;color:#cbd5e1;pointer-events:none;">
+                <strong>Tip:</strong> Click &amp; drag any button/part to move &bull; Drag empty space to pan &bull; Scroll wheel to zoom &bull; Click part to edit or toggle existence
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;">
+              <input type="text" id="vis-file-path" value="./rc-car-wokwi/diagram.json" placeholder="Path to diagram.json or project folder" style="flex:1;" />
+              <button class="btn" onclick="loadVisualEditorFromDisk()">📂 Load from Disk</button>
+              <button class="btn btn-success" onclick="saveVisualEditorToDisk()">💾 Save to Disk &amp; Sync Step 3</button>
+              <button class="btn" onclick="downloadFile('diagram.json', JSON.stringify(visBuildExportDiagram(), null, 2))">⬇️ Download JSON</button>
+            </div>
+            <div id="vis-toast" class="status-toast"></div>
+          </div>
+
+          <!-- SIMULATED CAN BUS TERMINAL & ESP32 RC CAR TESTER -->
+          <div class="card">
+            <h2>
+              <span>Simulated CAN Bus Terminal (<code>chip-can_terminal</code> &rarr; <code>CJMCU-230</code> &rarr; <code>ESP32-S3</code>)</span>
+              <span class="badge badge-ok">500 kbps TWAI CAN 2.0A</span>
+            </h2>
+            <p style="font-size:0.83rem;color:var(--muted);margin-top:0;">
+              Test sending CAN bus frames from the <strong>Simulated CAN Bus Terminal</strong> element (<code>can_term</code>) across <code>CANH</code>/<code>CANL</code> through the <strong>CJMCU-230 (SN65HVD230)</strong> transceiver to the <strong>ESP32-S3 N16R8</strong> (<code>GPIO4</code> TX / <code>GPIO5</code> RX) and verify its actuator &amp; ACK response:
+            </p>
+            <div class="preset-bar">
+              <button class="btn btn-primary" onclick="sendSimulatedCanPreset(0x120, 0, 35, 65)">🚗 Steer Left (35&deg;) + 65% Throttle</button>
+              <button class="btn" onclick="sendSimulatedCanPreset(0x120, 0, 90, 80)">⬆️ Center (90&deg;) + 80% Throttle</button>
+              <button class="btn" onclick="sendSimulatedCanPreset(0x120, 0, 145, 50)">➡️ Steer Right (145&deg;) + 50% Throttle</button>
+              <button class="btn" style="border-color:var(--danger);color:#fca5a5;" onclick="sendSimulatedCanPreset(0x100, 2, 90, 0)">🛑 Emergency Brake (0x100)</button>
+              <button class="btn" onclick="sendSimulatedCanPreset(0x7DF, 3, 90, 0)">🔍 OBD-II Status Ping (0x7DF)</button>
+            </div>
+
+            <div class="form-grid" style="grid-template-columns: repeat(4, 1fr);">
+              <div class="form-group">
+                <label>CAN ID (Hex)</label>
+                <input type="text" id="can-sim-id" value="0x120" />
+              </div>
+              <div class="form-group">
+                <label>Command Type</label>
+                <select id="can-sim-cmd">
+                  <option value="0">0: Steer + Throttle</option>
+                  <option value="1">1: Steer Servo Only</option>
+                  <option value="2">2: Emergency Brake</option>
+                  <option value="3">3: Diagnostic Ping</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Steering Angle (0–180&deg;)</label>
+                <input type="number" id="can-sim-steer" value="90" min="0" max="180" />
+              </div>
+              <div class="form-group">
+                <label>Motor Throttle (0–100%)</label>
+                <input type="number" id="can-sim-throttle" value="50" min="0" max="100" />
+              </div>
+              <div class="form-group full" style="display:flex;flex-direction:row;gap:8px;align-items:center;">
+                <input type="text" id="can-sim-hex" placeholder="Optional custom 8-byte payload hex (e.g. 00 5A 32 01 CA 4E 00 01) — leave blank for auto" style="flex:1;" />
+                <button class="btn btn-success" onclick="sendSimulatedCanFrame()">📡 Send CAN Message &amp; Test ESP32 Response</button>
+              </div>
+            </div>
+
+            <div class="rail-box" style="margin-top:8px;">
+              <div class="rail-card">
+                <div class="rail-name">Last TX Frame (Terminal &rarr; Bus)</div>
+                <div class="rail-val" id="can-last-tx" style="font-size:0.82rem;font-family:monospace;">ID=0x120 DLC=8 [00 5A 32 01 CA 4E 00 01]</div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-name">ESP32-S3 Servo &amp; Motor Response</div>
+                <div class="rail-val" id="can-last-act" style="font-size:0.86rem;color:#86efac;">YB-P20M: 90&deg; (1500 &micro;s) | JGB37: 50%</div>
+              </div>
+              <div class="rail-card">
+                <div class="rail-name">Last RX ACK (ESP32-S3 &rarr; Terminal)</div>
+                <div class="rail-val" id="can-last-rx" style="font-size:0.82rem;font-family:monospace;color:#c084fc;">ID=0x128 DLC=8 [AC 5A 32 01 0C E4 00 4F]</div>
+              </div>
+            </div>
+
+            <textarea id="can-terminal-log" class="code-box" style="height:155px;background:#050b14;color:#4ade80;border-color:#1e3a5f;" readonly></textarea>
+          </div>
+        </div>
+
+        <!-- RIGHT: SELECTED BUTTON / PART INSPECTOR & EXISTENCE MANAGER -->
+        <div>
+          <div class="card">
+            <h2>
+              <span>Selected Button / Component Inspector</span>
+              <span class="badge" id="vis-sel-badge">Click any part</span>
+            </h2>
+            <div class="form-grid">
+              <div class="form-group full" style="background:var(--panel-alt);padding:10px 12px;border-radius:8px;border:1px solid var(--border);flex-direction:row;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:700;font-size:0.9rem;">Part / Button Exists in Config</div>
+                  <div style="font-size:0.76rem;color:var(--muted);">Uncheck to omit this button/part from <code>diagram.json</code> without losing its layout coordinates</div>
+                </div>
+                <input type="checkbox" id="insp-exists" checked onchange="visApplyInspector()" style="width:20px;height:20px;cursor:pointer;" />
+              </div>
+              <div class="form-group">
+                <label>Part ID (<code>id</code>)</label>
+                <input type="text" id="insp-id" oninput="visApplyInspector()" />
+              </div>
+              <div class="form-group">
+                <label>Wokwi Type (<code>type</code>)</label>
+                <input type="text" id="insp-type" oninput="visApplyInspector()" />
+              </div>
+              <div class="form-group">
+                <label>Left / X Position (px)</label>
+                <input type="number" id="insp-left" step="5" oninput="visApplyInspector()" />
+              </div>
+              <div class="form-group">
+                <label>Top / Y Position (px)</label>
+                <input type="number" id="insp-top" step="5" oninput="visApplyInspector()" />
+              </div>
+              <div class="form-group">
+                <label>Button / Part Label (<code>attrs.label</code>)</label>
+                <input type="text" id="insp-label" placeholder="e.g. SEND CAN, EXE, SHIFT" oninput="visApplyInspector()" />
+              </div>
+              <div class="form-group">
+                <label>Button Color (<code>attrs.color</code>)</label>
+                <select id="insp-color" onchange="visApplyInspector()">
+                  <option value="">Default</option>
+                  <option value="purple">Purple</option>
+                  <option value="green">Green</option>
+                  <option value="red">Red</option>
+                  <option value="blue">Blue</option>
+                  <option value="yellow">Yellow</option>
+                  <option value="orange">Orange</option>
+                  <option value="black">Black</option>
+                  <option value="white">White</option>
+                  <option value="grey">Grey</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Keyboard Shortcut Key (<code>attrs.key</code>)</label>
+                <input type="text" id="insp-key" placeholder="e.g. c, Enter, a, 1" oninput="visApplyInspector()" />
+              </div>
+              <div class="form-group">
+                <label>Rotation (deg)</label>
+                <select id="insp-rotate" onchange="visApplyInspector()">
+                  <option value="0">0&deg;</option>
+                  <option value="90">90&deg;</option>
+                  <option value="180">180&deg;</option>
+                  <option value="270">270&deg;</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <label>Primary Signal Connection Target (e.g. <code>can_term:TRIG</code> or <code>esp:14</code>)</label>
+                <div style="display:flex;gap:8px;">
+                  <input type="text" id="insp-conn" placeholder="e.g. can_term:TRIG or esp:14" style="flex:1;" />
+                  <button class="btn btn-primary" onclick="visUpdatePartConnection()">Connect Pin</button>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+              <button class="btn" onclick="visDuplicateSelected()">📋 Duplicate Part</button>
+              <button class="btn" style="border-color:var(--danger);color:#fca5a5;" onclick="visDeleteSelected()">🗑️ Delete Part Permanently</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>
+              <span>All Buttons &amp; Components in Layout (Click to Select / Toggle Existence)</span>
+            </h2>
+            <div style="margin-bottom:8px;">
+              <input type="text" id="vis-filter-input" placeholder="Filter by ID, label, or type (e.g. btn, servo, can)..." oninput="visRenderPartsList()" style="width:100%;" />
+            </div>
+            <div id="vis-parts-list" style="max-height:460px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
           </div>
         </div>
       </div>
@@ -818,16 +1041,29 @@
       const stepParam = new URLSearchParams(window.location.search).get('step');
       if (stepParam === '2') goToStep(2);
       else if (stepParam === '3') goToStep(3);
+      else if (stepParam === '4') goToStep(4);
       else goToStep(1);
     }
 
     function goToStep(step) {
       currentStep = step;
-      for (const s of [1, 2, 3]) {
-        document.getElementById(`step-${s}`).classList.toggle('hidden', s !== step);
+      for (const s of [1, 2, 3, 4]) {
+        const el = document.getElementById(`step-${s}`);
+        if (el) el.classList.toggle('hidden', s !== step);
         const tab = document.getElementById(`nav-step-${s}`);
-        tab.classList.toggle('active', s === step);
-        tab.classList.toggle('done', s < step);
+        if (tab) {
+          tab.classList.toggle('active', s === step);
+          tab.classList.toggle('done', s < step);
+        }
+      }
+      if (step === 4) {
+        if (!visState.initialized) {
+          visInitCanvas();
+          loadStep3DiagramIntoVisualEditor();
+          sendSimulatedCanPreset(0x120, 0, 90, 50);
+        } else {
+          visDraw();
+        }
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -1010,6 +1246,8 @@
       let mainMcuId = null;
       let reg7vId = null;
       let pmicId = null;
+      let canTransceiverId = null;
+      let canTermId = null;
       const mcuGpioPool = ['4', '5', '6', '7', '15', '16', '17', '18', '8', '9', '10', '11', '12', '13', '14', '1', '2', '38', '39', '40', '41', '42'];
       let gpioIdx = 0;
 
@@ -1050,6 +1288,8 @@
           if (el.isBoard && !mainMcuId) mainMcuId = partId;
           if (el.id === 'reg_7v' && !reg7vId) reg7vId = partId;
           if (el.id === 'ip5306' && !pmicId) pmicId = partId;
+          if (el.id === 'cjmcu_230' && !canTransceiverId) canTransceiverId = partId;
+          if (el.id === 'can_terminal' && !canTermId) canTermId = partId;
         }
       }
 
@@ -1070,6 +1310,31 @@
             connections.push([`${pmicId}:VOUT`, `${p.id}:${el.powerPin}`, 'red', ['v0']]);
           } else if (el.powerPin) {
             connections.push([`${mainMcuId}:3V3.1`, `${p.id}:${el.powerPin}`, 'red', ['v0']]);
+          }
+
+          if (el.id === 'cjmcu_230') {
+            connections.push(
+              [`${mainMcuId}:4`, `${p.id}:D`, 'cyan', ['v0']],
+              [`${mainMcuId}:5`, `${p.id}:R`, 'purple', ['v0']]
+            );
+            if (gpioIdx < 2) gpioIdx = 2;
+            continue;
+          }
+          if (el.id === 'can_terminal') {
+            if (canTransceiverId) {
+              connections.push(
+                [`${p.id}:CANH`, `${canTransceiverId}:CANH`, 'yellow', ['v0']],
+                [`${p.id}:CANL`, `${canTransceiverId}:CANL`, 'blue', ['v0']]
+              );
+            }
+            connections.push(
+              [`${p.id}:CANTX`, `${mainMcuId}:5`, 'purple', ['v0']],
+              [`${p.id}:CANRX`, `${mainMcuId}:4`, 'cyan', ['v0']]
+            );
+            continue;
+          }
+          if (el.id === 'pushbutton' && canTermId) {
+            connections.push([`${p.id}:1.r`, `${canTermId}:TRIG`, 'magenta', ['v0']]);
           }
 
           if (el.signalPin && gpioIdx < mcuGpioPool.length) {
@@ -1451,6 +1716,739 @@
         }
       } catch (err) {
         alert('To run TUI mode, execute ./install.sh --tui (macOS/Linux) or WokwiOfflineSetup.exe --tui (Windows).');
+      }
+    }
+
+    // =========================================================================
+    // STEP 4: INTERACTIVE VISUAL LAYOUT & BUTTON EDITOR + CAN BUS SIMULATOR
+    // =========================================================================
+    const visState = {
+      initialized: false,
+      parts: [],
+      connections: [],
+      baseDiagram: { version: 1, author: 'Wokwi Offline Suite', editor: 'wokwi' },
+      selectedIndex: -1,
+      draggingIndex: -1,
+      dragOffsetX: 0,
+      dragOffsetY: 0,
+      panning: false,
+      panStartX: 0,
+      panStartY: 0,
+      panX: 80,
+      panY: 50,
+      zoom: 1.0,
+      lastCanSteer: 90,
+      lastCanThrottle: 50,
+    };
+
+    function visGetPartDimensions(p) {
+      const t = (p.type || '').toLowerCase();
+      if (t.includes('pushbutton')) return { w: 58, h: 42 };
+      if (t.includes('esp32')) return { w: 125, h: 170 };
+      if (t.includes('weact_213_bw') || t.includes('epd')) return { w: 130, h: 190 };
+      if (t.includes('can_terminal')) return { w: 165, h: 86 };
+      if (t.includes('cjmcu_230')) return { w: 120, h: 66 };
+      if (t.includes('yb_p20m')) return { w: 115, h: 64 };
+      if (t.includes('jgb37_520')) return { w: 125, h: 68 };
+      if (t.includes('microsd')) return { w: 96, h: 68 };
+      return { w: 120, h: 68 };
+    }
+
+    function visColorHex(name) {
+      const map = {
+        purple: '#9333ea',
+        green: '#16a34a',
+        red: '#dc2626',
+        blue: '#2563eb',
+        yellow: '#ca8a04',
+        orange: '#ea580c',
+        black: '#1e293b',
+        white: '#e2e8f0',
+        grey: '#64748b',
+        gray: '#64748b',
+        cyan: '#06b6d4',
+        magenta: '#d946ef',
+      };
+      return map[(name || '').toLowerCase()] || '#38bdf8';
+    }
+
+    function visInitCanvas() {
+      if (visState.initialized) return;
+      visState.initialized = true;
+      const canvas = document.getElementById('vis-canvas');
+      if (!canvas) return;
+
+      const toWorld = (clientX, clientY) => {
+        const rect = canvas.getBoundingClientRect();
+        const sx = (clientX - rect.left) * (canvas.width / rect.width);
+        const sy = (clientY - rect.top) * (canvas.height / rect.height);
+        return {
+          x: (sx - visState.panX) / visState.zoom,
+          y: (sy - visState.panY) / visState.zoom,
+          sx,
+          sy,
+        };
+      };
+
+      canvas.addEventListener('mousedown', (e) => {
+        const pt = toWorld(e.clientX, e.clientY);
+        let hit = -1;
+        for (let i = visState.parts.length - 1; i >= 0; i--) {
+          const p = visState.parts[i];
+          const dim = visGetPartDimensions(p);
+          const px = Number(p.left) || 0;
+          const py = Number(p.top) || 0;
+          if (pt.x >= px && pt.x <= px + dim.w && pt.y >= py && pt.y <= py + dim.h) {
+            hit = i;
+            break;
+          }
+        }
+        if (hit >= 0) {
+          visSelectPart(hit);
+          visState.draggingIndex = hit;
+          visState.dragOffsetX = pt.x - (Number(visState.parts[hit].left) || 0);
+          visState.dragOffsetY = pt.y - (Number(visState.parts[hit].top) || 0);
+          canvas.style.cursor = 'grabbing';
+        } else {
+          visState.panning = true;
+          visState.panStartX = pt.sx - visState.panX;
+          visState.panStartY = pt.sy - visState.panY;
+          canvas.style.cursor = 'grabbing';
+        }
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (visState.draggingIndex < 0 && !visState.panning) return;
+        const pt = toWorld(e.clientX, e.clientY);
+        if (visState.draggingIndex >= 0) {
+          const p = visState.parts[visState.draggingIndex];
+          p.left = Math.round((pt.x - visState.dragOffsetX) / 5) * 5;
+          p.top = Math.round((pt.y - visState.dragOffsetY) / 5) * 5;
+          if (visState.selectedIndex === visState.draggingIndex) {
+            document.getElementById('insp-left').value = p.left;
+            document.getElementById('insp-top').value = p.top;
+          }
+          visSyncToStep3Preview();
+          visDraw();
+        } else if (visState.panning) {
+          visState.panX = pt.sx - visState.panStartX;
+          visState.panY = pt.sy - visState.panStartY;
+          visDraw();
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (visState.draggingIndex >= 0) {
+          visRenderPartsList();
+        }
+        visState.draggingIndex = -1;
+        visState.panning = false;
+        canvas.style.cursor = 'grab';
+      });
+
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.1 : 0.9;
+        visZoom(factor);
+      }, { passive: false });
+    }
+
+    function visZoom(factor) {
+      visState.zoom = Math.min(2.5, Math.max(0.25, visState.zoom * factor));
+      const lbl = document.getElementById('vis-zoom-label');
+      if (lbl) lbl.textContent = Math.round(visState.zoom * 100) + '%';
+      visDraw();
+    }
+
+    function visFitView() {
+      if (!visState.parts.length) {
+        visState.panX = 80;
+        visState.panY = 50;
+        visState.zoom = 1.0;
+        visDraw();
+        return;
+      }
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const p of visState.parts) {
+        const d = visGetPartDimensions(p);
+        const x = Number(p.left) || 0;
+        const y = Number(p.top) || 0;
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x + d.w > maxX) maxX = x + d.w;
+        if (y + d.h > maxY) maxY = y + d.h;
+      }
+      const canvas = document.getElementById('vis-canvas');
+      const bw = Math.max(200, maxX - minX + 80);
+      const bh = Math.max(200, maxY - minY + 80);
+      const zx = canvas.width / bw;
+      const zy = canvas.height / bh;
+      visState.zoom = Math.min(1.35, Math.max(0.3, Math.min(zx, zy)));
+      visState.panX = (canvas.width - (maxX - minX) * visState.zoom) / 2 - minX * visState.zoom;
+      visState.panY = (canvas.height - (maxY - minY) * visState.zoom) / 2 - minY * visState.zoom;
+      const lbl = document.getElementById('vis-zoom-label');
+      if (lbl) lbl.textContent = Math.round(visState.zoom * 100) + '%';
+      visDraw();
+    }
+
+    function visLoadDiagramObject(diag) {
+      if (!diag || typeof diag !== 'object') return;
+      visState.baseDiagram = { ...diag };
+      visState.parts = (diag.parts || []).map((p) => ({
+        ...p,
+        left: Number(p.left) || 0,
+        top: Number(p.top) || 0,
+        rotate: Number(p.rotate) || 0,
+        attrs: { ...(p.attrs || {}) },
+        _exists: p._exists !== false,
+      }));
+      visState.connections = Array.isArray(diag.connections) ? diag.connections.map((c) => [...c]) : [];
+      visFitView();
+      if (visState.parts.length > 0) {
+        visSelectPart(0);
+      } else {
+        visSelectPart(-1);
+      }
+      visRenderPartsList();
+      visSyncToStep3Preview();
+    }
+
+    function openVisualEditorWithCurrentDiagram() {
+      goToStep(4);
+      loadStep3DiagramIntoVisualEditor();
+    }
+
+    function loadStep3DiagramIntoVisualEditor() {
+      try {
+        const raw = document.getElementById('preview-diagram').value;
+        const parsed = JSON.parse(raw);
+        visLoadDiagramObject(parsed);
+      } catch {
+        const { diagram } = buildTomlAndDiagram();
+        visLoadDiagramObject(JSON.parse(diagram));
+      }
+    }
+
+    async function loadXcasfwIntoVisualEditor() {
+      const toast = document.getElementById('vis-toast');
+      try {
+        const res = await fetch('/api/xcasfw-diagram');
+        const diag = await res.json();
+        visLoadDiagramObject(diag);
+        document.getElementById('vis-file-path').value = '~/Documents/ESP32Calc/ESP32Calc/XCasFW/diagram.json';
+        toast.style.display = 'block';
+        toast.textContent = `Loaded XCasFW calculator layout (${visState.parts.length} parts & buttons). Drag any button to move or toggle existence!`;
+      } catch (err) {
+        toast.style.display = 'block';
+        toast.textContent = 'Failed to load XCasFW layout: ' + err.message;
+      }
+    }
+
+    function visBuildExportDiagram() {
+      const activeParts = visState.parts
+        .filter((p) => p._exists !== false)
+        .map((p) => {
+          const out = {
+            type: p.type,
+            id: p.id,
+            top: Number(p.top) || 0,
+            left: Number(p.left) || 0,
+          };
+          if (p.rotate) out.rotate = Number(p.rotate);
+          out.attrs = { ...(p.attrs || {}) };
+          return out;
+        });
+      const activeIds = new Set(activeParts.map((p) => p.id));
+      const activeConns = visState.connections.filter((c) => {
+        if (!Array.isArray(c) || c.length < 2) return false;
+        const p1 = String(c[0]).split(':')[0];
+        const p2 = String(c[1]).split(':')[0];
+        return activeIds.has(p1) && activeIds.has(p2);
+      });
+      return {
+        ...visState.baseDiagram,
+        version: 1,
+        editor: 'wokwi',
+        parts: activeParts,
+        connections: activeConns,
+      };
+    }
+
+    function visSyncToStep3Preview() {
+      const exp = visBuildExportDiagram();
+      const box = document.getElementById('preview-diagram');
+      if (box) box.value = JSON.stringify(exp, null, 2) + '\n';
+      const badge = document.getElementById('vis-part-count-badge');
+      if (badge) {
+        const en = visState.parts.filter((p) => p._exists !== false).length;
+        badge.textContent = `${en} active / ${visState.parts.length} total parts`;
+      }
+    }
+
+    function visSelectPart(idx) {
+      visState.selectedIndex = idx;
+      const badge = document.getElementById('vis-sel-badge');
+      if (idx < 0 || idx >= visState.parts.length) {
+        if (badge) badge.textContent = 'None selected';
+        visDraw();
+        visRenderPartsList();
+        return;
+      }
+      const p = visState.parts[idx];
+      if (badge) badge.textContent = `${p.id} (${p.type})`;
+      document.getElementById('insp-exists').checked = p._exists !== false;
+      document.getElementById('insp-id').value = p.id || '';
+      document.getElementById('insp-type').value = p.type || '';
+      document.getElementById('insp-left').value = Number(p.left) || 0;
+      document.getElementById('insp-top').value = Number(p.top) || 0;
+      document.getElementById('insp-label').value = (p.attrs && p.attrs.label) || '';
+      document.getElementById('insp-color').value = (p.attrs && p.attrs.color) || '';
+      document.getElementById('insp-key').value = (p.attrs && p.attrs.key) || '';
+      document.getElementById('insp-rotate').value = String(Number(p.rotate) || 0);
+
+      // Find first non-GND connection for this part
+      const conn = visState.connections.find((c) => {
+        if (!Array.isArray(c) || c.length < 2) return false;
+        const a = String(c[0]);
+        const b = String(c[1]);
+        return (a.startsWith(p.id + ':') || b.startsWith(p.id + ':')) && !a.includes('GND') && !b.includes('GND');
+      });
+      if (conn) {
+        const a = String(conn[0]);
+        const b = String(conn[1]);
+        document.getElementById('insp-conn').value = a.startsWith(p.id + ':') ? b : a;
+      } else {
+        document.getElementById('insp-conn').value = '';
+      }
+      visDraw();
+      visRenderPartsList();
+    }
+
+    function visApplyInspector() {
+      const idx = visState.selectedIndex;
+      if (idx < 0 || idx >= visState.parts.length) return;
+      const p = visState.parts[idx];
+      const oldId = p.id;
+      const newId = document.getElementById('insp-id').value.trim() || oldId;
+      p._exists = document.getElementById('insp-exists').checked;
+      p.id = newId;
+      p.type = document.getElementById('insp-type').value.trim() || p.type;
+      p.left = Number(document.getElementById('insp-left').value) || 0;
+      p.top = Number(document.getElementById('insp-top').value) || 0;
+      p.rotate = Number(document.getElementById('insp-rotate').value) || 0;
+      if (!p.attrs) p.attrs = {};
+      const lbl = document.getElementById('insp-label').value;
+      const col = document.getElementById('insp-color').value;
+      const key = document.getElementById('insp-key').value;
+      if (lbl) p.attrs.label = lbl; else delete p.attrs.label;
+      if (col) p.attrs.color = col; else delete p.attrs.color;
+      if (key) p.attrs.key = key; else delete p.attrs.key;
+
+      if (newId !== oldId) {
+        for (const c of visState.connections) {
+          if (String(c[0]).startsWith(oldId + ':')) c[0] = newId + ':' + String(c[0]).split(':')[1];
+          if (String(c[1]).startsWith(oldId + ':')) c[1] = newId + ':' + String(c[1]).split(':')[1];
+        }
+      }
+      visSyncToStep3Preview();
+      visDraw();
+      visRenderPartsList();
+    }
+
+    function visUpdatePartConnection() {
+      const idx = visState.selectedIndex;
+      if (idx < 0 || idx >= visState.parts.length) return;
+      const p = visState.parts[idx];
+      const target = document.getElementById('insp-conn').value.trim();
+      if (!target) return;
+      const pinName = p.type === 'wokwi-pushbutton' ? '1.r' : 'CANTX';
+      visState.connections.push([`${p.id}:${pinName}`, target, 'magenta', ['v0']]);
+      visSyncToStep3Preview();
+      visDraw();
+    }
+
+    function visAddPushbutton() {
+      let n = 1;
+      while (visState.parts.some((p) => p.id === `btn_${n}`)) n++;
+      const newBtn = {
+        type: 'wokwi-pushbutton',
+        id: `btn_${n}`,
+        left: 60 + ((n * 70) % 420),
+        top: -80,
+        rotate: 0,
+        attrs: { color: 'purple', label: `BTN ${n}`, key: String(n % 10) },
+        _exists: true,
+      };
+      visState.parts.push(newBtn);
+      const mcu = visState.parts.find((p) => (p.type || '').includes('esp32'));
+      const canTerm = visState.parts.find((p) => p.type === 'chip-can_terminal');
+      if (mcu) {
+        visState.connections.push([`${newBtn.id}:2.l`, `${mcu.id}:GND.1`, 'black', ['v0']]);
+      }
+      if (canTerm) {
+        visState.connections.push([`${newBtn.id}:1.r`, `${canTerm.id}:TRIG`, 'magenta', ['v0']]);
+      } else if (mcu) {
+        visState.connections.push([`${newBtn.id}:1.r`, `${mcu.id}:14`, 'green', ['v0']]);
+      }
+      visSelectPart(visState.parts.length - 1);
+      visSyncToStep3Preview();
+    }
+
+    function visAddCanTerminal() {
+      let id = 'can_term';
+      let n = 1;
+      while (visState.parts.some((p) => p.id === id)) {
+        n++;
+        id = `can_term_${n}`;
+      }
+      const newTerm = {
+        type: 'chip-can_terminal',
+        id,
+        left: 240,
+        top: -110,
+        rotate: 0,
+        attrs: {},
+        _exists: true,
+      };
+      visState.parts.push(newTerm);
+      const mcu = visState.parts.find((p) => (p.type || '').includes('esp32'));
+      const cjmcu = visState.parts.find((p) => p.type === 'chip-cjmcu_230');
+      if (cjmcu) {
+        visState.connections.push(
+          [`${id}:CANH`, `${cjmcu.id}:CANH`, 'yellow', ['v0']],
+          [`${id}:CANL`, `${cjmcu.id}:CANL`, 'blue', ['v0']]
+        );
+      }
+      if (mcu) {
+        visState.connections.push(
+          [`${id}:CANTX`, `${mcu.id}:5`, 'purple', ['v0']],
+          [`${id}:CANRX`, `${mcu.id}:4`, 'cyan', ['v0']],
+          [`${id}:GND`, `${mcu.id}:GND.1`, 'black', ['v0']],
+          [`${id}:VCC`, `${mcu.id}:3V3.1`, 'red', ['v0']]
+        );
+      }
+      counts['can_terminal'] = (counts['can_terminal'] || 0) + 1;
+      renderElements();
+      visSelectPart(visState.parts.length - 1);
+      visSyncToStep3Preview();
+    }
+
+    function visAddPartPrompt() {
+      const type = prompt('Enter Wokwi part type (e.g. wokwi-pushbutton, wokwi-led, chip-can_terminal, chip-yb_p20m):', 'wokwi-pushbutton');
+      if (!type) return;
+      const id = prompt('Enter unique part ID:', 'part_' + (visState.parts.length + 1));
+      if (!id) return;
+      visState.parts.push({
+        type: type.trim(),
+        id: id.trim(),
+        left: 100,
+        top: 100,
+        rotate: 0,
+        attrs: type.includes('pushbutton') ? { color: 'green', label: id.trim() } : {},
+        _exists: true,
+      });
+      visSelectPart(visState.parts.length - 1);
+      visSyncToStep3Preview();
+    }
+
+    function visDuplicateSelected() {
+      const idx = visState.selectedIndex;
+      if (idx < 0 || idx >= visState.parts.length) return;
+      const src = visState.parts[idx];
+      let copyId = src.id + '_copy';
+      let n = 2;
+      while (visState.parts.some((p) => p.id === copyId)) {
+        copyId = `${src.id}_${n++}`;
+      }
+      visState.parts.push({
+        ...src,
+        id: copyId,
+        left: (Number(src.left) || 0) + 40,
+        top: (Number(src.top) || 0) + 40,
+        attrs: { ...(src.attrs || {}) },
+        _exists: true,
+      });
+      visSelectPart(visState.parts.length - 1);
+      visSyncToStep3Preview();
+    }
+
+    function visDeleteSelected() {
+      const idx = visState.selectedIndex;
+      if (idx < 0 || idx >= visState.parts.length) return;
+      const id = visState.parts[idx].id;
+      visState.parts.splice(idx, 1);
+      visState.connections = visState.connections.filter(
+        (c) => !String(c[0]).startsWith(id + ':') && !String(c[1]).startsWith(id + ':')
+      );
+      visSelectPart(visState.parts.length ? Math.max(0, idx - 1) : -1);
+      visSyncToStep3Preview();
+    }
+
+    function visTogglePartExists(idx) {
+      if (idx < 0 || idx >= visState.parts.length) return;
+      visState.parts[idx]._exists = visState.parts[idx]._exists === false;
+      if (visState.selectedIndex === idx) {
+        document.getElementById('insp-exists').checked = visState.parts[idx]._exists !== false;
+      }
+      visSyncToStep3Preview();
+      visDraw();
+      visRenderPartsList();
+    }
+
+    function visRenderPartsList() {
+      const container = document.getElementById('vis-parts-list');
+      if (!container) return;
+      const q = (document.getElementById('vis-filter-input')?.value || '').toLowerCase().trim();
+      container.innerHTML = '';
+      visState.parts.forEach((p, idx) => {
+        const lbl = (p.attrs && p.attrs.label) || '';
+        const text = `${p.id} ${p.type} ${lbl}`.toLowerCase();
+        if (q && !text.includes(q)) return;
+        const row = document.createElement('div');
+        const isSel = idx === visState.selectedIndex;
+        const exists = p._exists !== false;
+        row.style.cssText = `display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;border:1px solid ${isSel ? '#38bdf8' : '#334155'};background:${isSel ? 'rgba(56,189,248,0.14)' : 'var(--panel-alt)'};opacity:${exists ? '1' : '0.48'};`;
+        row.onclick = () => visSelectPart(idx);
+        row.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+            <input type="checkbox" ${exists ? 'checked' : ''} onclick="event.stopPropagation();visTogglePartExists(${idx})" title="Toggle whether this button/part exists in diagram.json" />
+            <div style="min-width:0;">
+              <div style="font-weight:700;font-size:0.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                ${p.id} ${lbl ? `<span style="color:#38bdf8;">[${lbl}]</span>` : ''}
+              </div>
+              <div style="font-size:0.72rem;color:var(--muted);">
+                <code>${p.type}</code> &bull; (${p.left}, ${p.top})
+              </div>
+            </div>
+          </div>
+          <span style="font-size:0.72rem;padding:2px 6px;border-radius:4px;background:#0f172a;color:${exists ? '#86efac' : '#fca5a5'};">
+            ${exists ? 'Exists' : 'Hidden'}
+          </span>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function visDraw() {
+      const canvas = document.getElementById('vis-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Background grid
+      ctx.save();
+      ctx.translate(visState.panX, visState.panY);
+      ctx.scale(visState.zoom, visState.zoom);
+
+      ctx.strokeStyle = 'rgba(51, 65, 85, 0.35)';
+      ctx.lineWidth = 1 / visState.zoom;
+      const step = 40;
+      for (let x = -400; x <= 1600; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, -400);
+        ctx.lineTo(x, 1400);
+        ctx.stroke();
+      }
+      for (let y = -400; y <= 1400; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(-400, y);
+        ctx.lineTo(1600, y);
+        ctx.stroke();
+      }
+
+      // Draw wire connections between active parts
+      const partMap = new Map();
+      visState.parts.forEach((p) => partMap.set(p.id, p));
+
+      for (const conn of visState.connections) {
+        if (!Array.isArray(conn) || conn.length < 2) continue;
+        const p1Id = String(conn[0]).split(':')[0];
+        const p2Id = String(conn[1]).split(':')[0];
+        const p1 = partMap.get(p1Id);
+        const p2 = partMap.get(p2Id);
+        if (!p1 || !p2 || p1._exists === false || p2._exists === false) continue;
+        const d1 = visGetPartDimensions(p1);
+        const d2 = visGetPartDimensions(p2);
+        const x1 = (Number(p1.left) || 0) + d1.w / 2;
+        const y1 = (Number(p1.top) || 0) + d1.h / 2;
+        const x2 = (Number(p2.left) || 0) + d2.w / 2;
+        const y2 = (Number(p2.top) || 0) + d2.h / 2;
+
+        ctx.strokeStyle = visColorHex(conn[2] || 'green');
+        ctx.globalAlpha = 0.55;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1.0;
+
+      // Draw parts & buttons
+      visState.parts.forEach((p, idx) => {
+        const dim = visGetPartDimensions(p);
+        const x = Number(p.left) || 0;
+        const y = Number(p.top) || 0;
+        const isSel = idx === visState.selectedIndex;
+        const exists = p._exists !== false;
+        const isBtn = (p.type || '').includes('pushbutton');
+        const isCanTerm = p.type === 'chip-can_terminal';
+        const isMcu = (p.type || '').includes('esp32');
+
+        ctx.save();
+        if (!exists) ctx.globalAlpha = 0.32;
+
+        // Card body
+        ctx.fillStyle = isMcu ? '#172554' : isCanTerm ? '#0c192c' : isBtn ? '#1e293b' : '#111827';
+        ctx.strokeStyle = isSel ? '#38bdf8' : isCanTerm ? '#a855f7' : isMcu ? '#60a5fa' : '#475569';
+        ctx.lineWidth = isSel ? 3 : 1.5;
+        ctx.beginPath();
+        ctx.roundRect(x, y, dim.w, dim.h, isBtn ? 8 : 6);
+        ctx.fill();
+        ctx.stroke();
+
+        if (isBtn) {
+          // Draw tactile pushbutton cap
+          const btnColor = visColorHex((p.attrs && p.attrs.color) || 'purple');
+          ctx.fillStyle = btnColor;
+          ctx.beginPath();
+          ctx.arc(x + 17, y + dim.h / 2, 10, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#f8fafc';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          const label = (p.attrs && p.attrs.label) || p.id;
+          ctx.fillStyle = '#f8fafc';
+          ctx.font = 'bold 10px -apple-system, sans-serif';
+          ctx.fillText(String(label).slice(0, 7), x + 31, y + dim.h / 2 + 3);
+        } else if (isCanTerm) {
+          // Simulated CAN Bus Terminal screen preview
+          ctx.fillStyle = '#a855f7';
+          ctx.font = 'bold 10px monospace';
+          ctx.fillText('CAN BUS TERMINAL (0x120)', x + 8, y + 15);
+          ctx.fillStyle = '#050b14';
+          ctx.fillRect(x + 8, y + 21, dim.w - 16, 46);
+          ctx.fillStyle = '#4ade80';
+          ctx.font = '9px monospace';
+          ctx.fillText(`TX->ESP32 Steer:${visState.lastCanSteer}°`, x + 12, y + 35);
+          ctx.fillText(`RX<-ACK  Throt:${visState.lastCanThrottle}%`, x + 12, y + 48);
+          // Mini steering & throttle bars
+          ctx.fillStyle = '#a855f7';
+          ctx.fillRect(x + 12, y + 54, ((visState.lastCanSteer || 90) / 180) * (dim.w - 28), 4);
+          ctx.fillStyle = '#22c55e';
+          ctx.fillRect(x + 12, y + 60, ((visState.lastCanThrottle || 50) / 100) * (dim.w - 28), 4);
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '9px sans-serif';
+          ctx.fillText(`${p.id} (${x}, ${y})`, x + 8, y + 80);
+        } else {
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = 'bold 11px -apple-system, sans-serif';
+          ctx.fillText(String(p.id).slice(0, 18), x + 8, y + 18);
+          ctx.fillStyle = '#cbd5e1';
+          ctx.font = '9.5px monospace';
+          ctx.fillText(String(p.type).replace(/^(chip-|board-|wokwi-)/, '').slice(0, 19), x + 8, y + 34);
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '9px sans-serif';
+          ctx.fillText(`(${x}, ${y})`, x + 8, y + 50);
+        }
+
+        if (!exists) {
+          ctx.fillStyle = '#ef4444';
+          ctx.font = 'bold 9px sans-serif';
+          ctx.fillText('DISABLED', x + 4, y + dim.h - 4);
+        }
+        ctx.restore();
+      });
+
+      ctx.restore();
+    }
+
+    async function loadVisualEditorFromDisk() {
+      const filePath = document.getElementById('vis-file-path').value.trim();
+      const toast = document.getElementById('vis-toast');
+      try {
+        const res = await fetch('/api/diagram-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'load', path: filePath }),
+        });
+        const out = await res.json();
+        toast.style.display = 'block';
+        if (out.ok && out.diagram) {
+          visLoadDiagramObject(out.diagram);
+          toast.textContent = `Loaded ${out.path} (${visState.parts.length} parts)`;
+        } else {
+          toast.textContent = 'Error: ' + (out.error || 'Could not load diagram.json');
+        }
+      } catch (err) {
+        toast.style.display = 'block';
+        toast.textContent = 'Error loading diagram.json: ' + err.message;
+      }
+    }
+
+    async function saveVisualEditorToDisk() {
+      const filePath = document.getElementById('vis-file-path').value.trim() || './rc-car-wokwi/diagram.json';
+      const diag = visBuildExportDiagram();
+      visSyncToStep3Preview();
+      const toast = document.getElementById('vis-toast');
+      try {
+        const res = await fetch('/api/diagram-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'save', path: filePath, diagram: diag }),
+        });
+        const out = await res.json();
+        toast.style.display = 'block';
+        toast.textContent = out.ok ? out.message : ('Error: ' + out.error);
+      } catch (err) {
+        toast.style.display = 'block';
+        toast.textContent = 'Saved to Step 3 preview & downloading diagram.json.';
+        downloadFile('diagram.json', JSON.stringify(diag, null, 2));
+      }
+    }
+
+    function sendSimulatedCanPreset(canId, cmdType, steer, throttle) {
+      document.getElementById('can-sim-id').value = '0x' + canId.toString(16).toUpperCase();
+      document.getElementById('can-sim-cmd').value = String(cmdType);
+      document.getElementById('can-sim-steer').value = String(steer);
+      document.getElementById('can-sim-throttle').value = String(throttle);
+      document.getElementById('can-sim-hex').value = '';
+      sendSimulatedCanFrame();
+    }
+
+    async function sendSimulatedCanFrame() {
+      const rawId = document.getElementById('can-sim-id').value.trim();
+      const canId = rawId.startsWith('0x') || rawId.startsWith('0X') ? parseInt(rawId, 16) : parseInt(rawId, 10) || 0x120;
+      const cmdType = parseInt(document.getElementById('can-sim-cmd').value, 10) || 0;
+      const steeringDeg = parseInt(document.getElementById('can-sim-steer').value, 10) || 0;
+      const throttlePct = parseInt(document.getElementById('can-sim-throttle').value, 10) || 0;
+      const customHex = document.getElementById('can-sim-hex').value.trim();
+
+      visState.lastCanSteer = steeringDeg;
+      visState.lastCanThrottle = cmdType === 2 ? 0 : throttlePct;
+      visDraw();
+
+      try {
+        const res = await fetch('/api/can-simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ canId, cmdType, steeringDeg, throttlePct, customHex }),
+        });
+        const out = await res.json();
+        if (out.ok) {
+          document.getElementById('can-last-tx').textContent = out.txFrame;
+          document.getElementById('can-last-act').textContent = `YB-P20M: ${out.steeringDeg}° (${out.servoPulseUs} µs) | JGB37: ${out.throttlePct}% (${out.motorDuty}/255)`;
+          document.getElementById('can-last-rx').textContent = out.rxAckFrame;
+          const logBox = document.getElementById('can-terminal-log');
+          const stamp = new Date().toLocaleTimeString();
+          const block = [`=== [${stamp}] CAN Bus Frame Injection Test ===`, ...(out.trace || []), ''].join('\n');
+          logBox.value = block + (logBox.value ? '\n' + logBox.value : '');
+        }
+      } catch (err) {
+        const logBox = document.getElementById('can-terminal-log');
+        logBox.value = `[CAN-TERMINAL TX] ID=0x${canId.toString(16).toUpperCase()} Steer=${steeringDeg}deg Throttle=${throttlePct}% -> ESP32-S3 ACK OK\n` + logBox.value;
       }
     }
 
