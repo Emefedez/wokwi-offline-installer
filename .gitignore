@@ -1,6 +1,5 @@
 .DS_Store
-*.wpk
-user.tok
-*.tok
 extension/.cache/
+extension-3.7.0/.cache/
+extension-4.1.0/.cache/
 extension/dist/*.orig

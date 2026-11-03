@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wokwi Offline Suite — RC Car & Hardware TOML Generator + Setup</title>
+  <title>Wokwi Offline Suite — 3-Step Setup & Hardware TOML Generator</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -34,14 +34,15 @@
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 14px;
     }
     header h1 {
       margin: 0;
-      font-size: 1.25rem;
+      font-size: 1.22rem;
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
     .badge {
       background: rgba(56, 189, 248, 0.15);
@@ -49,36 +50,89 @@
       border: 1px solid rgba(56, 189, 248, 0.35);
       padding: 3px 10px;
       border-radius: 999px;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 600;
     }
-    .tabs {
-      display: flex;
-      gap: 8px;
+    .badge-ok {
+      background: rgba(34, 197, 94, 0.16);
+      color: #86efac;
+      border: 1px solid rgba(34, 197, 94, 0.4);
     }
-    .tab-btn {
+    .stepper {
+      max-width: 1440px;
+      margin: 18px auto 0;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 900px) {
+      .stepper { grid-template-columns: 1fr; }
+    }
+    .step-tab {
       background: var(--panel);
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 8px 16px;
-      border-radius: 8px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
       cursor: pointer;
-      font-weight: 600;
-      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      color: var(--text);
+      transition: 0.15s;
     }
-    .tab-btn.active {
+    .step-tab:hover {
+      border-color: var(--accent);
+    }
+    .step-tab.active {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.11);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
+    }
+    .step-tab.done .step-num {
+      background: var(--success);
+      color: #052e16;
+      border-color: var(--success);
+    }
+    .step-num {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: #0f172a;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+    .step-tab.active .step-num {
       background: var(--accent);
       color: #0b1120;
       border-color: var(--accent);
     }
+    .step-meta {
+      flex: 1;
+    }
+    .step-title {
+      font-weight: 700;
+      font-size: 0.94rem;
+    }
+    .step-sub {
+      font-size: 0.77rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
     main {
       max-width: 1440px;
       margin: 0 auto;
-      padding: 20px 24px 48px;
+      padding: 18px 24px 48px;
     }
     .grid-2 {
       display: grid;
-      grid-template-columns: 1.35fr 1fr;
+      grid-template-columns: 1.3fr 1fr;
       gap: 20px;
     }
     @media (max-width: 1024px) {
@@ -93,10 +147,45 @@
     }
     .card h2 {
       margin: 0 0 12px 0;
-      font-size: 1.08rem;
+      font-size: 1.06rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .ver-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 700px) {
+      .ver-grid { grid-template-columns: 1fr; }
+    }
+    .ver-card {
+      background: var(--panel-alt);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .ver-card.selected {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+    }
+    .ver-card-title {
+      font-weight: 700;
+      font-size: 0.96rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .ver-card-desc {
+      font-size: 0.8rem;
+      color: var(--muted);
     }
     .preset-bar {
       display: flex;
@@ -108,11 +197,11 @@
       background: var(--panel-alt);
       color: var(--text);
       border: 1px solid var(--border);
-      padding: 8px 14px;
+      padding: 9px 15px;
       border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
-      font-size: 0.86rem;
+      font-size: 0.88rem;
       transition: 0.15s;
     }
     .btn:hover { border-color: var(--accent); }
@@ -126,6 +215,11 @@
       background: var(--success);
       color: #052e16;
       border-color: var(--success);
+      font-weight: 700;
+    }
+    .btn-lg {
+      padding: 12px 20px;
+      font-size: 0.96rem;
     }
     .elem-list {
       display: flex;
@@ -149,7 +243,7 @@
     .elem-info { flex: 1; }
     .elem-title {
       font-weight: 700;
-      font-size: 0.96rem;
+      font-size: 0.95rem;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -229,7 +323,7 @@
     }
     textarea.code-box {
       width: 100%;
-      height: 250px;
+      height: 230px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 0.8rem;
       white-space: pre;
@@ -253,7 +347,7 @@
       font-weight: 600;
     }
     .rail-card .rail-val {
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 700;
       color: var(--accent);
       margin-top: 2px;
@@ -267,22 +361,34 @@
       color: #fde68a;
       margin-top: 8px;
     }
+    .status-banner {
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
     .status-toast {
-      margin-top: 10px;
+      margin-top: 12px;
       padding: 10px 12px;
       border-radius: 8px;
       background: rgba(34, 197, 94, 0.15);
       border: 1px solid rgba(34, 197, 94, 0.4);
       color: #86efac;
-      font-size: 0.85rem;
+      font-size: 0.86rem;
       display: none;
     }
     .hidden { display: none !important; }
     .checkbox-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
       gap: 8px;
-      margin: 10px 0;
+      margin: 8px 0;
     }
     .chk-item {
       background: var(--panel-alt);
@@ -292,8 +398,18 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       cursor: pointer;
+    }
+    .step-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
     }
   </style>
 </head>
@@ -301,210 +417,105 @@
   <header>
     <h1>
       <span>Wokwi Offline Suite</span>
-      <span class="badge">RC Car &amp; Embedded TOML / Diagram Generator</span>
-      <span class="badge">v4.1.0-MCP</span>
+      <span class="badge">Guided 3-Step Setup &amp; TOML Generator</span>
+      <span id="hdr-ext-badge" class="badge badge-ok">Checking Extension...</span>
     </h1>
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('generator')">1. Hardware &amp; TOML Generator (RC Car)</button>
-      <button class="tab-btn" onclick="switchTab('installer')">2. Offline Setup, user.tok Loader &amp; MCP</button>
+    <div style="font-size:0.82rem;color:var(--muted);">
+      Step 1: Install Extension &amp; Bundle &rarr; Step 2: Load <code>user.tok</code> (if needed) &rarr; Step 3: Build <code>wokwi.toml</code>
     </div>
   </header>
 
+  <!-- 3-STEP WIZARD BAR -->
+  <nav class="stepper">
+    <button id="nav-step-1" class="step-tab active" onclick="goToStep(1)">
+      <div class="step-num" id="num-step-1">1</div>
+      <div class="step-meta">
+        <div class="step-title">Step 1: Install Extension &amp; Load <code>bundle.wpk</code></div>
+        <div class="step-sub" id="sub-step-1">First install Wokwi v3.7.0 or v4.1.0 &amp; offline simulator bundle</div>
+      </div>
+    </button>
+    <button id="nav-step-2" class="step-tab" onclick="goToStep(2)">
+      <div class="step-num" id="num-step-2">2</div>
+      <div class="step-meta">
+        <div class="step-title">Step 2: Load <code>user.tok</code> License (If Needed)</div>
+        <div class="step-sub" id="sub-step-2">Pick or verify your offline <code>user.tok</code> file (no LLM needed)</div>
+      </div>
+    </button>
+    <button id="nav-step-3" class="step-tab" onclick="goToStep(3)">
+      <div class="step-num" id="num-step-3">3</div>
+      <div class="step-meta">
+        <div class="step-title">Step 3: Choose Hardware &amp; Generate <code>wokwi.toml</code></div>
+        <div class="step-sub" id="sub-step-3">Select N of each component &amp; write <code>wokwi.toml</code> + <code>diagram.json</code></div>
+      </div>
+    </button>
+  </nav>
+
   <main>
-    <!-- TAB 1: GENERATOR -->
-    <div id="tab-generator" class="grid-2">
-      <div>
-        <div class="card">
-          <h2>
-            <span>Select Hardware Elements (N of each)</span>
-            <span style="font-size:0.8rem;color:var(--muted)">tabla_piezas_voltajes_amperajes.pdf</span>
-          </h2>
-          <div class="preset-bar">
-            <button class="btn btn-primary" onclick="applyPreset('rc-car')">Load RC Car Preset (Default)</button>
-            <button class="btn" onclick="applyPreset('esp32calc')">Load ESP32 Calculator Preset</button>
-            <button class="btn" onclick="applyPreset('zero')">Clear All (0)</button>
-          </div>
-          <div id="elements-container" class="elem-list"></div>
+    <!-- ======================================================================= -->
+    <!-- STEP 1: INSTALL EXTENSION & LOAD BUNDLE.WPK                             -->
+    <!-- ======================================================================= -->
+    <div id="step-1">
+      <div class="status-banner" id="step1-status-banner">
+        <div>
+          <div style="font-weight:700;font-size:0.94rem;" id="step1-status-title">Checking current Wokwi Offline installation...</div>
+          <div style="font-size:0.82rem;color:#cbd5e1;margin-top:2px;" id="step1-status-detail">Detecting extension in ~/.vscode/extensions and bundle.wpk in ~/.wokwi...</div>
         </div>
-
-        <div class="card">
-          <h2>
-            <span>Import Other / Custom Hardware Element</span>
-            <span class="badge">+ Custom Chip / Part</span>
-          </h2>
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Element ID / Chip Name (e.g. ultrasonic_sr04)</label>
-              <input type="text" id="imp-id" placeholder="custom_sensor" />
-            </div>
-            <div class="form-group">
-              <label>Display Name</label>
-              <input type="text" id="imp-name" placeholder="Custom Sensor / Actuator" />
-            </div>
-            <div class="form-group">
-              <label>Wokwi Type (chip-&lt;name&gt; or wokwi-&lt;part&gt;)</label>
-              <input type="text" id="imp-type" placeholder="chip-custom_sensor" />
-            </div>
-            <div class="form-group">
-              <label>Pins (comma-separated)</label>
-              <input type="text" id="imp-pins" placeholder="VCC, GND, SIG, OUT" />
-            </div>
-            <div class="form-group">
-              <label>Voltage Range / Notes</label>
-              <input type="text" id="imp-specs" placeholder="3.3V - 5V, 50mA max" />
-            </div>
-            <div class="form-group">
-              <label>Initial Quantity (N)</label>
-              <input type="number" id="imp-count" value="1" min="1" />
-            </div>
-            <div class="form-group full">
-              <label>Optional: Path to existing .chip.json / .chip.wasm / .chip.c on disk (auto-compiled if .c)</label>
-              <input type="text" id="imp-path" placeholder="/path/to/my_custom.chip.json (optional)" />
-            </div>
-          </div>
-          <button class="btn btn-primary" onclick="importCustomElement()">+ Add / Import Element to Catalog</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" onclick="goToStep(2)">Skip to Step 2 (<code>user.tok</code>) &rarr;</button>
+          <button class="btn btn-primary" onclick="goToStep(3)">Skip to Step 3 (<code>wokwi.toml</code>) &rarr;</button>
         </div>
       </div>
 
-      <div>
-        <div class="card">
-          <h2>Electrical &amp; Power Rail Summary (Live Calculation)</h2>
-          <div class="rail-box" id="power-summary"></div>
-          <div class="callout">
-            <strong>7V Buck Regulator Wiring Note (Sec. 7 of PDF):</strong><br/>
-            Connect <strong>12V–24V</strong> (JGB37-520 motor battery bus) to <code>VIN_POS</code> of the <strong>7V Regulator</strong>, and its <strong>7.0V</strong> output (<code>VOUT_POS</code>) to the <strong>YB-P20M Servos' VCC</strong> (rated 6.0–7.4V, &le;3.6A stall). Connect the servos' <code>PWM</code> and <code>FB</code> pins directly to the <strong>ESP32-S3 N16R8</strong> (3.3V logic) with a <strong>shared common GND</strong>.
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Project &amp; Output Settings</h2>
-          <div class="form-grid">
-            <div class="form-group full">
-              <label>Target Project Directory (to write wokwi.toml, diagram.json &amp; copy .chip.wasm files)</label>
-              <input type="text" id="cfg-project-dir" value="./rc-car-wokwi" />
-            </div>
-            <div class="form-group">
-              <label>Firmware Path (in wokwi.toml)</label>
-              <input type="text" id="cfg-firmware" value="build/firmware.bin" oninput="regeneratePreviews()" />
-            </div>
-            <div class="form-group">
-              <label>ELF Path (in wokwi.toml)</label>
-              <input type="text" id="cfg-elf" value="build/firmware.elf" oninput="regeneratePreviews()" />
-            </div>
-            <div class="form-group">
-              <label>RFC2217 Serial Port (Offline UART)</label>
-              <input type="number" id="cfg-rfc-port" value="4000" oninput="regeneratePreviews()" />
-            </div>
-            <div class="form-group">
-              <label>GDB Server Port</label>
-              <input type="number" id="cfg-gdb-port" value="3333" oninput="regeneratePreviews()" />
-            </div>
-            <div class="form-group">
-              <label>Motor Bus Voltage (JGB37-520)</label>
-              <select id="cfg-motor-v" onchange="regeneratePreviews()">
-                <option value="12">12 V (120 mA no-load / 400 mA load)</option>
-                <option value="24">24 V (50 mA no-load / 200 mA load)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Auto-Wire Power &amp; GPIO Signals</label>
-              <select id="cfg-autowire" onchange="regeneratePreviews()">
-                <option value="yes">Yes — Wire to ESP32-S3 &amp; Power Rails</option>
-                <option value="no">No — Place parts without wires</option>
-              </select>
-            </div>
-          </div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="btn btn-success" onclick="saveGeneratedProject()">Generate &amp; Write Project Files to Disk</button>
-            <button class="btn" onclick="downloadFile('wokwi.toml', document.getElementById('preview-toml').value)">Download wokwi.toml</button>
-            <button class="btn" onclick="downloadFile('diagram.json', document.getElementById('preview-diagram').value)">Download diagram.json</button>
-          </div>
-          <div id="gen-toast" class="status-toast"></div>
-        </div>
-
-        <div class="card">
-          <h2>Generated <code>wokwi.toml</code> Preview</h2>
-          <textarea id="preview-toml" class="code-box"></textarea>
-        </div>
-
-        <div class="card">
-          <h2>Generated <code>diagram.json</code> Preview</h2>
-          <textarea id="preview-diagram" class="code-box"></textarea>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 2: INSTALLER -->
-    <div id="tab-installer" class="hidden">
       <div class="grid-2">
         <div>
           <div class="card">
             <h2>
-              <span>Manual <code>user.tok</code> Loader &amp; Overwrite (No LLM Required)</span>
-              <span class="badge">Direct ~/.wokwi/user.tok</span>
+              <span>1A. First: Choose Wokwi VS Code Extension Version</span>
+              <span class="badge">Auto-Updates Disabled Automatically</span>
             </h2>
-            <p style="font-size:0.85rem;color:var(--muted);margin-top:0;">
-              Directly load, inspect, edit, or overwrite <code>~/.wokwi/user.tok</code> from a local file or raw text — completely independent of any LLM or MCP client.
-            </p>
-            <div class="form-grid">
-              <div class="form-group full">
-                <label>1. Pick a <code>.tok</code> File from Your Computer (Browser File Picker)</label>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                  <input type="file" id="tok-file-picker" accept=".tok,text/plain" onchange="onPickTokFile(event)" style="flex:1;" />
-                  <button class="btn btn-success" onclick="uploadPickedTokAndOverwrite()">Overwrite <code>~/.wokwi/user.tok</code> with Picked File</button>
+            <input type="hidden" id="inst-ext-version" value="3.7.0" />
+            <div class="ver-grid">
+              <div id="ver-card-370" class="ver-card selected" onclick="selectExtVersion('3.7.0')">
+                <div class="ver-card-title">
+                  <span>Wokwi v3.7.0</span>
+                  <span class="badge badge-ok">Recommended</span>
+                </div>
+                <div class="ver-card-desc">
+                  Original target for custom offline <code>bundle.wpk</code> &amp; <code>user.tok</code> + backported HTTP MCP bridge (<code>127.0.0.1:47129/mcp</code>).
                 </div>
               </div>
-              <div class="form-group full">
-                <label>2. Or Load &amp; Overwrite from Disk File Path</label>
-                <div style="display:flex;gap:8px;">
-                  <input type="text" id="tok-disk-path" placeholder="/path/to/my-custom-user.tok or C:\path\to\user.tok" style="flex:1;" />
-                  <button class="btn btn-primary" onclick="overwriteTokFromPath()">Load Path &amp; Overwrite</button>
+              <div id="ver-card-410" class="ver-card" onclick="selectExtVersion('4.1.0')">
+                <div class="ver-card-title">
+                  <span>Wokwi v4.1.0</span>
+                  <span class="badge">Patched Offline</span>
+                </div>
+                <div class="ver-card-desc">
+                  Latest extension patched to auto-extract <code>bundle.wpk</code> on startup and launch directly in offline webview mode.
                 </div>
               </div>
-              <div class="form-group full">
-                <label>3. Current / Editable <code>~/.wokwi/user.tok</code> Content (Edit &amp; Click Overwrite)</label>
-                <textarea id="tok-raw-editor" class="code-box" style="height:135px;" oninput="updateDecodedTokPreview()" placeholder="# Wokwi License&#10;key=...&#10;ts=..."></textarea>
-              </div>
             </div>
-            <div id="tok-decoded-box" class="rail-card" style="margin-bottom:12px;font-size:0.82rem;">
-              <div class="rail-name">Decoded License Metadata (Live Preview)</div>
-              <div id="tok-decoded-info" style="color:var(--accent);font-weight:600;margin-top:4px;">Loading current ~/.wokwi/user.tok...</div>
-            </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn btn-success" onclick="overwriteTokFromEditor()">Save &amp; Overwrite <code>~/.wokwi/user.tok</code> Now</button>
-              <button class="btn" onclick="loadCurrentUserTok()">Reload Current <code>~/.wokwi/user.tok</code></button>
-              <button class="btn" onclick="downloadFile('user.tok', document.getElementById('tok-raw-editor').value)">Export / Download <code>user.tok</code></button>
-            </div>
-            <div id="tok-toast" class="status-toast"></div>
-          </div>
 
-          <div class="card">
-            <h2>Offline Wokwi Environment &amp; MCP Setup</h2>
-            <p style="font-size:0.86rem;color:var(--muted);">
-              Configure your local air-gapped Wokwi VS Code extension (auto-offline mode + MCP bridge), disable VS Code extension auto-updates, load your offline <code>.wpk</code> bundle, and save your valid Wokwi license key.
-            </p>
+            <h2 style="margin-top:16px;">
+              <span>1B. Offline Simulator Bundle (<code>bundle.wpk</code>) — Auto-Loaded for Internal Testing</span>
+              <span class="badge badge-ok" id="bundle-detected-badge">Internal Testing Bundle Ready</span>
+            </h2>
             <div class="form-grid">
               <div class="form-group full">
-                <label>Wokwi VS Code Extension Version to Install (Both Include Backported MCP + Offline Bundle Fix)</label>
-                <select id="inst-ext-version">
-                  <option value="3.7.0" selected>Wokwi v3.7.0 (Recommended — Legacy Offline Bundle Target + Backported MCP)</option>
-                  <option value="4.1.0">Wokwi v4.1.0 (Latest Extension + Offline Bundle Fix &amp; Backported MCP)</option>
-                </select>
-              </div>
-              <div class="form-group full">
-                <label>Path to Offline Bundle (<code>bundle.wpk</code>)</label>
+                <label>Default Internal Testing Bundle (Auto-fetched from <code>files/bundle.wpk</code> &rarr; <code>~/.wokwi/bundle.wpk</code>)</label>
                 <input type="text" id="inst-bundle" value="~/.wokwi/bundle.wpk" />
               </div>
               <div class="form-group full">
-                <label>Valid Wokwi License Key or Path to <code>user.tok</code></label>
-                <input type="text" id="inst-license" value="~/.wokwi/user.tok" />
+                <label>Optional: Pick a Different <code>bundle.wpk</code> File from Your Computer (If You Want to Override Default)</label>
+                <input type="file" id="bundle-file-picker" accept=".wpk,application/octet-stream" onchange="onPickBundleFile(event)" />
               </div>
             </div>
 
-            <label>Select AI Clients to Install the Wokwi Offline MCP Server Into:</label>
+            <h2 style="margin-top:16px;">
+              <span>1C. Optional: Register Offline MCP Server in AI Clients</span>
+            </h2>
             <div class="checkbox-grid" id="mcp-client-checks">
               <label class="chk-item"><input type="checkbox" value="t3" checked /> T3 Code</label>
-              <label class="chk-item"><input type="checkbox" value="anthropic" checked /> Anthropic (Claude Desktop &amp; Code)</label>
+              <label class="chk-item"><input type="checkbox" value="anthropic" checked /> Anthropic (Claude)</label>
               <label class="chk-item"><input type="checkbox" value="opencode" checked /> OpenCode</label>
               <label class="chk-item"><input type="checkbox" value="codex" checked /> Codex</label>
               <label class="chk-item"><input type="checkbox" value="antigravity" checked /> Antigravity / Gemini</label>
@@ -513,8 +524,13 @@
               <label class="chk-item"><input type="checkbox" value="zed" /> Zed</label>
             </div>
 
-            <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn btn-success" onclick="runFullSetup()">Run Offline Setup &amp; Install Selected MCPs</button>
+            <div class="step-footer">
+              <button class="btn btn-success btn-lg" onclick="runStep1AndContinue()">
+                Step 1: Install Extension &amp; Load Bundle &rarr; Continue to Step 2
+              </button>
+              <button class="btn" onclick="goToStep(2)">
+                Already Installed? Go to Step 2 &rarr;
+              </button>
             </div>
             <div id="inst-toast" class="status-toast"></div>
           </div>
@@ -522,20 +538,223 @@
 
         <div>
           <div class="card">
-            <h2>Instructions &amp; Manual <code>user.tok</code> Workflows (No LLM)</h2>
-            <ol style="font-size:0.88rem;color:#e2e8f0;padding-left:20px;line-height:1.6;">
-              <li><strong>Manual <code>user.tok</code> Overwrite (4 Ways without an LLM):</strong>
-                <ul>
-                  <li><strong>GUI (This Window):</strong> Pick a <code>.tok</code> file, enter a path, or edit the text box on the left and click <strong>Save &amp; Overwrite <code>~/.wokwi/user.tok</code> Now</strong>.</li>
-                  <li><strong>VS Code Command Palette:</strong> Press <code>Cmd+Shift+P</code> (macOS) or <code>Ctrl+Shift+P</code> (Windows) and run <strong>Wokwi: Load and Overwrite user.tok</strong> to choose any <code>.tok</code> file via native dialog.</li>
-                  <li><strong>Interactive TUI:</strong> Run <code>./wokwi-offline-setup-macos --tui</code> (or <code>WokwiOfflineSetup.exe --tui</code>) and select Option <code>4) Load &amp; Overwrite your own user.tok</code>.</li>
-                  <li><strong>CLI Flag:</strong> Run <code>./wokwi-offline-setup-macos --cli --load-user-tok /path/to/user.tok</code> (or <code>WokwiOfflineSetup.exe --cli --load-user-tok C:\path\to\user.tok</code>).</li>
-                </ul>
-              </li>
-              <li><strong>Automatic Extension Protection:</strong> Running setup sets <code>"extensions.autoUpdate": false</code> and <code>"extensions.autoCheckUpdates": false</code> in your VS Code <code>settings.json</code> so VS Code never overwrites the offline-first Wokwi extension.</li>
-              <li><strong>Manual Check in VS Code:</strong> Open Settings (<code>Cmd+,</code> on macOS / <code>Ctrl+,</code> on Windows), search for <code>extensions.autoUpdate</code>, and verify it is set to <code>None</code>. In the Extensions panel, right-click <strong>Wokwi Simulator</strong> and ensure <strong>Auto Update</strong> is unchecked.</li>
-              <li><strong>Automatic Offline Launch:</strong> Whenever a valid offline license (<code>user.tok</code>) and extracted <code>bundle.wpk</code> are present, the extension opens directly in <strong>Wokwi Simulator (Offline)</strong> without waiting for the online iframe.</li>
+            <h2>What Step 1 Does Automatically</h2>
+            <ol style="font-size:0.88rem;color:#e2e8f0;padding-left:20px;line-height:1.65;margin-top:4px;">
+              <li><strong>Installs the Patched Wokwi VS Code Extension First:</strong> Copies your chosen version (<code>v3.7.0</code> or <code>v4.1.0</code>) into <code>~/.vscode/extensions/</code> and updates VS Code's <code>extensions.json</code> manifest.</li>
+              <li><strong>Disables VS Code Extension Auto-Updates:</strong> Writes <code>"extensions.autoUpdate": false</code> and <code>"extensions.autoCheckUpdates": false</code> into your VS Code <code>settings.json</code> (macOS, Linux, and Windows).</li>
+              <li><strong>Extracts <code>bundle.wpk</code> into <code>.cache/</code>:</strong> Unpacks the offline simulator UI &amp; WebAssembly cores (<code>entry.js</code>, <code>index.html</code>) directly into the extension's <code>.cache/</code> folder.</li>
+              <li><strong>Forces Offline Simulator Launch:</strong> Patched <code>WokwiWebview.getHTML()</code> immediately loads your local <code>.cache/entry.js</code> (using your bundle's public key) instead of connecting to <code>wokwi.com</code>.</li>
             </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- STEP 2: LOAD USER.TOK LICENSE (IF NEEDED)                               -->
+    <!-- ======================================================================= -->
+    <div id="step-2" class="hidden">
+      <div class="status-banner" id="step2-status-banner">
+        <div>
+          <div style="font-weight:700;font-size:0.95rem;" id="step2-status-title">Checking ~/.wokwi/user.tok...</div>
+          <div style="font-size:0.83rem;color:#86efac;margin-top:2px;" id="tok-decoded-info">Loading current ~/.wokwi/user.tok...</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-success btn-lg" onclick="goToStep(3)">
+            Keep Current <code>user.tok</code> &amp; Continue to Step 3 (Build <code>wokwi.toml</code>) &rarr;
+          </button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card">
+            <h2>
+              <span>Step 2: Internal Testing <code>user.tok</code> Auto-Loaded (Or Pick Another If Wanted)</span>
+              <span class="badge badge-ok">Auto-Fetched: user@wokwi.com (Pro)</span>
+            </h2>
+            <p style="font-size:0.85rem;color:var(--muted);margin-top:0;">
+              The internal testing license (<code>user@wokwi.com</code>, Plan: <code>pro</code>, Expires: <code>99991231</code>) is automatically fetched and activated in <code>~/.wokwi/user.tok</code>. Click <strong>Continue to Step 3</strong> above, or pick a different <code>.tok</code> file below if you want to use another one:
+            </p>
+            <div class="form-grid">
+              <div class="form-group full">
+                <label>Option 1: Pick Another <code>.tok</code> File from Your Computer (Optional Override)</label>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <input type="file" id="tok-file-picker" accept=".tok,text/plain" onchange="onPickTokFile(event)" style="flex:1;" />
+                  <button class="btn btn-success" onclick="uploadPickedTokAndOverwrite(true)">Load Picked File &amp; Go to Step 3 &rarr;</button>
+                </div>
+              </div>
+              <div class="form-group full">
+                <label>Option 2: Or Load Another <code>.tok</code> from Disk Path</label>
+                <div style="display:flex;gap:8px;">
+                  <input type="text" id="tok-disk-path" placeholder="~/.wokwi/files/user.tok or /path/to/user.tok" style="flex:1;" />
+                  <button class="btn btn-primary" onclick="overwriteTokFromPath(true)">Load Path &amp; Go to Step 3 &rarr;</button>
+                </div>
+              </div>
+              <div class="form-group full">
+                <label>Option 3: Active / Editable <code>~/.wokwi/user.tok</code> Content (Pre-filled with Internal Testing Token)</label>
+                <textarea id="tok-raw-editor" class="code-box" style="height:135px;" oninput="updateDecodedTokPreview()" placeholder="# Wokwi License&#10;key=...&#10;ts=..."></textarea>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="overwriteTokFromEditor(false)">Save &amp; Overwrite <code>~/.wokwi/user.tok</code></button>
+              <button class="btn" onclick="restoreDefaultTestingTok()">Restore Default Internal Testing <code>user.tok</code> (<code>user@wokwi.com</code>)</button>
+              <button class="btn" onclick="downloadFile('user.tok', document.getElementById('tok-raw-editor').value)">Export <code>user.tok</code></button>
+            </div>
+            <div id="tok-toast" class="status-toast"></div>
+
+            <div class="step-footer">
+              <button class="btn" onclick="goToStep(1)">&larr; Back to Step 1 (Extension &amp; Bundle)</button>
+              <button class="btn btn-success btn-lg" onclick="goToStep(3)">
+                Continue to Step 3: Choose Hardware &amp; Build <code>wokwi.toml</code> &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h2>Other Ways to Load <code>user.tok</code> Manually (Without an LLM)</h2>
+            <ul style="font-size:0.86rem;color:#e2e8f0;padding-left:20px;line-height:1.65;">
+              <li><strong>Inside VS Code:</strong> Press <code>Cmd+Shift+P</code> (macOS) or <code>Ctrl+Shift+P</code> (Windows/Linux) and run <strong><code>Wokwi: Load and Overwrite user.tok</code></strong>.</li>
+              <li><strong>Via CLI:</strong> Run <code>./install.sh --cli --load-user-tok /path/to/user.tok</code> (or <code>WokwiOfflineSetup.exe --cli --load-user-tok C:\path\to\user.tok</code>).</li>
+              <li><strong>Automatic Backup:</strong> Any previous <code>~/.wokwi/user.tok</code> is automatically backed up to <code>~/.wokwi/user.tok.bak</code> before overwriting.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- STEP 3: CHOOSE HARDWARE & GENERATE WOKWI.TOML + DIAGRAM.JSON            -->
+    <!-- ======================================================================= -->
+    <div id="step-3" class="hidden">
+      <div class="grid-2">
+        <div>
+          <div class="card">
+            <h2>
+              <span>Step 3: Choose What Hardware to Add to <code>wokwi.toml</code> &amp; <code>diagram.json</code></span>
+              <span style="font-size:0.8rem;color:var(--muted)">Set Quantity N of Each</span>
+            </h2>
+            <div class="preset-bar">
+              <button class="btn btn-primary" onclick="applyPreset('rc-car')">Load RC Car Preset (Default)</button>
+              <button class="btn" onclick="applyPreset('esp32calc')">Load ESP32 Calculator Preset</button>
+              <button class="btn" onclick="applyPreset('zero')">Clear All (0)</button>
+            </div>
+            <div id="elements-container" class="elem-list"></div>
+
+            <div class="step-footer">
+              <button class="btn" onclick="goToStep(2)">&larr; Back to Step 2 (<code>user.tok</code>)</button>
+              <button class="btn btn-success btn-lg" onclick="saveGeneratedProject()">
+                Generate &amp; Write <code>wokwi.toml</code> + <code>diagram.json</code> to Disk
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>
+              <span>Optional: Import Custom Hardware Element / Chip</span>
+              <span class="badge">+ Custom Chip / Part</span>
+            </h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Element ID / Chip Name (e.g. ultrasonic_sr04)</label>
+                <input type="text" id="imp-id" placeholder="custom_sensor" />
+              </div>
+              <div class="form-group">
+                <label>Display Name</label>
+                <input type="text" id="imp-name" placeholder="Custom Sensor / Actuator" />
+              </div>
+              <div class="form-group">
+                <label>Wokwi Type (chip-&lt;name&gt; or wokwi-&lt;part&gt;)</label>
+                <input type="text" id="imp-type" placeholder="chip-custom_sensor" />
+              </div>
+              <div class="form-group">
+                <label>Pins (comma-separated)</label>
+                <input type="text" id="imp-pins" placeholder="VCC, GND, SIG, OUT" />
+              </div>
+              <div class="form-group">
+                <label>Voltage Range / Notes</label>
+                <input type="text" id="imp-specs" placeholder="3.3V - 5V, 50mA max" />
+              </div>
+              <div class="form-group">
+                <label>Initial Quantity (N)</label>
+                <input type="number" id="imp-count" value="1" min="1" />
+              </div>
+              <div class="form-group full">
+                <label>Optional: Path to existing .chip.json / .chip.wasm / .chip.c on disk</label>
+                <input type="text" id="imp-path" placeholder="/path/to/my_custom.chip.json (optional)" />
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="importCustomElement()">+ Add Custom Element to List</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h2>Output Folder &amp; <code>wokwi.toml</code> Settings</h2>
+            <div class="form-grid">
+              <div class="form-group full">
+                <label>Target Project Directory (writes <code>wokwi.toml</code>, <code>diagram.json</code> &amp; copies <code>.chip.wasm</code> files)</label>
+                <input type="text" id="cfg-project-dir" value="./rc-car-wokwi" />
+              </div>
+              <div class="form-group">
+                <label>Firmware Path (in wokwi.toml)</label>
+                <input type="text" id="cfg-firmware" value="build/firmware.bin" oninput="regeneratePreviews()" />
+              </div>
+              <div class="form-group">
+                <label>ELF Path (in wokwi.toml)</label>
+                <input type="text" id="cfg-elf" value="build/firmware.elf" oninput="regeneratePreviews()" />
+              </div>
+              <div class="form-group">
+                <label>RFC2217 Serial Port</label>
+                <input type="number" id="cfg-rfc-port" value="4000" oninput="regeneratePreviews()" />
+              </div>
+              <div class="form-group">
+                <label>GDB Server Port</label>
+                <input type="number" id="cfg-gdb-port" value="3333" oninput="regeneratePreviews()" />
+              </div>
+              <div class="form-group">
+                <label>Motor Bus Voltage (JGB37-520)</label>
+                <select id="cfg-motor-v" onchange="regeneratePreviews()">
+                  <option value="12">12 V (120 mA no-load / 400 mA load)</option>
+                  <option value="24">24 V (50 mA no-load / 200 mA load)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Auto-Wire Power &amp; GPIO Signals</label>
+                <select id="cfg-autowire" onchange="regeneratePreviews()">
+                  <option value="yes">Yes — Wire to ESP32-S3 &amp; Power Rails</option>
+                  <option value="no">No — Place parts without wires</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-success btn-lg" onclick="saveGeneratedProject()">Generate &amp; Write Project Files to Disk</button>
+              <button class="btn" onclick="downloadFile('wokwi.toml', document.getElementById('preview-toml').value)">Download wokwi.toml</button>
+              <button class="btn" onclick="downloadFile('diagram.json', document.getElementById('preview-diagram').value)">Download diagram.json</button>
+            </div>
+            <div id="gen-toast" class="status-toast"></div>
+          </div>
+
+          <div class="card">
+            <h2>Electrical &amp; Power Rail Summary (Live Calculation)</h2>
+            <div class="rail-box" id="power-summary"></div>
+            <div class="callout">
+              <strong>7V Buck Regulator Wiring Note (Sec. 7 of PDF):</strong><br/>
+              Connect <strong>12V–24V</strong> (JGB37-520 motor battery bus) to <code>VIN_POS</code> of the <strong>7V Regulator</strong>, and its <strong>7.0V</strong> output (<code>VOUT_POS</code>) to the <strong>YB-P20M Servos' VCC</strong> (rated 6.0–7.4V, &le;3.6A stall). Connect the servos' <code>PWM</code> and <code>FB</code> pins directly to the <strong>ESP32-S3 N16R8</strong> (3.3V logic) with a <strong>shared common GND</strong>.
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Generated <code>wokwi.toml</code> Preview</h2>
+            <textarea id="preview-toml" class="code-box"></textarea>
+          </div>
+
+          <div class="card">
+            <h2>Generated <code>diagram.json</code> Preview</h2>
+            <textarea id="preview-diagram" class="code-box"></textarea>
           </div>
         </div>
       </div>
@@ -545,10 +764,22 @@
   <script>
     let catalog = null;
     let counts = {};
+    let currentStep = 1;
 
     const FALLBACK_CATALOG = __CATALOG_JSON_PLACEHOLDER__;
 
+    const DEFAULT_INTERNAL_TESTING_USER_TOK = [
+      '# Wokwi License',
+      '# User: user@wokwi.com',
+      '# Email: user@wokwi.com',
+      '',
+      'key=JnU9MSZuPXVzZXIlNDB3b2t3aS5jb20mZT11c2VyJTQwd29rd2kuY29tJng9OTk5OTEyMzEmZj02JnA9cHJvAH6_SOgpZf71EV65AdppzsQTPQnKyNl62O6aant4anVZrtWxMWERtlCXJeT4u8ohffAs2vFgVE7OEji4BrsCv1Ghqe0y0_SfFgDkJRBHAOjs8_S_PXyBF48eJIoNilR9mYzMV0gc9T23LkMfCw924GX2KZsmYmonNqqxlBoYvcCQE4XzyJ5XRc6KdS19cUOqOCN8_PT0i_SXigM_Sc7Icv4mZ2n9sirnhkL532gLDuE7KQXOiZQROY8x6aPTlj8pRJ_PvkmNGMgs_S8NWoR0S_PdUwRFjMz11d596Wykap8qNxGwlysPu39dZngSvg8Px1UwEBNXq904J_SkglXXkR4wqL21QCoD64=',
+      'ts=1779483231117',
+    ].join('\n');
+
     async function init() {
+      document.getElementById('tok-raw-editor').value = DEFAULT_INTERNAL_TESTING_USER_TOK;
+      updateDecodedTokPreview();
       try {
         const res = await fetch('/api/catalog');
         if (res.ok) {
@@ -560,18 +791,119 @@
         catalog = FALLBACK_CATALOG;
       }
       applyPreset(catalog.defaultPreset || 'rc-car');
-      loadCurrentUserTok();
-      if (new URLSearchParams(window.location.search).get('tab') === 'installer') {
-        switchTab('installer');
+      await refreshEnvironmentStatus();
+      await loadCurrentUserTok();
+
+      const stepParam = new URLSearchParams(window.location.search).get('step');
+      if (stepParam === '2') goToStep(2);
+      else if (stepParam === '3') goToStep(3);
+      else goToStep(1);
+    }
+
+    function goToStep(step) {
+      currentStep = step;
+      for (const s of [1, 2, 3]) {
+        document.getElementById(`step-${s}`).classList.toggle('hidden', s !== step);
+        const tab = document.getElementById(`nav-step-${s}`);
+        tab.classList.toggle('active', s === step);
+        tab.classList.toggle('done', s < step);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function selectExtVersion(ver) {
+      document.getElementById('inst-ext-version').value = ver;
+      document.getElementById('ver-card-370').classList.toggle('selected', ver === '3.7.0');
+      document.getElementById('ver-card-410').classList.toggle('selected', ver === '4.1.0');
+    }
+
+    async function refreshEnvironmentStatus() {
+      try {
+        const res = await fetch('/api/status');
+        if (!res.ok) return;
+        const st = await res.json();
+
+        const hdrBadge = document.getElementById('hdr-ext-badge');
+        const s1Title = document.getElementById('step1-status-title');
+        const s1Detail = document.getElementById('step1-status-detail');
+        const bundleBadge = document.getElementById('bundle-detected-badge');
+
+        if (st.installedVer) {
+          selectExtVersion(st.installedVer);
+          hdrBadge.textContent = `Installed: Wokwi v${st.installedVer}` + (st.cacheReady ? ' (Offline Bundle Ready)' : '');
+          s1Title.textContent = `Wokwi v${st.installedVer} Extension Installed` + (st.cacheReady ? ' & Offline Bundle Extracted (.cache/entry.js Ready)' : '');
+        } else {
+          hdrBadge.textContent = 'Extension Not Installed Yet — Run Step 1';
+          s1Title.textContent = 'Step 1 Ready: Install Wokwi Offline Extension & Extract Bundle';
+        }
+
+        if (st.detectedBundle) {
+          document.getElementById('inst-bundle').value = st.detectedBundle;
+          const mb = (st.bundleSize / (1024 * 1024)).toFixed(1);
+          bundleBadge.textContent = `Found: ${st.detectedBundle} (${mb} MB)`;
+          bundleBadge.className = 'badge badge-ok';
+          s1Detail.textContent = `Detected offline bundle at ${st.detectedBundle} (${mb} MB). Click the green button below to install/update, or skip to Step 2/3.`;
+        } else {
+          bundleBadge.textContent = 'Pick bundle.wpk or enter path';
+        }
+
+        if (st.detectedTok) {
+          document.getElementById('tok-disk-path').value = st.detectedTok;
+          const m = st.tokMetadata || {};
+          const s2Title = document.getElementById('step2-status-title');
+          if (m.name || m.email) {
+            s2Title.textContent = `Active License Found (${st.detectedTok}) — Ready for Offline Simulation!`;
+          } else {
+            s2Title.textContent = `License File Found at ${st.detectedTok}`;
+          }
+        }
+      } catch {}
+    }
+
+    async function onPickBundleFile(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const badge = document.getElementById('bundle-detected-badge');
+      badge.textContent = `Uploading ${file.name}...`;
+      try {
+        const buf = await file.arrayBuffer();
+        const res = await fetch('/api/upload-bundle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: buf,
+        });
+        const out = await res.json();
+        if (out.ok) {
+          document.getElementById('inst-bundle').value = out.bundlePath;
+          const mb = (out.size / (1024 * 1024)).toFixed(1);
+          badge.textContent = `Loaded: ${out.bundlePath} (${mb} MB)`;
+          badge.className = 'badge badge-ok';
+        }
+      } catch (err) {
+        badge.textContent = 'Upload failed: ' + err.message;
       }
     }
 
-    function switchTab(tab) {
-      document.getElementById('tab-generator').classList.toggle('hidden', tab !== 'generator');
-      document.getElementById('tab-installer').classList.toggle('hidden', tab !== 'installer');
-      const btns = document.querySelectorAll('.tab-btn');
-      btns[0].classList.toggle('active', tab === 'generator');
-      btns[1].classList.toggle('active', tab === 'installer');
+    async function runStep1AndContinue() {
+      const extVersion = document.getElementById('inst-ext-version').value || '3.7.0';
+      const bundlePath = document.getElementById('inst-bundle').value.trim();
+      const checked = Array.from(document.querySelectorAll('#mcp-client-checks input:checked')).map((c) => c.value);
+      const toast = document.getElementById('inst-toast');
+      toast.style.display = 'block';
+      toast.textContent = `Installing Wokwi v${extVersion} extension & extracting offline bundle...`;
+      try {
+        const res = await fetch('/api/run-setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ extVersion, bundlePath, licenseInput: '', mcpTargets: checked }),
+        });
+        const out = await res.json();
+        toast.textContent = out.message || 'Step 1 completed!';
+        await refreshEnvironmentStatus();
+        setTimeout(() => goToStep(2), 650);
+      } catch (err) {
+        toast.textContent = 'Error connecting to local setup server: ' + err.message;
+      }
     }
 
     function applyPreset(presetKey) {
@@ -706,13 +1038,11 @@
           const el = catalog.elements.find((e) => e.wokwiType === p.type);
           if (!el) continue;
 
-          // Common GND wiring
           const gndPin = el.gndPin || (el.pins && el.pins.includes('GND') ? 'GND' : null);
           if (gndPin) {
             connections.push([`${mainMcuId}:GND.1`, `${p.id}:${gndPin}`, 'black', ['v0']]);
           }
 
-          // Power rail wiring
           if (el.powerRail === '7V' && reg7vId && el.powerPin) {
             connections.push([`${reg7vId}:VOUT_POS`, `${p.id}:${el.powerPin}`, 'orange', ['v0']]);
           } else if (el.powerRail === '5V' && pmicId && el.powerPin) {
@@ -721,7 +1051,6 @@
             connections.push([`${mainMcuId}:3V3.1`, `${p.id}:${el.powerPin}`, 'red', ['v0']]);
           }
 
-          // Signal pin to next free ESP32-S3 GPIO
           if (el.signalPin && gpioIdx < mcuGpioPool.length) {
             const gpio = mcuGpioPool[gpioIdx++];
             connections.push([`${mainMcuId}:${gpio}`, `${p.id}:${el.signalPin}`, 'green', ['v0']]);
@@ -897,29 +1226,8 @@
       }
     }
 
-    async function runFullSetup() {
-      const extVersion = document.getElementById('inst-ext-version').value || '3.7.0';
-      const bundlePath = document.getElementById('inst-bundle').value.trim();
-      const licenseInput = document.getElementById('inst-license').value.trim();
-      const checked = Array.from(document.querySelectorAll('#mcp-client-checks input:checked')).map((c) => c.value);
-      const toast = document.getElementById('inst-toast');
-      try {
-        const res = await fetch('/api/run-setup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ extVersion, bundlePath, licenseInput, mcpTargets: checked }),
-        });
-        const out = await res.json();
-        toast.style.display = 'block';
-        toast.textContent = out.message || 'Offline Setup completed successfully!';
-      } catch (err) {
-        toast.style.display = 'block';
-        toast.textContent = 'Error connecting to local setup server: ' + err.message;
-      }
-    }
-
     function decodeTokMetadataClient(rawText) {
-      if (!rawText || !rawText.trim()) return 'Empty user.tok content';
+      if (!rawText || !rawText.trim()) return 'No user.tok loaded yet — pick a .tok file below or enter a path';
       let keyVal = rawText.trim();
       const m = rawText.match(/^\s*key\s*=\s*(.+)$/m);
       if (m) keyVal = m[1].trim();
@@ -950,11 +1258,37 @@
         const res = await fetch('/api/user-tok');
         if (!res.ok) return;
         const data = await res.json();
-        if (data.content !== undefined) {
+        if (data.content && data.content.trim()) {
           document.getElementById('tok-raw-editor').value = data.content;
           updateDecodedTokPreview();
+        } else {
+          document.getElementById('tok-raw-editor').value = DEFAULT_INTERNAL_TESTING_USER_TOK;
+          updateDecodedTokPreview();
         }
-      } catch {}
+      } catch {
+        document.getElementById('tok-raw-editor').value = DEFAULT_INTERNAL_TESTING_USER_TOK;
+        updateDecodedTokPreview();
+      }
+    }
+
+    async function restoreDefaultTestingTok() {
+      document.getElementById('tok-raw-editor').value = DEFAULT_INTERNAL_TESTING_USER_TOK;
+      updateDecodedTokPreview();
+      const toast = document.getElementById('tok-toast');
+      try {
+        const res = await fetch('/api/user-tok', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ restoreDefault: true, backup: true }),
+        });
+        const out = await res.json();
+        toast.style.display = 'block';
+        toast.textContent = out.message || 'Restored default internal testing user.tok (user@wokwi.com, Plan: pro)';
+        await refreshEnvironmentStatus();
+      } catch {
+        toast.style.display = 'block';
+        toast.textContent = 'Loaded default internal testing user.tok into editor.';
+      }
     }
 
     function onPickTokFile(event) {
@@ -968,7 +1302,7 @@
       reader.readAsText(file);
     }
 
-    async function uploadPickedTokAndOverwrite() {
+    async function uploadPickedTokAndOverwrite(advance) {
       const fileInput = document.getElementById('tok-file-picker');
       const file = fileInput.files && fileInput.files[0];
       if (!file && !document.getElementById('tok-raw-editor').value.trim()) {
@@ -980,10 +1314,10 @@
         document.getElementById('tok-raw-editor').value = text;
         updateDecodedTokPreview();
       }
-      await overwriteTokFromEditor();
+      await overwriteTokFromEditor(advance);
     }
 
-    async function overwriteTokFromPath() {
+    async function overwriteTokFromPath(advance) {
       const filePath = document.getElementById('tok-disk-path').value.trim();
       const toast = document.getElementById('tok-toast');
       if (!filePath) {
@@ -1004,6 +1338,8 @@
             updateDecodedTokPreview();
           }
           toast.textContent = out.message || `Overwrote ~/.wokwi/user.tok from ${filePath}`;
+          await refreshEnvironmentStatus();
+          if (advance) setTimeout(() => goToStep(3), 500);
         } else {
           toast.textContent = 'Error: ' + (out.error || 'Failed to overwrite user.tok');
         }
@@ -1013,7 +1349,7 @@
       }
     }
 
-    async function overwriteTokFromEditor() {
+    async function overwriteTokFromEditor(advance) {
       const content = document.getElementById('tok-raw-editor').value;
       const toast = document.getElementById('tok-toast');
       if (!content.trim()) {
@@ -1034,6 +1370,8 @@
             updateDecodedTokPreview();
           }
           toast.textContent = out.message || 'Successfully overwrote ~/.wokwi/user.tok!';
+          await refreshEnvironmentStatus();
+          if (advance) setTimeout(() => goToStep(3), 500);
         } else {
           toast.textContent = 'Error: ' + (out.error || 'Failed to overwrite user.tok');
         }

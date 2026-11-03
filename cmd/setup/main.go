@@ -269,6 +269,47 @@ func parseUserTokMetadata(raw string) map[string]string {
 	return meta
 }
 
+const defaultInternalTestingUserTok = `# Wokwi License
+# User: user@wokwi.com
+# Email: user@wokwi.com
+
+key=JnU9MSZuPXVzZXIlNDB3b2t3aS5jb20mZT11c2VyJTQwd29rd2kuY29tJng9OTk5OTEyMzEmZj02JnA9cHJvAH6_SOgpZf71EV65AdppzsQTPQnKyNl62O6aant4anVZrtWxMWERtlCXJeT4u8ohffAs2vFgVE7OEji4BrsCv1Ghqe0y0_SfFgDkJRBHAOjs8_S_PXyBF48eJIoNilR9mYzMV0gc9T23LkMfCw924GX2KZsmYmonNqqxlBoYvcCQE4XzyJ5XRc6KdS19cUOqOCN8_PT0i_SXigM_Sc7Icv4mZ2n9sirnhkL532gLDuE7KQXOiZQROY8x6aPTlj8pRJ_PvkmNGMgs_S8NWoR0S_PdUwRFjMz11d596Wykap8qNxGwlysPu39dZngSvg8Px1UwEBNXq904J_SkglXXkR4wqL21QCoD64=
+ts=1779483231117
+`
+
+func ensureDefaultTestingAssets(root string) {
+	home, _ := os.UserHomeDir()
+	wokwiDir := filepath.Join(home, ".wokwi")
+	_ = os.MkdirAll(wokwiDir, 0755)
+
+	destBundle := filepath.Join(wokwiDir, "bundle.wpk")
+	if _, err := os.Stat(destBundle); err != nil {
+		for _, cand := range []string{
+			filepath.Join(root, "files", "bundle.wpk"),
+			filepath.Join(wokwiDir, "files", "bundle.wpk"),
+		} {
+			if info, err := os.Stat(cand); err == nil && !info.IsDir() {
+				_ = copyFile(cand, destBundle)
+				break
+			}
+		}
+	}
+
+	destTok := filepath.Join(wokwiDir, "user.tok")
+	if raw, err := os.ReadFile(destTok); err != nil || len(bytes.TrimSpace(raw)) == 0 {
+		for _, cand := range []string{
+			filepath.Join(root, "files", "user.tok"),
+			filepath.Join(wokwiDir, "files", "user.tok"),
+		} {
+			if b, err := os.ReadFile(cand); err == nil && len(bytes.TrimSpace(b)) > 0 {
+				_ = os.WriteFile(destTok, b, 0600)
+				return
+			}
+		}
+		_ = os.WriteFile(destTok, []byte(defaultInternalTestingUserTok), 0600)
+	}
+}
+
 func overwriteUserTok(srcPath, rawContent string, backup bool) (map[string]interface{}, error) {
 	home, _ := os.UserHomeDir()
 	wokwiDir := filepath.Join(home, ".wokwi")
@@ -412,6 +453,7 @@ func runFullEnvironmentSetup(root, extVersion, bundlePath, licenseInput string, 
 	if extVersion != "4.1.0" {
 		extVersion = "3.7.0"
 	}
+	ensureDefaultTestingAssets(root)
 	home, _ := os.UserHomeDir()
 	wokwiDir := filepath.Join(home, ".wokwi")
 	extensionsRoot := filepath.Join(home, ".vscode", "extensions")
@@ -449,11 +491,12 @@ func runFullEnvironmentSetup(root, extVersion, bundlePath, licenseInput string, 
 		summary = append(summary, "Disabled VS Code extension auto-update in settings.json")
 	}
 
-	// 3. Extract .wpk bundle (auto-fallback to ~/.wokwi/bundle.wpk or ~/.wokwi/files/bundle.wpk)
+	// 3. Extract .wpk bundle (auto-fallback to ~/.wokwi/bundle.wpk, root/files/bundle.wpk, or ~/.wokwi/files/bundle.wpk)
 	resolvedBundle := expandHome(strings.TrimSpace(bundlePath))
 	if resolvedBundle == "" {
 		for _, cand := range []string{
 			filepath.Join(wokwiDir, "bundle.wpk"),
+			filepath.Join(root, "files", "bundle.wpk"),
 			filepath.Join(wokwiDir, "files", "bundle.wpk"),
 		} {
 			if _, err := os.Stat(cand); err == nil {
@@ -463,6 +506,10 @@ func runFullEnvironmentSetup(root, extVersion, bundlePath, licenseInput string, 
 		}
 	}
 	if resolvedBundle != "" {
+		destBundle := filepath.Join(wokwiDir, "bundle.wpk")
+		if filepath.Clean(resolvedBundle) != filepath.Clean(destBundle) {
+			_ = copyFile(resolvedBundle, destBundle)
+		}
 		if n, err := extractWpkBundle(resolvedBundle, cacheDir); err == nil {
 			summary = append(summary, fmt.Sprintf("Extracted %d files from bundle.wpk into %s", n, cacheDir))
 		} else {
@@ -470,11 +517,12 @@ func runFullEnvironmentSetup(root, extVersion, bundlePath, licenseInput string, 
 		}
 	}
 
-	// 4. Save license (auto-fallback to ~/.wokwi/user.tok or ~/.wokwi/files/user.tok)
+	// 4. Save license (auto-fallback to ~/.wokwi/user.tok, root/files/user.tok, or built-in internal testing token)
 	resolvedLic := strings.TrimSpace(licenseInput)
 	if resolvedLic == "" {
 		for _, cand := range []string{
 			filepath.Join(wokwiDir, "user.tok"),
+			filepath.Join(root, "files", "user.tok"),
 			filepath.Join(wokwiDir, "files", "user.tok"),
 		} {
 			if _, err := os.Stat(cand); err == nil {
@@ -482,6 +530,9 @@ func runFullEnvironmentSetup(root, extVersion, bundlePath, licenseInput string, 
 				break
 			}
 		}
+	}
+	if resolvedLic == "" {
+		resolvedLic = defaultInternalTestingUserTok
 	}
 	if resolvedLic != "" {
 		if msg, err := saveLicenseToken(resolvedLic); err == nil && msg != "" {
@@ -777,18 +828,13 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 
 	mux.HandleFunc("/api/user-tok", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		ensureDefaultTestingAssets(root)
 		home, _ := os.UserHomeDir()
 		tokPath := filepath.Join(home, ".wokwi", "user.tok")
 		if r.Method == http.MethodGet {
 			raw, err := os.ReadFile(tokPath)
 			if err != nil {
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{
-					"ok":      true,
-					"exists":  false,
-					"path":    tokPath,
-					"content": "",
-				})
-				return
+				raw = []byte(defaultInternalTestingUserTok)
 			}
 			meta := parseUserTokMetadata(string(raw))
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -801,13 +847,18 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 			return
 		}
 		var req struct {
-			FilePath string `json:"filePath"`
-			Content  string `json:"content"`
-			Backup   bool   `json:"backup"`
+			FilePath       string `json:"filePath"`
+			Content        string `json:"content"`
+			Backup         bool   `json:"backup"`
+			RestoreDefault bool   `json:"restoreDefault"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": err.Error()})
 			return
+		}
+		if req.RestoreDefault {
+			req.FilePath = ""
+			req.Content = defaultInternalTestingUserTok
 		}
 		res, err := overwriteUserTok(req.FilePath, req.Content, req.Backup)
 		if err != nil {
@@ -815,6 +866,90 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 			return
 		}
 		_ = json.NewEncoder(w).Encode(res)
+	})
+
+	mux.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		ensureDefaultTestingAssets(root)
+		home, _ := os.UserHomeDir()
+		wokwiDir := filepath.Join(home, ".wokwi")
+		extRoot := filepath.Join(home, ".vscode", "extensions")
+
+		installedVer := ""
+		cacheReady := false
+		for _, v := range []string{"3.7.0", "4.1.0"} {
+			dir := filepath.Join(extRoot, "wokwi.wokwi-vscode-"+v)
+			if info, err := os.Stat(dir); err == nil && info.IsDir() {
+				installedVer = v
+				if _, err := os.Stat(filepath.Join(dir, ".cache", "entry.js")); err == nil {
+					cacheReady = true
+				}
+				break
+			}
+		}
+
+		detectedBundle := ""
+		var bundleSize int64
+		for _, cand := range []string{
+			filepath.Join(wokwiDir, "bundle.wpk"),
+			filepath.Join(root, "files", "bundle.wpk"),
+			filepath.Join(wokwiDir, "files", "bundle.wpk"),
+		} {
+			if info, err := os.Stat(cand); err == nil && !info.IsDir() {
+				detectedBundle = cand
+				bundleSize = info.Size()
+				break
+			}
+		}
+
+		detectedTok := ""
+		var tokContent string
+		tokMeta := map[string]string{}
+		for _, cand := range []string{
+			filepath.Join(wokwiDir, "user.tok"),
+			filepath.Join(root, "files", "user.tok"),
+			filepath.Join(wokwiDir, "files", "user.tok"),
+		} {
+			if raw, err := os.ReadFile(cand); err == nil && len(bytes.TrimSpace(raw)) > 0 {
+				detectedTok = cand
+				tokContent = string(raw)
+				tokMeta = parseUserTokMetadata(tokContent)
+				break
+			}
+		}
+
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"ok":             true,
+			"installedVer":   installedVer,
+			"cacheReady":     cacheReady,
+			"detectedBundle": detectedBundle,
+			"bundleSize":     bundleSize,
+			"detectedTok":    detectedTok,
+			"tokMetadata":    tokMeta,
+		})
+	})
+
+	mux.HandleFunc("/api/upload-bundle", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		home, _ := os.UserHomeDir()
+		wokwiDir := filepath.Join(home, ".wokwi")
+		_ = os.MkdirAll(wokwiDir, 0755)
+		dest := filepath.Join(wokwiDir, "bundle.wpk")
+
+		data, err := io.ReadAll(io.LimitReader(r.Body, 256*1024*1024))
+		if err != nil || len(data) == 0 {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": "empty or invalid bundle.wpk upload"})
+			return
+		}
+		if err := os.WriteFile(dest, data, 0644); err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"ok":         true,
+			"bundlePath": dest,
+			"size":       len(data),
+		})
 	})
 
 	mux.HandleFunc("/api/run-setup", func(w http.ResponseWriter, r *http.Request) {
@@ -875,57 +1010,64 @@ func runTUI(root string) error {
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Println("╔══════════════════════════════════════════════════════════════════╗")
-	fmt.Println("║  Wokwi Offline Suite — Interactive TUI (RC Car & Hardware Setup) ║")
+	fmt.Println("║  Wokwi Offline Suite — Guided Step-by-Step TUI                   ║")
 	fmt.Println("╚══════════════════════════════════════════════════════════════════╝")
-	fmt.Println("  1) Generate RC Car / Custom Hardware Project (wokwi.toml + diagram.json)")
-	fmt.Println("  2) Run Full Offline Environment Setup (Extension + Bundle + License + MCP)")
-	fmt.Println("  3) Run Both (Full Offline Setup + Hardware Project Generator)")
-	fmt.Println("  4) Load & Overwrite your own user.tok (Manual, no LLM required)")
-	choice := promptLine(reader, "Select action (1/2/3/4)", "3")
+	fmt.Println("  1) Guided 3-Step Flow (Step 1: Install Extension & Bundle -> Step 2: Load user.tok -> Step 3: Build wokwi.toml)")
+	fmt.Println("  2) Only Step 1: Install Extension (v3.7.0 / v4.1.0), Load bundle.wpk & MCP")
+	fmt.Println("  3) Only Step 2: Load & Overwrite user.tok (Manual, no LLM required)")
+	fmt.Println("  4) Only Step 3: Choose Hardware Elements & Generate wokwi.toml + diagram.json")
+	choice := promptLine(reader, "Select option (1/2/3/4)", "1")
 
-	if choice == "4" {
-		fmt.Println("\n--- Manual user.tok Loader & Overwrite (No LLM) ---")
-		home, _ := os.UserHomeDir()
-		curTok := filepath.Join(home, ".wokwi", "user.tok")
-		if raw, err := os.ReadFile(curTok); err == nil {
-			meta := parseUserTokMetadata(string(raw))
-			fmt.Printf("Current ~/.wokwi/user.tok: %s <%s> (Plan: %s, Expires: %s)\n", meta["name"], meta["email"], meta["plan"], meta["expiration"])
-		}
-		src := promptLine(reader, "Enter path to your custom .tok file OR paste raw key= / token string", "")
-		if strings.TrimSpace(src) == "" {
-			return fmt.Errorf("no user.tok path or content provided")
-		}
-		var res map[string]interface{}
-		var err error
-		resolved := expandHome(src)
-		if info, statErr := os.Stat(resolved); statErr == nil && !info.IsDir() {
-			res, err = overwriteUserTok(resolved, "", true)
-		} else {
-			res, err = overwriteUserTok("", src, true)
-		}
-		if err != nil {
-			return err
-		}
-		fmt.Println("[+] " + res["message"].(string))
-		return nil
-	}
-
-	if choice == "2" || choice == "3" {
-		fmt.Println("\n--- Offline Environment & License Setup ---")
+	if choice == "1" || choice == "2" {
+		fmt.Println("\n=== STEP 1: Install Wokwi Extension & Load Offline Bundle (bundle.wpk) ===")
 		extVer := promptLine(reader, "Select Wokwi VS Code Extension Version to install (3.7.0 / 4.1.0)", "3.7.0")
 		bundle := promptLine(reader, "Path to offline bundle.wpk", "~/.wokwi/bundle.wpk")
-		lic := promptLine(reader, "Valid Wokwi license key or path to user.tok", "~/.wokwi/user.tok")
 		mcp := promptLine(reader, "MCP clients to install (t3 anthropic opencode codex antigravity vscode all none)", "t3 anthropic")
 		var targets []string
 		if mcp != "none" {
 			targets = strings.Fields(mcp)
 		}
-		msg, _ := runFullEnvironmentSetup(root, extVer, bundle, lic, targets)
+		msg, _ := runFullEnvironmentSetup(root, extVer, bundle, "", targets)
 		fmt.Println("[+] " + msg)
 	}
 
 	if choice == "1" || choice == "3" {
-		fmt.Println("\n--- Hardware & wokwi.toml Generator (RC Car / Custom) ---")
+		fmt.Println("\n=== STEP 2: Load & Overwrite user.tok License (If Needed) ===")
+		home, _ := os.UserHomeDir()
+		curTok := filepath.Join(home, ".wokwi", "user.tok")
+		hasExisting := false
+		if raw, err := os.ReadFile(curTok); err == nil && len(bytes.TrimSpace(raw)) > 0 {
+			hasExisting = true
+			meta := parseUserTokMetadata(string(raw))
+			fmt.Printf("Current ~/.wokwi/user.tok detected: %s <%s> (Plan: %s, Expires: %s)\n", meta["name"], meta["email"], meta["plan"], meta["expiration"])
+		}
+		promptMsg := "Enter path to custom .tok file OR paste raw key= string"
+		defVal := ""
+		if hasExisting && choice == "1" {
+			promptMsg = "Enter path/key to overwrite user.tok, or press Enter to keep existing user.tok"
+			defVal = "keep"
+		}
+		src := promptLine(reader, promptMsg, defVal)
+		if strings.TrimSpace(src) != "" && src != "keep" {
+			var res map[string]interface{}
+			var err error
+			resolved := expandHome(src)
+			if info, statErr := os.Stat(resolved); statErr == nil && !info.IsDir() {
+				res, err = overwriteUserTok(resolved, "", true)
+			} else {
+				res, err = overwriteUserTok("", src, true)
+			}
+			if err != nil {
+				return err
+			}
+			fmt.Println("[+] " + res["message"].(string))
+		} else if hasExisting {
+			fmt.Println("[+] Keeping existing ~/.wokwi/user.tok")
+		}
+	}
+
+	if choice == "1" || choice == "4" {
+		fmt.Println("\n=== STEP 3: Choose Hardware Elements & Generate wokwi.toml + diagram.json ===")
 		preset := promptLine(reader, "Select base preset (rc-car / esp32calc / zero)", "rc-car")
 		counts := map[string]int{}
 		for _, el := range cat.Elements {
