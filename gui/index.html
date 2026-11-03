@@ -719,8 +719,10 @@
       <button onclick="visZoom(1.18)" title="Zoom In">+</button>
       <button onclick="visFitView()">Fit</button>
       <div class="divider"></div>
-      <input type="text" id="vis-file-path" value="./rc-car-wokwi/diagram.json" style="width:168px;" title="Target diagram.json path" />
-      <button onclick="loadVisualEditorFromDisk()">Load JSON</button>
+      <input type="file" id="vis-json-picker" accept=".json,application/json" onchange="visHandleJsonFilePicked(event)" style="display:none;" />
+      <input type="text" id="vis-file-path" value="./rc-car-wokwi/diagram.json" style="width:160px;" title="Target diagram.json path (press Enter to load)" onkeydown="if(event.key==='Enter')loadVisualEditorFromDisk()" />
+      <button onclick="loadVisualEditorFromDisk()" title="Load diagram.json from specified path">Load JSON</button>
+      <button onclick="document.getElementById('vis-json-picker').click()" title="Browse and choose a diagram.json file from your computer">📂</button>
       <button class="ok-btn" onclick="saveGeneratedProject()">
         <svg class="icon"><use href="#i-save"/></svg>
         Save Project
@@ -3137,20 +3139,53 @@
 
     async function loadVisualEditorFromDisk() {
       const filePath = document.getElementById('vis-file-path').value.trim();
+      if (!filePath) {
+        document.getElementById('vis-json-picker').click();
+        return;
+      }
       try {
         const res = await fetch('/api/diagram-file', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'load', path: filePath }),
         });
-        const out = await res.json();
+        const text = await res.text();
+        let out = {};
+        try {
+          out = JSON.parse(text);
+        } catch {
+          throw new Error(text.slice(0, 100));
+        }
         if (out.ok && out.diagram) {
           visLoadDiagramObject(out.diagram);
-          showToast(`Loaded ${out.path}`);
+          if (out.path) document.getElementById('vis-file-path').value = out.path;
+          showToast(`Loaded ${out.path || filePath} (${(out.diagram.parts || []).length} parts)`);
         } else {
-          showToast('Error: ' + (out.error || 'Could not load diagram.json'));
+          showToast('Could not load path: ' + (out.error || 'Opening file picker...'));
+          document.getElementById('vis-json-picker').click();
         }
-      } catch {}
+      } catch (err) {
+        showToast('Error: ' + (err.message || String(err)) + ' - Opening file picker...');
+        document.getElementById('vis-json-picker').click();
+      }
+    }
+
+    function visHandleJsonFilePicked(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          visLoadDiagramObject(parsed);
+          document.getElementById('vis-file-path').value = file.name;
+          showToast(`Loaded ${file.name} (${(parsed.parts || []).length} parts)`);
+        } catch (err) {
+          showToast('Error parsing JSON diagram: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
     }
 
     function sendSimulatedCanPreset(canId, cmdType, steer, throttle) {

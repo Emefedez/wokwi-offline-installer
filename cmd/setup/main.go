@@ -800,7 +800,7 @@ func generateProjectFromCounts(root, targetDir string, cat *Catalog, counts map[
 	hwDir := filepath.Join(root, "hardware")
 	for chipName, el := range usedChips {
 		tomlLines = append(tomlLines, "", "[[chip]]", fmt.Sprintf("name = %q", chipName), fmt.Sprintf("binary = %q", el.ChipBinary))
-		for _, f := range []string{el.ChipBinary, el.ChipJSON} {
+		for _, f := range []string{el.ChipBinary, el.ChipJSON, chipName + ".svg"} {
 			if f == "" {
 				continue
 			}
@@ -810,6 +810,11 @@ func generateProjectFromCounts(root, targetDir string, cat *Catalog, counts map[
 				copiedChips = append(copiedChips, f)
 			}
 		}
+	}
+	boardSvg := "esp32-s3-devkitc-1.svg"
+	if _, err := os.Stat(filepath.Join(hwDir, boardSvg)); err == nil {
+		_ = copyFile(filepath.Join(hwDir, boardSvg), filepath.Join(targetDir, boardSvg))
+		copiedChips = append(copiedChips, boardSvg)
 	}
 
 	tomlLines = append(tomlLines, "", "# Hardware Elements Bill of Materials & Electrical Ratings")
@@ -1367,18 +1372,45 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 		}
 
 		if req.Action == "load" {
-			raw, err := os.ReadFile(target)
-			if err != nil {
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": fmt.Sprintf("Failed to read %s: %v", target, err)})
+			var raw []byte
+			var readErr error
+			resolvedPath := ""
+
+			candidates := []string{target}
+			if !filepath.IsAbs(target) {
+				candidates = append(candidates,
+					filepath.Join(root, target),
+					filepath.Join(root, "rc-car-wokwi", filepath.Base(target)),
+					filepath.Join(root, "hardware", filepath.Base(target)),
+					filepath.Join(root, "rc-car-wokwi", "diagram.json"),
+					filepath.Join(root, "hardware", "diagram.json"),
+				)
+			}
+			for _, cand := range candidates {
+				if b, err := os.ReadFile(cand); err == nil && len(b) > 0 {
+					raw = b
+					resolvedPath = cand
+					break
+				} else if readErr == nil {
+					readErr = err
+				}
+			}
+
+			if len(raw) == 0 {
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": fmt.Sprintf("Failed to read %s: %v", target, readErr)})
 				return
 			}
 			var parsed interface{}
 			if err := json.Unmarshal(raw, &parsed); err != nil {
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": fmt.Sprintf("Invalid JSON in %s: %v", target, err)})
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": fmt.Sprintf("Invalid JSON in %s: %v", resolvedPath, err)})
 				return
 			}
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "path": target, "diagram": parsed})
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "path": resolvedPath, "diagram": parsed})
 			return
+		}
+
+		if !filepath.IsAbs(target) {
+			target = filepath.Join(root, target)
 		}
 
 		// Save diagram.json and ensure custom chip .wasm/.json files are present if referenced

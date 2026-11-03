@@ -55,7 +55,14 @@
     { "type": "chip-irf520_pwm", "id": "mosfet_irf520_4", "top": 540, "left": 190, "attrs": {} },
     { "type": "chip-ip5306", "id": "pmic_ip5306", "top": 540, "left": 385, "attrs": {} },
     { "type": "chip-reg_7v", "id": "buck_7v", "top": 540, "left": 580, "attrs": {} },
-    { "type": "chip-weact_213_bw", "id": "epd", "top": 675, "left": 190, "attrs": {} }
+    { "type": "chip-weact_213_bw", "id": "epd", "top": 675, "left": 190, "attrs": {} },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 82.8537523060527,
+      "left": -168.91824818351816,
+      "attrs": { "color": "red" }
+    }
   ],
   "connections": [
     [ "esp:GND.1", "servo_ybp20m_1:GND", "black", [ "v0" ] ],
