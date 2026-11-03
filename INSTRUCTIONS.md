@@ -32,10 +32,10 @@ Visually drag and move any button (`wokwi-pushbutton`) or hardware part (`left`,
 
 | Platform | Executable / Launcher | Description |
 | :--- | :--- | :--- |
-| **Windows (x86_64)** | `WokwiOfflineSetup.exe` / `install.bat` | Standalone native 64-bit Windows executable |
-| **macOS (ARM64)** | `./wokwi-offline-setup-macos` / `./install.sh` | Standalone native Apple Silicon executable & shell launcher |
-| **Linux (x86_64)** | `./wokwi-offline-setup-linux-amd64` / `./install.sh` | Standalone native 64-bit Linux (`amd64`) executable & shell launcher |
-| **Linux (ARM64)** | `./wokwi-offline-setup-linux-arm64` / `./install.sh` | Standalone native ARM64 Linux (`aarch64`) executable & shell launcher |
+| **Windows (x86_64)** | `WokwiOfflineToolkit.exe` / `install.bat` | Standalone native 64-bit Windows executable |
+| **macOS (ARM64)** | `./wokwi-offline-toolkit-macos` / `./install.sh` | Standalone native Apple Silicon executable & shell launcher |
+| **Linux (x86_64)** | `./wokwi-offline-toolkit-linux-amd64` / `./install.sh` | Standalone native 64-bit Linux (`amd64`) executable & shell launcher |
+| **Linux (ARM64)** | `./wokwi-offline-toolkit-linux-arm64` / `./install.sh` | Standalone native ARM64 Linux (`aarch64`) executable & shell launcher |
 
 > **Tip**: On both **macOS** and **Linux**, `./install.sh` automatically detects your operating system (`Darwin` vs `Linux`) and CPU architecture (`x86_64` vs `arm64`/`aarch64`) and launches the corresponding native binary.
 
@@ -47,13 +47,13 @@ Visually drag and move any button (`wokwi-pushbutton`) or hardware part (`left`,
    ./install.sh --gui
 
    # Or run the platform binary directly:
-   ./wokwi-offline-setup-macos --gui          # macOS (ARM64)
-   ./wokwi-offline-setup-linux-amd64 --gui    # Linux (x86_64)
-   ./wokwi-offline-setup-linux-arm64 --gui    # Linux (ARM64)
+   ./wokwi-offline-toolkit-macos --gui          # macOS (ARM64)
+   ./wokwi-offline-toolkit-linux-amd64 --gui    # Linux (x86_64)
+   ./wokwi-offline-toolkit-linux-arm64 --gui    # Linux (ARM64)
 
    # Windows
-   WokwiOfflineSetup.exe --gui
-   # or double-click WokwiOfflineSetup.exe / install.bat
+   WokwiOfflineToolkit.exe --gui
+   # or double-click WokwiOfflineToolkit.exe / install.bat
    ```
    Opens the **3-Step Guided Wizard GUI** at `http://127.0.0.1:47130`:
    - **Step 1**: First choose & install Wokwi `v3.7.0` (Recommended) or `v4.1.0`, auto-extract `files/bundle.wpk` (or pick a custom `.wpk` file), and optionally register the MCP server.

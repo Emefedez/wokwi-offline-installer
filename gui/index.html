@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Wokwi Offline Suite — Setup &amp; Visual Layout Manager</title>
+  <title>Wokwi Offline Toolkit — Setup &amp; Visual Layout Manager</title>
   <style>
     /* =========================================================================
        NoteComplete polished-apps Design System — Desktop Dark + Red Accent
@@ -498,13 +498,16 @@
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></symbol>
     <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></symbol>
+    <symbol id="i-vscode" viewBox="0 0 24 24"><path d="M17.5 2 7 11.5 2 7.5v9l5-4 10.5 9.5 4.5-2V4l-4.5-2z"/></symbol>
   </svg>
 
   <!-- TOP BAR: Brand · Two Main Workspaces Switcher · Status & TUI -->
   <header class="bar" role="banner">
     <div class="brand">
       <span class="brand-dot"></span>
-      <span>Wokwi Offline Suite</span>
+      <span>Wokwi Offline Toolkit</span>
       <span id="hdr-ext-badge" class="tag ok">Checking...</span>
     </div>
 
@@ -709,7 +712,15 @@
       <button onclick="loadVisualEditorFromDisk()">Load JSON</button>
       <button class="ok-btn" onclick="saveGeneratedProject()">
         <svg class="icon"><use href="#i-save"/></svg>
-        Write <code>wokwi.toml</code> + <code>diagram.json</code>
+        Save Project
+      </button>
+      <button onclick="openProjectInVsCode()" title="Open project directory directly in VS Code">
+        <svg class="icon"><use href="#i-vscode"/></svg>
+        Open in VS Code
+      </button>
+      <button id="btn-run-sim" class="primary" onclick="toggleVsCodeSimulation()" title="Control active Wokwi simulation in VS Code via 127.0.0.1:47129">
+        <svg class="icon" id="sim-btn-icon"><use href="#i-play"/></svg>
+        <span id="sim-btn-label">Run Sim</span>
       </button>
       <span id="vis-part-count-badge" class="tag" style="margin-left:auto;">0 parts</span>
     </div>
@@ -862,6 +873,10 @@
               <input type="text" id="cfg-project-dir" value="./rc-car-wokwi" />
               <span class="unit"></span>
             </label>
+            <div style="display:flex;gap:6px;padding:2px 12px 6px;">
+              <button onclick="saveGeneratedProject()" style="flex:1;">Regenerate</button>
+              <button class="primary" onclick="openProjectInVsCode()" style="flex:1;">Open VS Code</button>
+            </div>
             <label class="prop">
               <span>Firmware</span>
               <input type="text" id="cfg-firmware" value="build/firmware.bin" oninput="regeneratePreviews()" />
@@ -1664,6 +1679,54 @@
       }
     }
 
+    async function openProjectInVsCode() {
+      const targetDir = document.getElementById('cfg-project-dir').value.trim() || './rc-car-wokwi';
+      try {
+        const res = await fetch('/api/open-vscode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetDir }),
+        });
+        const out = await res.json();
+        if (out.ok) {
+          showToast(out.message || 'Opened project in VS Code');
+        } else {
+          showToast('Error opening VS Code: ' + (out.error || 'Check path'));
+        }
+      } catch (err) {
+        showToast('Error opening VS Code: ' + err.message);
+      }
+    }
+
+    let simActive = false;
+    async function toggleVsCodeSimulation() {
+      const targetDir = document.getElementById('cfg-project-dir').value.trim() || './rc-car-wokwi';
+      const btn = document.getElementById('btn-run-sim');
+      const label = document.getElementById('sim-btn-label');
+      const icon = document.getElementById('sim-btn-icon');
+      const action = simActive ? 'stop' : 'start';
+
+      try {
+        const res = await fetch('/api/sim-control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, projectPath: targetDir }),
+        });
+        const out = await res.json();
+        if (out.ok) {
+          simActive = action === 'start';
+          if (label) label.textContent = simActive ? 'Stop Sim' : 'Run Sim';
+          if (icon) icon.innerHTML = `<use href="#i-${simActive ? 'stop' : 'play'}"/>`;
+          if (btn) btn.className = simActive ? 'danger' : 'primary';
+          showToast(simActive ? 'Wokwi Simulation Running in VS Code!' : 'Simulation Stopped');
+        } else {
+          showToast(out.error || 'VS Code Bridge not active (open VS Code first)');
+        }
+      } catch (err) {
+        showToast('VS Code Bridge unreachable: ' + err.message);
+      }
+    }
+
     function decodeTokMetadataClient(rawText) {
       if (!rawText || !rawText.trim()) return 'No user.tok loaded';
       let keyVal = rawText.trim();
@@ -2398,7 +2461,24 @@
 
       stage.addEventListener('wheel', (e) => {
         e.preventDefault();
-        visZoom(e.deltaY < 0 ? 1.1 : 0.9);
+        const rect = stage.getBoundingClientRect();
+        const cursorSx = e.clientX - rect.left;
+        const cursorSy = e.clientY - rect.top;
+
+        if (e.ctrlKey || e.metaKey) {
+          // Trackpad pinch-to-zoom or ctrl+wheel: zoom centered on mouse cursor
+          const zoomDelta = e.deltaY > 0 ? 0.9 : 1.1;
+          const oldZoom = visState.zoom;
+          const newZoom = Math.min(2.5, Math.max(0.25, oldZoom * zoomDelta));
+          visState.panX = cursorSx - (cursorSx - visState.panX) * (newZoom / oldZoom);
+          visState.panY = cursorSy - (cursorSy - visState.panY) * (newZoom / oldZoom);
+          visState.zoom = newZoom;
+        } else {
+          // Standard trackpad two-finger scroll / mouse wheel: pan canvas smoothly
+          visState.panX -= e.deltaX;
+          visState.panY -= e.deltaY;
+        }
+        visUpdateViewportTransform();
       }, { passive: false });
     }
 
@@ -2440,6 +2520,51 @@
       visUpdateViewportTransform();
     }
 
+    function visGetPinOffset(p, pinSpec) {
+      const pinName = String(pinSpec || '').split(':')[1] || '';
+      const t = (p.type || '').toLowerCase();
+      const d = visGetPartDimensions(p);
+
+      // ESP32-S3 Board Pin Offsets (matches pin layout in esp32-s3-devkitc-1.board.json)
+      if (t.includes('esp32')) {
+        const leftPins = ['3V3', '3V3.1', 'RST', '4', '5', '6', '7', '15', '16', '17', '18', '8', '3', '46', '9', '10', '11', '12', '13', '14', '5V'];
+        const rightPins = ['GND.1', 'GND', 'TX', 'RX', '1', '2', '42', '41', '40', '39', '38', '37', '36', '0', '45', '48', '47', '21', '20', '19', 'GND.2'];
+        const clean = pinName.replace(/^([0-9]+)$/, '$1');
+        const lIdx = leftPins.indexOf(clean);
+        if (lIdx >= 0) return { x: 7, y: 24 + lIdx * 12.2 };
+        const rIdx = rightPins.indexOf(clean);
+        if (rIdx >= 0) return { x: d.w - 7, y: 24 + rIdx * 12.2 };
+      }
+
+      // Pushbutton Pins (1.l, 1.r, 2.l, 2.r)
+      if (t.includes('pushbutton')) {
+        if (pinName.includes('1')) return { x: 6, y: d.h / 2 };
+        return { x: d.w - 6, y: d.h / 2 };
+      }
+
+      // Servo Pins (PWM, VCC, GND)
+      if (t.includes('yb_p20m') || t.includes('servo')) {
+        if (pinName === 'PWM') return { x: 12, y: 40 };
+        if (pinName === 'VCC') return { x: 12, y: 48 };
+        if (pinName === 'GND') return { x: 12, y: 56 };
+        return { x: 12, y: 48 };
+      }
+
+      // Dual-Row Breakout Custom Chips (CJMCU, CAN Terminal, MOSFET, PMIC, Buck, Motors, Screens)
+      const pins = CHIP_PIN_MAP[p.type] || ['VCC', 'GND', 'IN', 'OUT'];
+      const half = Math.max(Math.ceil(pins.length / 2), 2);
+      const pIdx = pins.indexOf(pinName);
+      if (pIdx >= 0) {
+        const isRight = pIdx >= half;
+        const rowIdx = isRight ? (pIdx - half) : pIdx;
+        const hx = isRight ? (d.w - 8) : 8;
+        const hy = 14 + rowIdx * 15;
+        return { x: hx, y: hy };
+      }
+
+      return { x: d.w / 2, y: d.h / 2 };
+    }
+
     function visDraw() {
       visUpdateViewportTransform();
       const wiresLayer = document.getElementById('svg-wires-layer');
@@ -2457,15 +2582,18 @@
         const p1 = partMap.get(p1Id);
         const p2 = partMap.get(p2Id);
         if (!p1 || !p2 || p1._exists === false || p2._exists === false) continue;
-        const d1 = visGetPartDimensions(p1);
-        const d2 = visGetPartDimensions(p2);
-        const x1 = (Number(p1.left) || 0) + d1.w / 2;
-        const y1 = (Number(p1.top) || 0) + d1.h / 2;
-        const x2 = (Number(p2.left) || 0) + d2.w / 2;
-        const y2 = (Number(p2.top) || 0) + d2.h / 2;
+        const off1 = visGetPinOffset(p1, conn[0]);
+        const off2 = visGetPinOffset(p2, conn[1]);
+        const x1 = (Number(p1.left) || 0) + off1.x;
+        const y1 = (Number(p1.top) || 0) + off1.y;
+        const x2 = (Number(p2.left) || 0) + off2.x;
+        const y2 = (Number(p2.top) || 0) + off2.y;
+        const midX = (x1 + x2) / 2;
         const stroke = visColorHex(conn[2] || 'green');
         wirePaths.push(
-          `<path d="M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-opacity="0.55" stroke-linejoin="round" />`
+          `<path d="M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}" fill="none" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round" stroke-opacity="0.8" />`,
+          `<circle cx="${x1}" cy="${y1}" r="3" fill="${stroke}" />`,
+          `<circle cx="${x2}" cy="${y2}" r="3" fill="${stroke}" />`
         );
       }
       wiresLayer.innerHTML = wirePaths.join('');

@@ -5,12 +5,12 @@ INSTALLER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 OS_NAME="$(uname -s)"
 ARCH_NAME="$(uname -m)"
-SETUP_BIN="${INSTALLER_DIR}/wokwi-offline-setup-macos"
+SETUP_BIN="${INSTALLER_DIR}/wokwi-offline-toolkit-macos"
 if [ "${OS_NAME}" = "Linux" ]; then
   if [ "${ARCH_NAME}" = "aarch64" ] || [ "${ARCH_NAME}" = "arm64" ]; then
-    SETUP_BIN="${INSTALLER_DIR}/wokwi-offline-setup-linux-arm64"
+    SETUP_BIN="${INSTALLER_DIR}/wokwi-offline-toolkit-linux-arm64"
   else
-    SETUP_BIN="${INSTALLER_DIR}/wokwi-offline-setup-linux-amd64"
+    SETUP_BIN="${INSTALLER_DIR}/wokwi-offline-toolkit-linux-amd64"
   fi
 fi
 

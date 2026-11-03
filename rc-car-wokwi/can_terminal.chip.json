@@ -1,0 +1,64 @@
+{
+  "name": "Simulated CAN Bus Terminal (RC Car Tester)",
+  "author": "Wokwi Offline Suite",
+  "pins": [
+    "CANH",
+    "CANL",
+    "CANTX",
+    "CANRX",
+    "TRIG",
+    "VCC",
+    "GND"
+  ],
+  "display": {
+    "width": 128,
+    "height": 48
+  },
+  "controls": [
+    {
+      "id": "canId",
+      "label": "CAN Frame ID (dec, 288 = 0x120 RC Cmd)",
+      "type": "range",
+      "min": 256,
+      "max": 2047,
+      "step": 1
+    },
+    {
+      "id": "cmdType",
+      "label": "Command (0=Steer+Throttle, 1=Steer, 2=Brake, 3=Ping)",
+      "type": "range",
+      "min": 0,
+      "max": 3,
+      "step": 1
+    },
+    {
+      "id": "steeringDeg",
+      "label": "RC Steering Servo Target (0-180 deg)",
+      "type": "range",
+      "min": 0,
+      "max": 180,
+      "step": 5
+    },
+    {
+      "id": "throttlePct",
+      "label": "RC Drive Motor Throttle (0-100 %)",
+      "type": "range",
+      "min": 0,
+      "max": 100,
+      "step": 5
+    },
+    {
+      "id": "sendSeq",
+      "label": "Inject CAN Frame Now (slide to send)",
+      "type": "range",
+      "min": 0,
+      "max": 50,
+      "step": 1
+    },
+    {
+      "id": "autoPeriodic",
+      "label": "Auto-Send CAN Test Frame (every 2s)",
+      "type": "boolean"
+    }
+  ]
+}

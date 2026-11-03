@@ -1,0 +1,33 @@
+{
+  "name": "IP5306 Power Bank & Battery PMIC",
+  "author": "Wokwi Offline Suite",
+  "pins": [
+    "VIN",
+    "BAT",
+    "VOUT",
+    "GND",
+    "KEY",
+    "LED1",
+    "LED2",
+    "LED3",
+    "LED4"
+  ],
+  "controls": [
+    {
+      "id": "vinMv",
+      "label": "Port Input Voltage VIN (mV, -300 to 5500)",
+      "type": "range",
+      "min": 0,
+      "max": 5500,
+      "step": 100
+    },
+    {
+      "id": "batteryPct",
+      "label": "Battery Charge (%)",
+      "type": "range",
+      "min": 0,
+      "max": 100,
+      "step": 5
+    }
+  ]
+}

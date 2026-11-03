@@ -1,0 +1,30 @@
+{
+  "name": "JGB37-520 Geared Motor (12V/24V)",
+  "author": "Shenzhen Jinshunlaite / Wokwi Offline",
+  "pins": [
+    "M1",
+    "M2",
+    "GND",
+    "C1",
+    "C2",
+    "VCC"
+  ],
+  "controls": [
+    {
+      "id": "nominalVoltage",
+      "label": "Nominal Voltage (12V or 24V)",
+      "type": "range",
+      "min": 12,
+      "max": 24,
+      "step": 12
+    },
+    {
+      "id": "loadState",
+      "label": "Load State (0=No-Load, 1=Loaded, 2=Stall)",
+      "type": "range",
+      "min": 0,
+      "max": 2,
+      "step": 1
+    }
+  ]
+}

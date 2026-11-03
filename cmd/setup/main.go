@@ -870,7 +870,7 @@ func launchTUIInTerminal(root string) (string, error) {
 	exe, err := os.Executable()
 	if err != nil || exe == "" {
 		if runtime.GOOS == "windows" {
-			exe = filepath.Join(root, "WokwiOfflineSetup.exe")
+			exe = filepath.Join(root, "WokwiOfflineToolkit.exe")
 		} else {
 			exe = filepath.Join(root, "install.sh")
 		}
@@ -895,7 +895,7 @@ func launchTUIInTerminal(root string) (string, error) {
 
 	case "windows":
 		cmdline := fmt.Sprintf("cd /d \"%s\" && \"%s\" --tui", root, exe)
-		cmd := exec.Command("cmd.exe", "/c", "start", "Wokwi Offline Suite TUI", "cmd.exe", "/k", cmdline)
+		cmd := exec.Command("cmd.exe", "/c", "start", "Wokwi Offline Toolkit TUI", "cmd.exe", "/k", cmdline)
 		if err := cmd.Start(); err != nil {
 			return "", err
 		}
@@ -1020,6 +1020,80 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 			"targetDir":   target,
 			"copiedChips": copied,
 		})
+	})
+
+	mux.HandleFunc("/api/open-vscode", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var req struct {
+			TargetDir string `json:"targetDir"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		target := expandHome(strings.TrimSpace(req.TargetDir))
+		if target == "" {
+			target = filepath.Join(root, "rc-car-wokwi")
+		}
+		if !filepath.IsAbs(target) {
+			target = filepath.Join(root, target)
+		}
+		_ = os.MkdirAll(target, 0755)
+
+		var err error
+		if runtime.GOOS == "darwin" {
+			err = exec.Command("open", "-a", "Visual Studio Code", target).Start()
+		} else if runtime.GOOS == "windows" {
+			err = exec.Command("cmd.exe", "/c", "code", target).Start()
+		} else {
+			err = exec.Command("code", target).Start()
+		}
+		if err != nil {
+			// Fallback to "code" command
+			if err2 := exec.Command("code", target).Start(); err2 != nil {
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": fmt.Sprintf("Could not open VS Code: %v", err)})
+				return
+			}
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"ok":        true,
+			"targetDir": target,
+			"message":   fmt.Sprintf("Opened project in VS Code: %s", target),
+		})
+	})
+
+	mux.HandleFunc("/api/sim-control", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var req struct {
+			Action      string `json:"action"` // "status", "start", "stop", "restart", "pause", "resume"
+			ProjectPath string `json:"projectPath"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		if req.Action == "" {
+			req.Action = "status"
+		}
+		target := expandHome(strings.TrimSpace(req.ProjectPath))
+		if target != "" && !filepath.IsAbs(target) {
+			target = filepath.Join(root, target)
+		}
+
+		payload, _ := json.Marshal(map[string]interface{}{
+			"action":      req.Action,
+			"projectPath": target,
+		})
+		client := &http.Client{Timeout: 3 * time.Second}
+		resp, err := client.Post("http://127.0.0.1:47129/mcp", "application/json", bytes.NewReader(payload))
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"ok":          false,
+				"vscodeLive":  false,
+				"error":       fmt.Sprintf("VS Code bridge (127.0.0.1:47129) not reachable: %v", err),
+				"instruction": "Open VS Code with the Wokwi extension to connect the live simulator bridge.",
+			})
+			return
+		}
+		defer resp.Body.Close()
+		var out map[string]interface{}
+		_ = json.NewDecoder(resp.Body).Decode(&out)
+		out["vscodeLive"] = true
+		_ = json.NewEncoder(w).Encode(out)
 	})
 
 	mux.HandleFunc("/api/fix-project", func(w http.ResponseWriter, r *http.Request) {
