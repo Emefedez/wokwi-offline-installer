@@ -501,6 +501,8 @@
     <symbol id="i-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
     <symbol id="i-stop" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></symbol>
     <symbol id="i-vscode" viewBox="0 0 24 24"><path d="M17.5 2 7 11.5 2 7.5v9l5-4 10.5 9.5 4.5-2V4l-4.5-2z"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></symbol>
   </svg>
 
   <!-- TOP BAR: Brand · Two Main Workspaces Switcher · Status & TUI -->
@@ -702,6 +704,15 @@
         e-Paper Screen
       </button>
       <button onclick="visAddPartPrompt()">+ Part...</button>
+      <div class="divider"></div>
+      <button id="btn-undo" onclick="visUndo()" title="Undo (Ctrl+Z / Cmd+Z)" disabled>
+        <svg class="icon"><use href="#i-undo"/></svg>
+        Undo
+      </button>
+      <button id="btn-redo" onclick="visRedo()" title="Redo (Ctrl+Y / Cmd+Shift+Z)" disabled>
+        <svg class="icon"><use href="#i-redo"/></svg>
+        Redo
+      </button>
       <div class="divider"></div>
       <button onclick="visZoom(0.85)" title="Zoom Out">&minus;</button>
       <span id="vis-zoom-label" class="readout" style="min-width:38px;text-align:center;font-size:11.5px;">100%</span>
@@ -1890,7 +1901,73 @@
       zoom: 0.92,
       lastCanSteer: 90,
       lastCanThrottle: 50,
+      undoStack: [],
+      redoStack: [],
+      isApplyingHistory: false,
     };
+
+    function visSnapshot() {
+      return JSON.stringify({
+        parts: visState.parts,
+        connections: visState.connections,
+        selectedIndex: visState.selectedIndex,
+      });
+    }
+
+    function visPushHistory() {
+      if (visState.isApplyingHistory) return;
+      const snap = visSnapshot();
+      if (visState.undoStack.length > 0 && visState.undoStack[visState.undoStack.length - 1] === snap) {
+        return;
+      }
+      visState.undoStack.push(snap);
+      if (visState.undoStack.length > 50) visState.undoStack.shift();
+      visState.redoStack = [];
+      visUpdateUndoRedoButtons();
+    }
+
+    function visUpdateUndoRedoButtons() {
+      const uBtn = document.getElementById('btn-undo');
+      const rBtn = document.getElementById('btn-redo');
+      if (uBtn) uBtn.disabled = visState.undoStack.length <= 1;
+      if (rBtn) rBtn.disabled = visState.redoStack.length === 0;
+    }
+
+    function visUndo() {
+      if (visState.undoStack.length <= 1) return;
+      visState.isApplyingHistory = true;
+      const current = visState.undoStack.pop();
+      visState.redoStack.push(current);
+      const prev = JSON.parse(visState.undoStack[visState.undoStack.length - 1]);
+      visState.parts = prev.parts || [];
+      visState.connections = prev.connections || [];
+      visState.selectedIndex = prev.selectedIndex ?? -1;
+      visSelectPart(visState.selectedIndex);
+      visSyncToStep3Preview();
+      visDraw();
+      visRenderPartsList();
+      visState.isApplyingHistory = false;
+      visUpdateUndoRedoButtons();
+      showToast('Undo');
+    }
+
+    function visRedo() {
+      if (visState.redoStack.length === 0) return;
+      visState.isApplyingHistory = true;
+      const nextSnap = visState.redoStack.pop();
+      visState.undoStack.push(nextSnap);
+      const next = JSON.parse(nextSnap);
+      visState.parts = next.parts || [];
+      visState.connections = next.connections || [];
+      visState.selectedIndex = next.selectedIndex ?? -1;
+      visSelectPart(visState.selectedIndex);
+      visSyncToStep3Preview();
+      visDraw();
+      visRenderPartsList();
+      visState.isApplyingHistory = false;
+      visUpdateUndoRedoButtons();
+      showToast('Redo');
+    }
 
     const CHIP_PIN_MAP = {
       'chip-yb_p20m': ['PWM', 'VCC', 'GND', 'FB'],
@@ -2454,6 +2531,7 @@
       window.addEventListener('mouseup', () => {
         if (visState.draggingIndex >= 0) {
           visRenderPartsList();
+          visPushHistory();
         }
         visState.draggingIndex = -1;
         visState.panning = false;
@@ -2631,6 +2709,9 @@
       visSelectPart(visState.parts.length > 0 ? 0 : -1);
       setTimeout(() => visFitView(), 30);
       visSyncToStep3Preview();
+      visState.undoStack = [];
+      visState.redoStack = [];
+      visPushHistory();
     }
 
     function loadStep3DiagramIntoVisualEditor() {
@@ -2760,6 +2841,7 @@
       visSyncToStep3Preview();
       visDraw();
       visRenderPartsList();
+      visPushHistory();
     }
 
     function visUpdatePartConnection() {
@@ -2922,6 +3004,7 @@
       visSyncToStep3Preview();
       visDraw();
       visRenderPartsList();
+      visPushHistory();
     }
 
     function visRenderPartsList() {
