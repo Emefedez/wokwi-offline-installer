@@ -170,11 +170,104 @@ func disableVsCodeAutoUpdate() error {
 	}
 	settings["extensions.autoUpdate"] = false
 	settings["extensions.autoCheckUpdates"] = false
+
+	home, _ := os.UserHomeDir()
+	wokwiBin := filepath.Join(home, ".wokwi", "bin")
+	pioWin := filepath.Join(home, ".platformio", "penv", "Scripts")
+	pioUnix := filepath.Join(home, ".platformio", "penv", "bin")
+
+	settings["terminal.integrated.env.windows"] = map[string]string{
+		"PATH": fmt.Sprintf("%s;%s;${env:PATH}", wokwiBin, pioWin),
+	}
+	settings["terminal.integrated.env.osx"] = map[string]string{
+		"PATH": fmt.Sprintf("%s:%s:${env:PATH}", wokwiBin, pioUnix),
+	}
+	settings["terminal.integrated.env.linux"] = map[string]string{
+		"PATH": fmt.Sprintf("%s:%s:${env:PATH}", wokwiBin, pioUnix),
+	}
+
 	out, err := json.MarshalIndent(settings, "", "  ")
 	if err != nil {
 		return err
 	}
 	return os.WriteFile(sPath, append(out, '\n'), 0644)
+}
+
+func installPioWrapperAndFallbacks(root string) error {
+	home, _ := os.UserHomeDir()
+	wokwiDir := filepath.Join(home, ".wokwi")
+	fbDst := filepath.Join(wokwiDir, "firmware-fallbacks")
+	binDir := filepath.Join(wokwiDir, "bin")
+	_ = os.MkdirAll(fbDst, 0755)
+	_ = os.MkdirAll(binDir, 0755)
+
+	srcFb := filepath.Join(root, "firmware-fallbacks")
+	if info, err := os.Stat(srcFb); err == nil && info.IsDir() {
+		_ = copyDirRecursive(srcFb, fbDst)
+	}
+
+	unixScript := "#!/usr/bin/env sh\nexec node \"$HOME/.wokwi/firmware-fallbacks/pio-fallback.js\" \"$@\"\n"
+	winScript := "@echo off\r\nnode \"%USERPROFILE%\\.wokwi\\firmware-fallbacks\\pio-fallback.js\" %*\r\n"
+
+	for _, name := range []string{"pio", "platformio"} {
+		uPath := filepath.Join(binDir, name)
+		_ = os.WriteFile(uPath, []byte(unixScript), 0755)
+		_ = os.Chmod(uPath, 0755)
+		wPath := filepath.Join(binDir, name+".cmd")
+		_ = os.WriteFile(wPath, []byte(winScript), 0644)
+	}
+	return nil
+}
+
+func provisionFirmwareFallbacksToProject(root, targetDir string) ([]string, error) {
+	home, _ := os.UserHomeDir()
+	fbDir := filepath.Join(root, "firmware-fallbacks")
+	if _, err := os.Stat(filepath.Join(fbDir, "firmware.bin")); err != nil {
+		fbDir = filepath.Join(home, ".wokwi", "firmware-fallbacks")
+	}
+	var provisioned []string
+	binFiles := []string{"bootloader.bin", "partitions.bin", "firmware.bin"}
+	destDirs := []string{
+		filepath.Join(targetDir, "build"),
+		filepath.Join(targetDir, ".pio", "build", "esp32-s3-wokwi"),
+		filepath.Join(targetDir, ".pio", "build", "esp32-s3-n16r16"),
+	}
+	for _, d := range destDirs {
+		_ = os.MkdirAll(d, 0755)
+		for _, bf := range binFiles {
+			src := filepath.Join(fbDir, bf)
+			dst := filepath.Join(d, bf)
+			if _, err := os.Stat(src); err == nil {
+				if _, dstErr := os.Stat(dst); dstErr != nil {
+					if copyFile(src, dst) == nil {
+						rel, _ := filepath.Rel(targetDir, dst)
+						provisioned = append(provisioned, rel)
+					}
+				}
+			}
+		}
+	}
+	flasherSrc := filepath.Join(fbDir, "flasher_args.json")
+	flasherDst := filepath.Join(targetDir, "flasher_args.json")
+	if _, err := os.Stat(flasherSrc); err == nil {
+		if _, dstErr := os.Stat(flasherDst); dstErr != nil {
+			if copyFile(flasherSrc, flasherDst) == nil {
+				provisioned = append(provisioned, "flasher_args.json")
+			}
+		}
+	}
+	batDst := filepath.Join(targetDir, "build_wokwi.bat")
+	if _, err := os.Stat(batDst); err != nil {
+		batContent := "@echo off\r\ncd /d \"%~dp0\"\r\nnode \"%USERPROFILE%\\.wokwi\\firmware-fallbacks\\pio-fallback.js\" run -e esp32-s3-wokwi %*\r\n"
+		_ = os.WriteFile(batDst, []byte(batContent), 0644)
+	}
+	shDst := filepath.Join(targetDir, "build_wokwi.sh")
+	if _, err := os.Stat(shDst); err != nil {
+		shContent := "#!/usr/bin/env sh\nset -eu\ncd \"$(dirname \"$0\")\"\nnode \"$HOME/.wokwi/firmware-fallbacks/pio-fallback.js\" run -e esp32-s3-wokwi \"$@\"\n"
+		_ = os.WriteFile(shDst, []byte(shContent), 0755)
+		_ = os.Chmod(shDst, 0755)
+	}
+	return provisioned, nil
 }
 
 func extractWpkBundle(bundlePath, cacheDir string) (int, error) {
@@ -281,6 +374,7 @@ func ensureDefaultTestingAssets(root string) {
 	home, _ := os.UserHomeDir()
 	wokwiDir := filepath.Join(home, ".wokwi")
 	_ = os.MkdirAll(wokwiDir, 0755)
+	_ = installPioWrapperAndFallbacks(root)
 
 	destBundle := filepath.Join(wokwiDir, "bundle.wpk")
 	if _, err := os.Stat(destBundle); err != nil {
@@ -484,6 +578,9 @@ func runFullEnvironmentSetup(root, extVersion, bundlePath, licenseInput string, 
 	}
 	if err := copyDirRecursive(filepath.Join(root, "hardware"), filepath.Join(wokwiDir, "hardware-elements")); err == nil {
 		summary = append(summary, "Installed RC Car & ESP32Calc hardware elements to "+filepath.Join(wokwiDir, "hardware-elements"))
+	}
+	if err := installPioWrapperAndFallbacks(root); err == nil {
+		summary = append(summary, "Installed cross-platform pio wrapper (~/.wokwi/bin) & ESP32-S3 .bin fallbacks (~/.wokwi/firmware-fallbacks)")
 	}
 
 	// 2. Disable VS Code extension auto-update
@@ -714,6 +811,10 @@ func generateProjectFromCounts(root, targetDir string, cat *Catalog, counts map[
 		return nil, err
 	}
 
+	if prov, err := provisionFirmwareFallbacksToProject(root, targetDir); err == nil {
+		copiedChips = append(copiedChips, prov...)
+	}
+
 	return copiedChips, nil
 }
 
@@ -818,11 +919,44 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 				}
 			}
 		}
+		if prov, err := provisionFirmwareFallbacksToProject(root, target); err == nil {
+			copied = append(copied, prov...)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"ok":          true,
 			"targetDir":   target,
 			"copiedChips": copied,
+		})
+	})
+
+	mux.HandleFunc("/api/fix-project", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var req struct {
+			TargetDir string `json:"targetDir"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+		target := expandHome(strings.TrimSpace(req.TargetDir))
+		if target == "" {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": "empty project directory"})
+			return
+		}
+		if !filepath.IsAbs(target) {
+			target = filepath.Join(root, target)
+		}
+		prov, err := provisionFirmwareFallbacksToProject(root, target)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"ok":          true,
+			"targetDir":   target,
+			"provisioned": prov,
+			"message":     fmt.Sprintf("Provisioned pre-built ESP32-S3 .bin files + cross-platform pio scripts in %s", target),
 		})
 	})
 
@@ -1139,10 +1273,24 @@ func main() {
 	license := flag.String("license", "", "Valid Wokwi license key or path to user.tok")
 	loadTok := flag.String("load-user-tok", "", "Manually load and overwrite ~/.wokwi/user.tok from file path or raw token (no LLM)")
 	overwriteTok := flag.String("overwrite-user-tok", "", "Alias for --load-user-tok: overwrite ~/.wokwi/user.tok from file path or raw token")
+	fixProj := flag.String("fix-project", "", "Populate pre-built ESP32-S3 .bin files + cross-platform pio fallback scripts in existing project (e.g. XCasFW)")
 	mcp := flag.String("mcp", "", "Space/comma separated MCP targets to install")
 	flag.Parse()
 
 	root := resolveInstallerRoot()
+
+	if strings.TrimSpace(*fixProj) != "" {
+		target := expandHome(strings.TrimSpace(*fixProj))
+		prov, err := provisionFirmwareFallbacksToProject(root, target)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "fix-project error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("[+] Provisioned pre-built .bin firmware & cross-platform pio scripts in %s: %v\n", target, prov)
+		if *outDir == "" && *countsArg == "" && *bundle == "" && *license == "" && *mcp == "" && !*guiMode && !*tuiMode {
+			return
+		}
+	}
 
 	tokInput := strings.TrimSpace(*loadTok)
 	if tokInput == "" {

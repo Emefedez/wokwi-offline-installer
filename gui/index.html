@@ -544,7 +544,23 @@
               <li><strong>Disables VS Code Extension Auto-Updates:</strong> Writes <code>"extensions.autoUpdate": false</code> and <code>"extensions.autoCheckUpdates": false</code> into your VS Code <code>settings.json</code> (macOS, Linux, and Windows).</li>
               <li><strong>Extracts <code>bundle.wpk</code> into <code>.cache/</code>:</strong> Unpacks the offline simulator UI &amp; WebAssembly cores (<code>entry.js</code>, <code>index.html</code>) directly into the extension's <code>.cache/</code> folder.</li>
               <li><strong>Forces Offline Simulator Launch:</strong> Patched <code>WokwiWebview.getHTML()</code> immediately loads your local <code>.cache/entry.js</code> (using your bundle's public key) instead of connecting to <code>wokwi.com</code>.</li>
+              <li><strong>Cross-Platform <code>pio</code> Wrapper &amp; Automatic <code>.bin</code> Fallback (Windows, macOS, Linux):</strong> Installs <code>~/.wokwi/bin/pio</code> (and <code>pio.cmd</code>) + pre-built ESP32-S3 / XCasFW <code>bootloader.bin</code>, <code>partitions.bin</code>, and <code>firmware.bin</code> in <code>~/.wokwi/firmware-fallbacks/</code>. If PlatformIO is not installed or fails to produce a <code>.bin</code>, Wokwi automatically provisions and boots the pre-built <code>.bin</code> firmware without errors!</li>
             </ol>
+          </div>
+
+          <div class="card">
+            <h2>
+              <span>Fix Missing <code>.bin</code> / No-PIO Error in Existing Project (e.g. <code>XCasFW</code>)</span>
+              <span class="badge badge-ok">Windows / macOS / Linux</span>
+            </h2>
+            <p style="font-size:0.83rem;color:var(--muted);margin-top:0;">
+              Even without clicking this, the patched Wokwi extension automatically populates missing <code>.bin</code> files on startup. You can also pre-populate any project folder (like <code>XCasFW</code>) with pre-built <code>.pio/build/esp32-s3-wokwi/*.bin</code>, <code>build/*.bin</code>, <code>flasher_args.json</code>, and <code>build_wokwi.bat</code> / <code>build_wokwi.sh</code> right here:
+            </p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <input type="text" id="fix-proj-dir" placeholder="Path to XCasFW or ESP32 project folder (e.g. C:\...\ESP32Calc\XCasFW)" style="flex:1;" />
+              <button class="btn btn-primary" onclick="fixExistingProjectBins()">Populate Pre-Built <code>.bin</code> Files Now</button>
+            </div>
+            <div id="fix-proj-toast" class="status-toast"></div>
           </div>
         </div>
       </div>
@@ -1388,6 +1404,32 @@
       a.href = URL.createObjectURL(blob);
       a.download = filename;
       a.click();
+    }
+
+    async function fixExistingProjectBins() {
+      const targetDir = document.getElementById('fix-proj-dir').value.trim();
+      const toast = document.getElementById('fix-proj-toast');
+      if (!targetDir) {
+        alert('Please enter the path to the project folder (e.g. XCasFW).');
+        return;
+      }
+      try {
+        const res = await fetch('/api/fix-project', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetDir }),
+        });
+        const out = await res.json();
+        toast.style.display = 'block';
+        if (out.ok) {
+          toast.textContent = out.message + ' (' + (out.provisioned || []).join(', ') + ')';
+        } else {
+          toast.textContent = 'Error: ' + (out.error || 'Failed to populate .bin files');
+        }
+      } catch (err) {
+        toast.style.display = 'block';
+        toast.textContent = 'Error communicating with local setup server: ' + err.message;
+      }
     }
 
     init();

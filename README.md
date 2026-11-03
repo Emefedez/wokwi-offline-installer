@@ -80,11 +80,30 @@ Choose what components to add to `wokwi.toml` and `diagram.json` (with presets f
    ./install.sh --cli --load-user-tok /path/to/my-user.tok
    # Windows:
    WokwiOfflineSetup.exe --cli --load-user-tok C:\path\to\my-user.tok
+
+   # Populate pre-built ESP32-S3 / XCasFW .bin files & cross-platform pio scripts into an existing project (no PIO needed):
+   ./install.sh --cli --fix-project /path/to/ESP32Calc/XCasFW
+   WokwiOfflineSetup.exe --cli --fix-project C:\path\to\ESP32Calc\XCasFW
    ```
 
 ---
 
-## 2. Dual Extension Version Support (`v3.7.0` & `v4.1.0`) & Offline Architecture
+## 2. Automatic `pio` Wrapper & Missing `.bin` Circumvention (Windows, macOS, Linux)
+
+For projects like **`XCasFW` (`ESP32Calc`)** or newly generated ESP32-S3 projects where PlatformIO (`pio`) is not installed or fails to build `.bin` files (such as Windows `MAX_PATH` / linker errors or missing `.pio/build/esp32-s3-wokwi/*.bin`):
+
+1. **Zero-Config Extension Auto-Fallback (`extension-3.7.0` & `extension-4.1.0`)**:
+   - Whenever Wokwi starts a simulation and a `.bin` file or `flasher_args.json` (`.pio/build/esp32-s3-wokwi/bootloader.bin`, `partitions.bin`, `firmware.bin`, or `build/firmware.bin`) is missing in the workspace, the patched extension **automatically provisions it from `~/.wokwi/firmware-fallbacks/`**, writes it into the expected workspace path, and boots the simulator immediately without throwing a `.bin` error.
+   - If `wokwi.toml` points directly to an unmerged app `.bin` (`build/firmware.bin`), the extension automatically pairs it with `bootloader.bin` (`0x0`) and `partitions.bin` (`0x8000`) as `flashSections`.
+2. **Cross-Platform `pio` / `platformio` Wrapper (`~/.wokwi/bin/pio` & `pio.cmd`)**:
+   - Added automatically to VS Code's integrated terminal `PATH` on **Windows, macOS, and Linux**.
+   - Runs real PlatformIO (`~/.platformio/penv/...`) if installed; if `pio` is not installed or exits with a build error, it automatically provisions the pre-built `.bin` files so `build_wokwi.sh` / `build_wokwi.bat` and Wokwi Simulation always succeed.
+3. **One-Click GUI & CLI Project Fixer (`--fix-project`)**:
+   - In **Step 1** of the GUI (or via `--fix-project <path>`), you can also pre-populate any existing project folder (`XCasFW`, `ESP32Calc`, or custom firmware) with `.pio/build/esp32-s3-wokwi/{bootloader.bin,partitions.bin,firmware.bin}`, `build/*.bin`, `flasher_args.json`, `build_wokwi.sh`, and `build_wokwi.bat`.
+
+---
+
+## 3. Dual Extension Version Support (`v3.7.0` & `v4.1.0`) & Offline Architecture
 
 Both **`extension-3.7.0`** (`wokwi.wokwi-vscode-3.7.0`, also archived in `vsix/Wokwi.wokwi-vscode-3.7.0.vsix`) and **`extension-4.1.0`** (`wokwi.wokwi-vscode-4.1.0`) are bundled and patched with identical offline guarantees:
 
