@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "required": ["version", "author", "editor", "parts", "connections"],
+  "properties": {
+    "version": {
+      "enum": [1]
+    },
+    "author": {
+      "type": "string",
+      "title": "Author name"
+    },
+    "editor": {
+      "type": "string",
+      "title": "Software used to create this file",
+      "default": "wokwi",
+      "examples": ["wokwi"]
+    },
+    "pacman": {
+      "type": "boolean"
+    },
+    "parts": {
+      "type": "array",
+      "title": "List of parts",
+      "items": {
+        "required": ["id", "type"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "left": { "type": "number" },
+          "top": { "type": "number" },
+          "rotate": { "type": "number" },
+          "attrs": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "hide": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": false
+      }
+    },
+    "connections": {
+      "type": "array",
+      "title": "List of part connections",
+      "items": {
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 4,
+        "items": [
+          {
+            "type": "string",
+            "title": "From pin",
+            "pattern": "^.+:.+$"
+          },
+          {
+            "type": "string",
+            "title": "To pin",
+            "pattern": "^.+:.+$"
+          },
+          {
+            "type": "string",
+            "title": "Wire color",
+            "format": "color",
+            "examples": ["black", "red", "green"]
+          },
+          {
+            "type": "array",
+            "items": {
+              "pattern": "^[vh]-?[0-9]+|\\*$",
+              "type": "string"
+            }
+          }
+        ],
+        "additionalItems": false
+      }
+    },
+    "serialMonitor": {
+      "type": "object",
+      "properties": {
+        "display": {
+          "type": "string",
+          "enum": ["always", "never", "auto", "plotter", "terminal"],
+          "default": "auto"
+        },
+        "newline": {
+          "type": "string",
+          "enum": ["none", "lf", "cr", "crlf"]
+        }
+      }
+    }
+  }
+}

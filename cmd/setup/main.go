@@ -359,17 +359,83 @@ func saveLicenseToken(input string) (string, error) {
 	return res["message"].(string), nil
 }
 
-func runFullEnvironmentSetup(root, bundlePath, licenseInput string, mcpTargets []string) (string, error) {
+func updateVsCodeExtensionsManifest(extensionsRoot, version string) {
+	manifestPath := filepath.Join(extensionsRoot, "extensions.json")
+	raw, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return
+	}
+	var entries []map[string]interface{}
+	if err := json.Unmarshal(raw, &entries); err != nil {
+		return
+	}
+	relLoc := "wokwi.wokwi-vscode-" + version
+	fullPath := filepath.Join(extensionsRoot, relLoc)
+	found := false
+	for i := range entries {
+		if idObj, ok := entries[i]["identifier"].(map[string]interface{}); ok {
+			if strings.EqualFold(fmt.Sprint(idObj["id"]), "wokwi.wokwi-vscode") {
+				entries[i]["version"] = version
+				entries[i]["relativeLocation"] = relLoc
+				if locObj, ok := entries[i]["location"].(map[string]interface{}); ok {
+					locObj["path"] = filepath.ToSlash(fullPath)
+					locObj["fsPath"] = fullPath
+				}
+				found = true
+			}
+		}
+	}
+	if !found {
+		entries = append(entries, map[string]interface{}{
+			"identifier": map[string]interface{}{"id": "wokwi.wokwi-vscode"},
+			"version":    version,
+			"location": map[string]interface{}{
+				"$mid":   1,
+				"fsPath": fullPath,
+				"path":   filepath.ToSlash(fullPath),
+				"scheme": "file",
+			},
+			"relativeLocation": relLoc,
+			"metadata": map[string]interface{}{
+				"installedTimestamp": time.Now().UnixMilli(),
+				"pinned":             true,
+				"source":             "vsix",
+			},
+		})
+	}
+	if out, err := json.Marshal(entries); err == nil {
+		_ = os.WriteFile(manifestPath, out, 0644)
+	}
+}
+
+func runFullEnvironmentSetup(root, extVersion, bundlePath, licenseInput string, mcpTargets []string) (string, error) {
+	if extVersion != "4.1.0" {
+		extVersion = "3.7.0"
+	}
 	home, _ := os.UserHomeDir()
 	wokwiDir := filepath.Join(home, ".wokwi")
-	extDir := filepath.Join(home, ".vscode", "extensions", "wokwi.wokwi-vscode-4.1.0")
+	extensionsRoot := filepath.Join(home, ".vscode", "extensions")
+	extDir := filepath.Join(extensionsRoot, "wokwi.wokwi-vscode-"+extVersion)
+	otherVer := "4.1.0"
+	if extVersion == "4.1.0" {
+		otherVer = "3.7.0"
+	}
+	otherExtDir := filepath.Join(extensionsRoot, "wokwi.wokwi-vscode-"+otherVer)
 	cacheDir := filepath.Join(extDir, ".cache")
 
 	var summary []string
 
-	// 1. Copy extension & hardware & MCP
-	if err := copyDirRecursive(filepath.Join(root, "extension"), extDir); err == nil {
-		summary = append(summary, "Installed offline-first Wokwi extension to "+extDir)
+	// Remove other version folder so VS Code loads the selected version cleanly
+	_ = os.RemoveAll(otherExtDir)
+
+	// 1. Copy selected extension & hardware & MCP
+	srcExtDir := filepath.Join(root, "extension-"+extVersion)
+	if _, err := os.Stat(srcExtDir); err != nil {
+		srcExtDir = filepath.Join(root, "extension")
+	}
+	if err := copyDirRecursive(srcExtDir, extDir); err == nil {
+		updateVsCodeExtensionsManifest(extensionsRoot, extVersion)
+		summary = append(summary, fmt.Sprintf("Installed offline-first Wokwi v%s extension to %s", extVersion, extDir))
 	}
 	if err := copyDirRecursive(filepath.Join(root, "mcp"), filepath.Join(wokwiDir, "mcp")); err == nil {
 		summary = append(summary, "Installed Wokwi Offline MCP to "+filepath.Join(wokwiDir, "mcp"))
@@ -383,18 +449,42 @@ func runFullEnvironmentSetup(root, bundlePath, licenseInput string, mcpTargets [
 		summary = append(summary, "Disabled VS Code extension auto-update in settings.json")
 	}
 
-	// 3. Extract .wpk bundle
-	if bundlePath != "" {
-		if n, err := extractWpkBundle(bundlePath, cacheDir); err == nil {
+	// 3. Extract .wpk bundle (auto-fallback to ~/.wokwi/bundle.wpk or ~/.wokwi/files/bundle.wpk)
+	resolvedBundle := expandHome(strings.TrimSpace(bundlePath))
+	if resolvedBundle == "" {
+		for _, cand := range []string{
+			filepath.Join(wokwiDir, "bundle.wpk"),
+			filepath.Join(wokwiDir, "files", "bundle.wpk"),
+		} {
+			if _, err := os.Stat(cand); err == nil {
+				resolvedBundle = cand
+				break
+			}
+		}
+	}
+	if resolvedBundle != "" {
+		if n, err := extractWpkBundle(resolvedBundle, cacheDir); err == nil {
 			summary = append(summary, fmt.Sprintf("Extracted %d files from bundle.wpk into %s", n, cacheDir))
 		} else {
 			summary = append(summary, "Bundle warning: "+err.Error())
 		}
 	}
 
-	// 4. Save license
-	if licenseInput != "" {
-		if msg, err := saveLicenseToken(licenseInput); err == nil && msg != "" {
+	// 4. Save license (auto-fallback to ~/.wokwi/user.tok or ~/.wokwi/files/user.tok)
+	resolvedLic := strings.TrimSpace(licenseInput)
+	if resolvedLic == "" {
+		for _, cand := range []string{
+			filepath.Join(wokwiDir, "user.tok"),
+			filepath.Join(wokwiDir, "files", "user.tok"),
+		} {
+			if _, err := os.Stat(cand); err == nil {
+				resolvedLic = cand
+				break
+			}
+		}
+	}
+	if resolvedLic != "" {
+		if msg, err := saveLicenseToken(resolvedLic); err == nil && msg != "" {
 			summary = append(summary, msg)
 		}
 	}
@@ -729,12 +819,13 @@ func runGUIServer(root string, port int) error {
 
 	mux.HandleFunc("/api/run-setup", func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
+			ExtVersion   string   `json:"extVersion"`
 			BundlePath   string   `json:"bundlePath"`
 			LicenseInput string   `json:"licenseInput"`
 			McpTargets   []string `json:"mcpTargets"`
 		}
 		_ = json.NewDecoder(r.Body).Decode(&req)
-		msg, err := runFullEnvironmentSetup(root, req.BundlePath, req.LicenseInput, req.McpTargets)
+		msg, err := runFullEnvironmentSetup(root, req.ExtVersion, req.BundlePath, req.LicenseInput, req.McpTargets)
 		w.Header().Set("Content-Type", "application/json")
 		if err != nil {
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "message": err.Error()})
@@ -819,6 +910,7 @@ func runTUI(root string) error {
 
 	if choice == "2" || choice == "3" {
 		fmt.Println("\n--- Offline Environment & License Setup ---")
+		extVer := promptLine(reader, "Select Wokwi VS Code Extension Version to install (3.7.0 / 4.1.0)", "3.7.0")
 		bundle := promptLine(reader, "Path to offline bundle.wpk", "~/.wokwi/bundle.wpk")
 		lic := promptLine(reader, "Valid Wokwi license key or path to user.tok", "~/.wokwi/user.tok")
 		mcp := promptLine(reader, "MCP clients to install (t3 anthropic opencode codex antigravity vscode all none)", "t3 anthropic")
@@ -826,7 +918,7 @@ func runTUI(root string) error {
 		if mcp != "none" {
 			targets = strings.Fields(mcp)
 		}
-		msg, _ := runFullEnvironmentSetup(root, bundle, lic, targets)
+		msg, _ := runFullEnvironmentSetup(root, extVer, bundle, lic, targets)
 		fmt.Println("[+] " + msg)
 	}
 
@@ -897,6 +989,7 @@ func main() {
 	outDir := flag.String("out", "", "Output project folder to generate wokwi.toml & diagram.json")
 	firmware := flag.String("firmware", "build/firmware.bin", "Firmware path in wokwi.toml")
 	elf := flag.String("elf", "build/firmware.elf", "ELF path in wokwi.toml")
+	extVer := flag.String("ext-version", "3.7.0", "Wokwi VS Code extension version to install (3.7.0 or 4.1.0)")
 	bundle := flag.String("bundle", "", "Path to offline bundle.wpk")
 	license := flag.String("license", "", "Valid Wokwi license key or path to user.tok")
 	loadTok := flag.String("load-user-tok", "", "Manually load and overwrite ~/.wokwi/user.tok from file path or raw token (no LLM)")
@@ -938,9 +1031,9 @@ func main() {
 	}
 
 	if *cliMode || *outDir != "" || *countsArg != "" || *bundle != "" || *license != "" || *mcp != "" {
-		if *bundle != "" || *license != "" || *mcp != "" {
+		if *bundle != "" || *license != "" || *mcp != "" || (*cliMode && *outDir == "" && *countsArg == "") {
 			targets := strings.Fields(strings.ReplaceAll(*mcp, ",", " "))
-			msg, err := runFullEnvironmentSetup(root, *bundle, *license, targets)
+			msg, err := runFullEnvironmentSetup(root, *extVer, *bundle, *license, targets)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Setup error: %v\n", err)
 				os.Exit(1)

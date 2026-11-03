@@ -2,7 +2,7 @@
 	"name": "wokwi-vscode",
 	"displayName": "Wokwi Simulator",
 	"description": "Simulator for Embedded & IoT Systems: ARM, ESP32, Arduino, etc.",
-	"version": "4.1.0",
+	"version": "3.7.0",
 	"author": "Wokwi",
 	"homepage": "https://wokwi.com",
 	"bugs": {
@@ -17,13 +17,13 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onStartupFinished",
 		"onUri",
 		"onCommand:wokwi-vscode.start",
 		"onCommand:wokwi-vscode.startAndWait",
 		"onCommand:wokwi-vscode.newLicense",
 		"onCommand:wokwi-vscode.enterLicense",
-		"onCommand:wokwi-vscode.selectConfigFile"
+		"onCommand:wokwi-vscode.selectConfigFile",
+		"onCommand:wokwi-vscode.loadUserTok"
 	],
 	"main": "./dist/extension.js",
 	"icon": "images/icon.png",
@@ -71,11 +71,6 @@
 				"icon": "$(edit)"
 			},
 			{
-				"command": "wokwi-vscode.loadUserTok",
-				"title": "Wokwi: Load and Overwrite user.tok",
-				"icon": "$(key)"
-			},
-			{
 				"command": "wokwi-vscode.selectConfigFile",
 				"title": "Wokwi: Select Config File",
 				"icon": "$(file)"
@@ -106,11 +101,6 @@
 				"icon": "$(debug-restart)"
 			},
 			{
-				"command": "wokwi-vscode.stopSimulation",
-				"title": "Stop Simulation",
-				"icon": "$(debug-stop)"
-			},
-			{
 				"command": "wokwi-vscode.togglePrivacyMode",
 				"title": "Wokwi: Toggle Privacy Mode",
 				"icon": "$(eye-closed)"
@@ -119,6 +109,11 @@
 				"command": "wokwi-vscode.refreshExplorer",
 				"title": "Refresh",
 				"icon": "$(refresh)"
+			},
+			{
+				"command": "wokwi-vscode.loadUserTok",
+				"title": "Load and Overwrite user.tok",
+				"category": "Wokwi"
 			}
 		],
 		"menus": {
@@ -220,10 +215,5 @@
 		"react-dom": "^19.2.0",
 		"uf2": "^2.0.0",
 		"ws": "^8.18.0"
-	},
-	"__metadata": {
-		"installedTimestamp": 1793703760232,
-		"targetPlatform": "undefined",
-		"size": 16875391
 	}
 }

@@ -1,19 +1,5 @@
 # Changelog
 
-## 4.1.0 - 2026-10-23
-
-- New "Stop Simulation" command (command palette and the Wokwi sidebar): stops the simulation and writes the SD card contents back when `writeback` is set
-
-## 4.0.1 - 2026-10-18
-
-- Fix a new GDB connection receiving a stale reply left over from the previous connection
-
-## 4.0.0 - 2026-10-01
-
-- SD card support (https://github.com/wokwi/wokwi-features/issues/581)
-  - An `sdcard/` folder next to `wokwi.toml` is copied onto the simulated micro SD card at every start (no config needed)
-  - New `[[sdcard]]` section in `wokwi.toml`: `folder` or `image` (raw disk image), `size` (`8M` default, up to `256M`), `writeback` (write the card contents back to the folder / image when the simulation stops or restarts), `part` (needed only with several cards)
-
 ## 3.7.0 - 2026-08-28
 
 - Offer switching to offline mode when the simulator is slow to load (requires an offline license and a downloaded offline bundle)

@@ -1,0 +1,219 @@
+{
+	"name": "wokwi-vscode",
+	"displayName": "Wokwi Simulator",
+	"description": "Simulator for Embedded & IoT Systems: ARM, ESP32, Arduino, etc.",
+	"version": "3.7.0",
+	"author": "Wokwi",
+	"homepage": "https://wokwi.com",
+	"bugs": {
+		"url": "https://github.com/wokwi/wokwi-features/issues"
+	},
+	"publisher": "Wokwi",
+	"repository": {},
+	"engines": {
+		"vscode": "^1.72.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onUri",
+		"onCommand:wokwi-vscode.start",
+		"onCommand:wokwi-vscode.startAndWait",
+		"onCommand:wokwi-vscode.newLicense",
+		"onCommand:wokwi-vscode.enterLicense",
+		"onCommand:wokwi-vscode.selectConfigFile",
+		"onCommand:wokwi-vscode.loadUserTok"
+	],
+	"main": "./dist/extension.js",
+	"icon": "images/icon.png",
+	"galleryBanner": {
+		"color": "#0078d7",
+		"theme": "light"
+	},
+	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "wokwi-sidebar",
+					"title": "Wokwi Simulator",
+					"icon": "$(wokwi-icon)"
+				}
+			]
+		},
+		"views": {
+			"wokwi-sidebar": [
+				{
+					"id": "wokwi-explorer",
+					"name": "Wokwi"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "wokwi-vscode.start",
+				"title": "Wokwi: Start Simulator",
+				"icon": "$(play)"
+			},
+			{
+				"command": "wokwi-vscode.startAndWait",
+				"title": "Wokwi: Start Simulator and Wait for Debugger",
+				"icon": "$(debug-alt)"
+			},
+			{
+				"command": "wokwi-vscode.newLicense",
+				"title": "Wokwi: Request a New License",
+				"icon": "$(key)"
+			},
+			{
+				"command": "wokwi-vscode.enterLicense",
+				"title": "Wokwi: Manually Enter License Key",
+				"icon": "$(edit)"
+			},
+			{
+				"command": "wokwi-vscode.selectConfigFile",
+				"title": "Wokwi: Select Config File",
+				"icon": "$(file)"
+			},
+			{
+				"command": "wokwi-vscode.viewLicense",
+				"title": "View License Information",
+				"icon": "$(info)"
+			},
+			{
+				"command": "wokwi-vscode.openDocumentation",
+				"title": "Open Documentation",
+				"icon": "$(book)"
+			},
+			{
+				"command": "wokwi-vscode.pauseSimulation",
+				"title": "Pause Simulation",
+				"icon": "$(debug-pause)"
+			},
+			{
+				"command": "wokwi-vscode.resumeSimulation",
+				"title": "Resume Simulation",
+				"icon": "$(debug-continue)"
+			},
+			{
+				"command": "wokwi-vscode.restartSimulation",
+				"title": "Restart Simulation",
+				"icon": "$(debug-restart)"
+			},
+			{
+				"command": "wokwi-vscode.togglePrivacyMode",
+				"title": "Wokwi: Toggle Privacy Mode",
+				"icon": "$(eye-closed)"
+			},
+			{
+				"command": "wokwi-vscode.refreshExplorer",
+				"title": "Refresh",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "wokwi-vscode.loadUserTok",
+				"title": "Load and Overwrite user.tok",
+				"category": "Wokwi"
+			}
+		],
+		"menus": {
+			"view/title": [
+				{
+					"command": "wokwi-vscode.refreshExplorer",
+					"when": "view == wokwi-explorer",
+					"group": "navigation"
+				}
+			]
+		},
+		"jsonValidation": [
+			{
+				"url": "./schemas/diagram.schema.json",
+				"fileMatch": "diagram.json"
+			},
+			{
+				"url": "./schemas/diagram.schema.json",
+				"fileMatch": "diagram.*.json"
+			},
+			{
+				"url": "./schemas/chip.schema.json",
+				"fileMatch": "*.chip.json"
+			}
+		],
+		"customEditors": [
+			{
+				"viewType": "wokwi.diagram-editor",
+				"displayName": "Wokwi Diagram Editor",
+				"selector": [
+					{
+						"filenamePattern": "{file,untitled,vscode-vfs,vscode-remote}:/**/diagram.json"
+					},
+					{
+						"filenamePattern": "{file,untitled,vscode-vfs,vscode-remote}:/**/diagram.*.json"
+					}
+				]
+			}
+		],
+		"configuration": {
+			"title": "Wokwi Simulator",
+			"properties": {
+				"wokwi.hidePersonalInfo": {
+					"type": "boolean",
+					"default": false,
+					"description": "Hide your name and email in the Wokwi UI (useful for streaming and presentations)"
+				}
+			}
+		},
+		"icons": {
+			"wokwi-icon": {
+				"description": "Wokwi icon",
+				"default": {
+					"fontPath": "./media/wokwi.woff",
+					"fontCharacter": "\\0041"
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run package",
+		"compile": "npm run compile:extension && npm run compile:webview",
+		"compile:extension": "vite build",
+		"compile:webview": "vite build --config vite.webview.config.ts",
+		"watch": "concurrently \"npm run watch:extension\" \"npm run watch:webview\"",
+		"watch:extension": "vite build --watch",
+		"watch:webview": "vite build --watch --config vite.webview.config.ts",
+		"package": "rimraf dist && vite build --mode production && vite build --mode production --config vite.webview.config.ts",
+		"pretest": "npm run compile && npm run lint",
+		"lint": "eslint src",
+		"test": "vitest --run",
+		"test:watch": "vitest"
+	},
+	"devDependencies": {
+		"@types/fs-extra": "^11.0.4",
+		"@types/node": "^22.13.10",
+		"@types/react": "^19.2.2",
+		"@types/react-dom": "^19.2.2",
+		"@types/vscode": "^1.72.0",
+		"@types/ws": "^8.5.14",
+		"@vitejs/plugin-react": "^5.1.0",
+		"concurrently": "^9.2.1",
+		"eslint": "^9.19.0",
+		"fs-extra": "^11.2.0",
+		"rimraf": "^3.0.2",
+		"rollup-plugin-license": "^3.6.0",
+		"typescript": "^5.2.2",
+		"typescript-eslint": "^8.56.1",
+		"vite": "^7.0.4",
+		"vitest": "^3.2.4"
+	},
+	"dependencies": {
+		"@iarna/toml": "^3.0.0",
+		"@vscode/webview-ui-toolkit": "^1.4.0",
+		"@wokwi-packages/wokwigw-wasm": "^2.0.7",
+		"cross-fetch": "^4.1.0",
+		"esp32-roms": "^1.20260528.0",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
+		"uf2": "^2.0.0",
+		"ws": "^8.18.0"
+	}
+}

@@ -1,0 +1,80 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  text-decoration: none;
+}
+
+#loading-message {
+  font-size: 3em;
+}
+
+#offline-message {
+  font-size: 2em;
+}
+
+/* Floating toast offering to switch to offline mode. The z-index lifts it
+   above the iframe, which would otherwise paint over it and capture clicks. */
+#offline-switch {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-editorWidget-foreground);
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 4px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  text-align: center;
+}
+
+#offline-switch p {
+  margin: 0 0 8px;
+}
+
+#offline-switch button {
+  font: inherit;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 2px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+#offline-switch button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.full-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  user-select: none;
+}
+
+.hidden {
+  display: none;
+}
+
+iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  border: none;
+}

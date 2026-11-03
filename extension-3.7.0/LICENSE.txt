@@ -1,0 +1,18 @@
+wokwi-vscode - https://wokwi.com/
+
+Copyright (c) 2019-2024 CodeMagic LTD - All Rights Reserved.
+
+The List of third party components licenses used in this extension can be viewed here:
+
+https://wokwi.com/legal/licenses
+
+Your use of this extension implies your acceptance of our Terms available at:
+
+https://wokwi.com/legal/terms
+
+Wokwi for VS Code is a proprietary (closed source) software.
+
+IMPORTANT:
+Wokwi is a tool made by software developers for software developers with passion and love for what we do.
+Pirating the tool is not only illegal and just morally wrong, it is also unfair to other fellow programmers who are using it legally,
+and very harmful for the tool and its future.

@@ -485,6 +485,13 @@
             </p>
             <div class="form-grid">
               <div class="form-group full">
+                <label>Wokwi VS Code Extension Version to Install (Both Include Backported MCP + Offline Bundle Fix)</label>
+                <select id="inst-ext-version">
+                  <option value="3.7.0" selected>Wokwi v3.7.0 (Recommended — Legacy Offline Bundle Target + Backported MCP)</option>
+                  <option value="4.1.0">Wokwi v4.1.0 (Latest Extension + Offline Bundle Fix &amp; Backported MCP)</option>
+                </select>
+              </div>
+              <div class="form-group full">
                 <label>Path to Offline Bundle (<code>bundle.wpk</code>)</label>
                 <input type="text" id="inst-bundle" value="~/.wokwi/bundle.wpk" />
               </div>
@@ -888,6 +895,7 @@
     }
 
     async function runFullSetup() {
+      const extVersion = document.getElementById('inst-ext-version').value || '3.7.0';
       const bundlePath = document.getElementById('inst-bundle').value.trim();
       const licenseInput = document.getElementById('inst-license').value.trim();
       const checked = Array.from(document.querySelectorAll('#mcp-client-checks input:checked')).map((c) => c.value);
@@ -896,7 +904,7 @@
         const res = await fetch('/api/run-setup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bundlePath, licenseInput, mcpTargets: checked }),
+          body: JSON.stringify({ extVersion, bundlePath, licenseInput, mcpTargets: checked }),
         });
         const out = await res.json();
         toast.style.display = 'block';

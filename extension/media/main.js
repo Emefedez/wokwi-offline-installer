@@ -7,6 +7,7 @@
   const offlineSwitch = document.querySelector('#offline-switch');
   const offlineSwitchButton = document.querySelector('#offline-switch-button');
   const vscode = acquireVsCodeApi();
+  if (document.body.dataset.offline) { vscode.postMessage({ command: 'goOffline' }); return; }
   let wokwiPort = null;
   let wokwiLoaded = false;
 
