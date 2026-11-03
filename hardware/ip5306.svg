@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="136" height="98" viewBox="0 0 136 98">
+  <defs>
+    <g id="ip-hole">
+      <circle cx="0" cy="0" r="3.4" fill="#090d14" stroke="#eab308" stroke-width="1.5"/>
+    </g>
+  </defs>
+  <!-- IP5306 Power Management PCB -->
+  <rect x="2" y="2" width="132" height="94" rx="5" fill="#065f46" stroke="#10b981" stroke-width="1.2"/>
+  <text x="68" y="13" text-anchor="middle" fill="#a7f3d0" font-family="monospace" font-size="6.8" font-weight="bold">IP5306 5V 2.4A BMS</text>
+  <!-- Left 5 Gold Pads (VIN, BAT, VOUT, GND, KEY) -->
+  <use href="#ip-hole" x="10" y="20"/>
+  <use href="#ip-hole" x="10" y="35"/>
+  <use href="#ip-hole" x="10" y="50"/>
+  <use href="#ip-hole" x="10" y="65"/>
+  <use href="#ip-hole" x="10" y="80"/>
+  <g fill="#ecfdf5" font-family="monospace" font-size="7" font-weight="bold">
+    <text x="17" y="22.5">VIN</text>
+    <text x="17" y="37.5">BAT</text>
+    <text x="17" y="52.5">VOUT</text>
+    <text x="17" y="67.5">GND</text>
+    <text x="17" y="82.5">KEY</text>
+  </g>
+  <!-- Shielded 2R2 Power Inductor + ESOP-8 IP5306 IC -->
+  <rect x="44" y="18" width="28" height="28" rx="3" fill="#334155" stroke="#94a3b8" stroke-width="1"/>
+  <circle cx="58" cy="32" r="10" fill="#1e293b"/>
+  <text x="58" y="34.5" text-anchor="middle" fill="#e2e8f0" font-family="monospace" font-size="7.5" font-weight="bold">2R2</text>
+  <rect x="44" y="52" width="32" height="26" rx="2" fill="#18181b" stroke="#64748b" stroke-width="1"/>
+  <text x="60" y="64" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="6.8" font-weight="bold">IP5306</text>
+  <text x="60" y="73" text-anchor="middle" fill="#34d399" font-family="monospace" font-size="5.5">BOOST+CHG</text>
+  <!-- 4 Blue Battery Gauge SMD LEDs -->
+  <g fill="#38bdf8" stroke="#bae6fd" stroke-width="0.6">
+    <rect x="83" y="18" width="5" height="5" rx="1"/>
+    <rect x="83" y="33" width="5" height="5" rx="1"/>
+    <rect x="83" y="48" width="5" height="5" rx="1"/>
+    <rect x="83" y="63" width="5" height="5" rx="1"/>
+  </g>
+  <!-- Right 4 Gold Pads (LED1..LED4) -->
+  <use href="#ip-hole" x="126" y="20"/>
+  <use href="#ip-hole" x="126" y="35"/>
+  <use href="#ip-hole" x="126" y="50"/>
+  <use href="#ip-hole" x="126" y="65"/>
+  <g fill="#ecfdf5" font-family="monospace" font-size="7" font-weight="bold" text-anchor="end">
+    <text x="119" y="22.5">LED1</text>
+    <text x="119" y="37.5">LED2</text>
+    <text x="119" y="52.5">LED3</text>
+    <text x="119" y="67.5">LED4</text>
+  </g>
+</svg>

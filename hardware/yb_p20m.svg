@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="145" height="96" viewBox="0 0 170.08 119.55">
+  <defs>
+    <g id="servo-pin">
+      <circle cx="0" cy="0" r="2.8" fill="#090d14" stroke="#eab308" stroke-width="1.2"/>
+    </g>
+  </defs>
+  <g stroke-width="2.7" fill="none">
+    <path stroke="#b44200" d="m 83.32,56.6 c0,0 -32.99,0.96 -43.32,0 -6.20,-0.58 -10.60,-6.20 -14.87,-6.31"/>
+    <path stroke="#ff2300" d="m83.326 59.6h-62.971"/>
+    <path stroke="#f47b00" d="m 83.32,62.6 c0,0 -32.60,-0.61 -43.33,-0.15 -6.87,0.29 -12.01,6.82 -14.77,6.73"/>
+  </g>
+  <rect fill="#555" y="45.5" width="25.71" height="28" rx="1.5"/>
+  <use href="#servo-pin" x="4.7" y="50.06"/>
+  <use href="#servo-pin" x="4.7" y="59.66"/>
+  <use href="#servo-pin" x="4.7" y="69.26"/>
+  <rect fill="#374151" x="50" y="51.5" width="118" height="16.5" rx="2"/>
+  <rect fill="#4b5563" x="64.255" y="37.911" width="90.241" height="43.725" rx="5.33" stroke="#9ca3af" stroke-width="1"/>
+  <circle fill="#9ca3af" cx="91.467" cy="59.773" r="18.6"/>
+  <rect x="85.5" y="14" width="12" height="91" rx="6" fill="#e5e8ed" stroke="#475569" stroke-width="1.2"/>
+  <circle cx="91.467" cy="22" r="2.2" fill="#334155"/>
+  <circle cx="91.467" cy="30" r="2.2" fill="#334155"/>
+  <circle cx="91.467" cy="89" r="2.2" fill="#334155"/>
+  <circle cx="91.467" cy="97" r="2.2" fill="#334155"/>
+  <circle fill="#64748b" cx="91.467" cy="59.773" r="7.5"/>
+  <circle fill="#e2e8f0" cx="91.467" cy="59.773" r="4.5"/>
+</svg>

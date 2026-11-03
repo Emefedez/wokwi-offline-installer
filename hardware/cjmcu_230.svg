@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="136" height="84" viewBox="0 0 136 84">
+  <defs>
+    <g id="cjmcu-hole">
+      <circle cx="0" cy="0" r="3.5" fill="#090d14" stroke="#eab308" stroke-width="1.5"/>
+    </g>
+  </defs>
+  <!-- CJMCU-230 Purple/Violet Breakout PCB -->
+  <rect x="2" y="2" width="132" height="80" rx="5" fill="#3b1d6e" stroke="#a78bfa" stroke-width="1.3"/>
+  <text x="68" y="13" text-anchor="middle" fill="#ddd6fe" font-family="monospace" font-size="7" font-weight="bold">CJMCU-230 CAN</text>
+  <!-- Left 4 Gold Pads (D, GND, VCC, R) -->
+  <use href="#cjmcu-hole" x="10" y="20"/>
+  <use href="#cjmcu-hole" x="10" y="35"/>
+  <use href="#cjmcu-hole" x="10" y="50"/>
+  <use href="#cjmcu-hole" x="10" y="65"/>
+  <g fill="#f5f3ff" font-family="monospace" font-size="7.2" font-weight="bold">
+    <text x="17" y="22.5">D</text>
+    <text x="17" y="37.5">GND</text>
+    <text x="17" y="52.5">VCC</text>
+    <text x="17" y="67.5">R</text>
+  </g>
+  <!-- SOIC-8 SN65HVD230 (VP230) IC Package + Gull-Wing Leads -->
+  <g fill="#cbd5e1">
+    <rect x="44" y="24" width="5" height="3"/>
+    <rect x="44" y="32" width="5" height="3"/>
+    <rect x="44" y="40" width="5" height="3"/>
+    <rect x="44" y="48" width="5" height="3"/>
+    <rect x="87" y="24" width="5" height="3"/>
+    <rect x="87" y="32" width="5" height="3"/>
+    <rect x="87" y="40" width="5" height="3"/>
+    <rect x="87" y="48" width="5" height="3"/>
+  </g>
+  <rect x="48" y="20" width="40" height="36" rx="2" fill="#18181b" stroke="#64748b" stroke-width="1"/>
+  <circle cx="53" cy="25" r="2" fill="#a78bfa"/>
+  <text x="68" y="36" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="7" font-weight="bold">VP230</text>
+  <text x="68" y="46" text-anchor="middle" fill="#a78bfa" font-family="monospace" font-size="5.8">SN65HVD230</text>
+  <!-- 120 Ohm SMD Bus Termination Resistor (121) -->
+  <rect x="56" y="62" width="24" height="10" rx="1.5" fill="#0f172a" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="68" y="69.5" text-anchor="middle" fill="#fde047" font-family="monospace" font-size="6.5" font-weight="bold">120Ω</text>
+  <!-- Right 4 Gold Pads (VREF, CANL, CANH, RS) -->
+  <use href="#cjmcu-hole" x="126" y="20"/>
+  <use href="#cjmcu-hole" x="126" y="35"/>
+  <use href="#cjmcu-hole" x="126" y="50"/>
+  <use href="#cjmcu-hole" x="126" y="65"/>
+  <g fill="#f5f3ff" font-family="monospace" font-size="7.2" font-weight="bold" text-anchor="end">
+    <text x="119" y="22.5">VREF</text>
+    <text x="119" y="37.5">CANL</text>
+    <text x="119" y="52.5">CANH</text>
+    <text x="119" y="67.5">RS</text>
+  </g>
+</svg>

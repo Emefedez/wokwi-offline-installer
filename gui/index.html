@@ -22,12 +22,12 @@
       --menu: #292d33;
       --fill: #30343b;
 
-      /* Red UI Accent Trio (main, soft, hover) */
-      --accent: #ff6b6b;
-      --accent-soft: #482124;
-      --accent-hover: #5c2a2e;
+      /* Purple UI Accent Trio (main, soft, hover) — Red reserved strictly for errors/danger */
+      --accent: #a78bfa;
+      --accent-soft: #2e214d;
+      --accent-hover: #3d2c66;
 
-      --danger: #ffaaa3;
+      --danger: #ff6b6b;
       --danger-soft: #432220;
       --ok: #9be3bd;
       --ok-soft: #173a2a;
@@ -99,7 +99,7 @@
     .primary, [aria-pressed="true"], [aria-selected="true"] {
       background: var(--accent-soft);
       color: var(--accent);
-      border-color: rgba(255, 107, 107, 0.35);
+      border-color: rgba(167, 139, 250, 0.38);
       font-weight: 600;
     }
     .primary:hover { background: var(--accent-hover); }
@@ -214,19 +214,20 @@
       color: var(--ok);
     }
 
-    /* Context Toolbar (28px controls) */
+    /* Context Toolbar (28px controls, wrap-safe so right actions never clip) */
     .toolbar {
       display: flex;
       align-items: center;
-      gap: 6px;
-      height: 36px;
-      padding: 0 12px;
+      flex-wrap: wrap;
+      gap: 5px;
+      min-height: 36px;
+      padding: 4px 10px;
       border-bottom: 1px solid var(--line);
       background: var(--chrome);
     }
     .toolbar button {
       background: transparent;
-      padding: 3px 9px;
+      padding: 3px 8px;
       font-size: 12px;
     }
     .toolbar button:hover {
@@ -406,7 +407,7 @@
       font-size: 12px;
     }
     .elem-item.active {
-      background: rgba(255, 107, 107, 0.08);
+      background: rgba(167, 139, 250, 0.1);
       border-left: 3px solid var(--accent);
     }
     .qty-stepper {
@@ -445,7 +446,7 @@
       stroke-dasharray: none;
     }
     .wokwi-part-group:hover .part-selection-outline {
-      stroke: rgba(255, 107, 107, 0.65);
+      stroke: rgba(167, 139, 250, 0.65);
       stroke-width: 1.5;
     }
 
@@ -681,29 +682,30 @@
   <div id="view-layout" style="display:flex;flex-direction:column;flex:1;min-height:0;" hidden>
     <!-- CONTEXT TOOLBAR -->
     <div class="toolbar" role="toolbar" aria-label="Layout and part tools">
-      <button class="primary" onclick="applyPreset('rc-car')">RC Car + CAN Preset</button>
-      <button onclick="applyPreset('esp32calc')">ESP32Calc Preset</button>
-      <button onclick="loadXcasfwIntoVisualEditor()">XCasFW 54-Key Layout</button>
+      <button class="primary" onclick="applyPreset('rc-car')">RC Car + CAN</button>
+      <button onclick="applyPreset('esp32calc')">ESP32Calc (+Screen)</button>
+      <button onclick="loadXcasfwIntoVisualEditor()">XCasFW 54-Key</button>
       <div class="divider"></div>
       <button class="primary" onclick="visAddPushbutton()">
         <svg class="icon"><use href="#i-plus"/></svg>
-        Add Pushbutton
+        Button
       </button>
       <button onclick="visAddCanTerminal()">
         <svg class="icon"><use href="#i-plus"/></svg>
-        Add CAN Terminal
+        CAN Term
       </button>
-      <button onclick="visAddPartPrompt()">
+      <button onclick="visAddScreenPart()">
         <svg class="icon"><use href="#i-plus"/></svg>
-        Add Part...
+        e-Paper Screen
       </button>
+      <button onclick="visAddPartPrompt()">+ Part...</button>
       <div class="divider"></div>
       <button onclick="visZoom(0.85)" title="Zoom Out">&minus;</button>
-      <span id="vis-zoom-label" class="readout" style="min-width:42px;text-align:center;font-size:12px;">100%</span>
+      <span id="vis-zoom-label" class="readout" style="min-width:38px;text-align:center;font-size:11.5px;">100%</span>
       <button onclick="visZoom(1.18)" title="Zoom In">+</button>
-      <button onclick="visFitView()">Fit View</button>
+      <button onclick="visFitView()">Fit</button>
       <div class="divider"></div>
-      <input type="text" id="vis-file-path" value="./rc-car-wokwi/diagram.json" style="width:210px;" title="Target diagram.json path" />
+      <input type="text" id="vis-file-path" value="./rc-car-wokwi/diagram.json" style="width:168px;" title="Target diagram.json path" />
       <button onclick="loadVisualEditorFromDisk()">Load JSON</button>
       <button class="ok-btn" onclick="saveGeneratedProject()">
         <svg class="icon"><use href="#i-save"/></svg>
@@ -905,11 +907,14 @@
         </details>
       </aside>
 
-      <!-- BOTTOM DOCK: SIMULATED CAN BUS TERMINAL | WOKWI.TOML | DIAGRAM.JSON -->
+      <!-- BOTTOM DOCK: SIMULATED CAN BUS TERMINAL | FREERTOS CAN CODE | WOKWI.TOML | DIAGRAM.JSON -->
       <section class="dock dock-bottom">
         <div class="dock-tabs" role="tablist">
           <button id="btm-tab-btn-can" role="tab" aria-selected="true" onclick="switchBottomTab('can')">
             Simulated CAN Bus Terminal (<code>chip-can_terminal</code> &rarr; <code>CJMCU-230</code> &rarr; <code>ESP32-S3</code>)
+          </button>
+          <button id="btm-tab-btn-rtos" role="tab" aria-selected="false" onclick="switchBottomTab('rtos')">
+            FreeRTOS CAN Code &amp; Config (ESP32-S3 TWAI)
           </button>
           <button id="btm-tab-btn-toml" role="tab" aria-selected="false" onclick="switchBottomTab('toml')">
             Generated <code>wokwi.toml</code>
@@ -956,12 +961,33 @@
           <textarea id="can-terminal-log" readonly style="width:100%;height:100%;background:var(--canvas);color:var(--ok);border-color:var(--line);font-size:11.5px;"></textarea>
         </div>
 
-        <!-- BOTTOM TAB 2: WOKWI.TOML -->
+        <!-- BOTTOM TAB 2: FREERTOS CAN 2.0A CODE & CONFIG SNIPPETS -->
+        <div id="btm-tab-rtos" style="display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:10px;padding:8px 12px;flex:1;min-height:0;overflow:hidden;" hidden>
+          <div style="display:flex;flex-direction:column;min-height:0;gap:4px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:11.5px;font-weight:600;color:var(--accent);"><code>src/freertos_can_rc_car.c</code> — ESP-IDF / FreeRTOS TWAI RX + Actuator + TX Tasks</span>
+              <div style="display:flex;gap:6px;">
+                <button class="primary" style="min-height:22px;padding:1px 8px;font-size:11px;" onclick="copyTextById('preview-freertos-c', 'Copied FreeRTOS CAN C code')">Copy C Code</button>
+                <button style="min-height:22px;padding:1px 8px;font-size:11px;" onclick="downloadFile('freertos_can_rc_car.c', document.getElementById('preview-freertos-c').value)">Download .c</button>
+              </div>
+            </div>
+            <textarea id="preview-freertos-c" style="flex:1;width:100%;background:var(--canvas);font-size:11.5px;"></textarea>
+          </div>
+          <div style="display:flex;flex-direction:column;min-height:0;gap:4px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:11.5px;font-weight:600;color:var(--ok);"><code>platformio.ini</code> &amp; <code>sdkconfig.defaults</code> (FreeRTOS 1000Hz + IRAM TWAI ISR)</span>
+              <button class="primary" style="min-height:22px;padding:1px 8px;font-size:11px;" onclick="copyTextById('preview-freertos-ini', 'Copied platformio.ini & sdkconfig')">Copy Config</button>
+            </div>
+            <textarea id="preview-freertos-ini" style="flex:1;width:100%;background:var(--canvas);font-size:11.5px;"></textarea>
+          </div>
+        </div>
+
+        <!-- BOTTOM TAB 3: WOKWI.TOML -->
         <div id="btm-tab-toml" style="padding:8px 12px;flex:1;min-height:0;display:flex;flex-direction:column;" hidden>
           <textarea id="preview-toml" style="flex:1;width:100%;"></textarea>
         </div>
 
-        <!-- BOTTOM TAB 3: DIAGRAM.JSON -->
+        <!-- BOTTOM TAB 4: DIAGRAM.JSON -->
         <div id="btm-tab-diag" style="padding:8px 12px;flex:1;min-height:0;display:flex;flex-direction:column;" hidden>
           <textarea id="preview-diagram" style="flex:1;width:100%;"></textarea>
         </div>
@@ -1058,10 +1084,181 @@
     }
 
     function switchBottomTab(tab) {
-      for (const k of ['can', 'toml', 'diag']) {
-        document.getElementById(`btm-tab-${k}`).hidden = k !== tab;
-        document.getElementById(`btm-tab-btn-${k}`).setAttribute('aria-selected', String(k === tab));
+      for (const k of ['can', 'rtos', 'toml', 'diag']) {
+        const panel = document.getElementById(`btm-tab-${k}`);
+        const btn = document.getElementById(`btm-tab-btn-${k}`);
+        if (panel) panel.hidden = k !== tab;
+        if (btn) btn.setAttribute('aria-selected', String(k === tab));
       }
+    }
+
+    function copyTextById(id, toastMsg) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      navigator.clipboard?.writeText(el.value).catch(() => {});
+      showToast(toastMsg || 'Copied to clipboard');
+    }
+
+    function buildFreeRtosCanSnippets() {
+      const motorV = parseInt(document.getElementById('cfg-motor-v')?.value || '12', 10) || 12;
+      const cCode = [
+        '/**',
+        ' * ESP32-S3 FreeRTOS CAN 2.0A (TWAI) + RC Car Actuator Firmware',
+        ' * Hardware: ESP32-S3-DevKitC-1 + CJMCU-230 (SN65HVD230) + 2x YB-P20M Servos + 4x JGB37-520 + 4x IRF520',
+        ' * CAN Bus:  500 kbps (ISO 11898-2) | TX = GPIO4 -> CJMCU-230:D | RX = GPIO5 <- CJMCU-230:R',
+        ' */',
+        '#include <stdio.h>',
+        '#include <string.h>',
+        '#include "freertos/FreeRTOS.h"',
+        '#include "freertos/task.h"',
+        '#include "freertos/queue.h"',
+        '#include "driver/twai.h"',
+        '#include "driver/ledc.h"',
+        '#include "esp_log.h"',
+        '',
+        '#define CAN_TX_GPIO          GPIO_NUM_4',
+        '#define CAN_RX_GPIO          GPIO_NUM_5',
+        '#define CAN_ID_CMD           0x120   // RX: [cmd, steer_deg, throttle_pct, seq, ...]',
+        '#define CAN_ID_BRAKE         0x100   // RX: Emergency Brake',
+        '#define CAN_ID_ACK           0x128   // TX: [0xAC, 0x5A, cmd, steer_deg, throttle_pct, status, crc, seq]',
+        '#define CAN_WATCHDOG_MS      250     // Failsafe neutral timeout if CAN bus goes silent',
+        '',
+        '#define SERVO_FRONT_GPIO     GPIO_NUM_17',
+        '#define SERVO_REAR_GPIO      GPIO_NUM_18',
+        '#define MOTOR_FL_PWM_GPIO    GPIO_NUM_6',
+        '#define MOTOR_FR_PWM_GPIO    GPIO_NUM_7',
+        '#define MOTOR_RL_PWM_GPIO    GPIO_NUM_8',
+        '#define MOTOR_RR_PWM_GPIO    GPIO_NUM_9',
+        '',
+        'typedef struct {',
+        '    uint8_t  cmd_type;      // 0=Steer+Throttle, 1=SteerOnly, 2=EmergencyBrake, 3=DiagPing',
+        '    uint8_t  steer_deg;     // 0..180 deg (90 = center, 1500 us)',
+        '    uint8_t  throttle_pct;  // 0..100 %',
+        '    uint32_t rx_tick;',
+        '} rc_can_cmd_t;',
+        '',
+        'static QueueHandle_t xActuatorQueue = NULL;',
+        'static QueueHandle_t xCanTxQueue    = NULL;',
+        'static const char *TAG = "RC_CAN_RTOS";',
+        '',
+        'static uint32_t servo_deg_to_duty(uint8_t deg) {',
+        '    if (deg > 180) deg = 180;',
+        '    uint32_t pulse_us = 500 + ((uint32_t)deg * 2000) / 180; // 500..2500 us @ 50Hz (20000 us period)',
+        '    return (pulse_us * ((1 << 14) - 1)) / 20000;',
+        '}',
+        '',
+        '/* Core 0 Priority 10: Real-Time TWAI (CAN 2.0A) Receive & Protocol Parser Task */',
+        'static void vCanRxTask(void *pvParameters) {',
+        '    twai_message_t rx_msg;',
+        '    uint8_t seq = 0;',
+        '    for (;;) {',
+        '        if (twai_receive(&rx_msg, pdMS_TO_TICKS(50)) == ESP_OK && !rx_msg.rtr) {',
+        '            rc_can_cmd_t cmd = { .cmd_type = 0, .steer_deg = 90, .throttle_pct = 0, .rx_tick = xTaskGetTickCount() };',
+        '            if (rx_msg.identifier == CAN_ID_BRAKE) {',
+        '                cmd.cmd_type = 2; cmd.steer_deg = 90; cmd.throttle_pct = 0;',
+        '            } else if (rx_msg.identifier == CAN_ID_CMD && rx_msg.data_length_code >= 3) {',
+        '                cmd.cmd_type     = rx_msg.data[0];',
+        '                cmd.steer_deg    = rx_msg.data[1] > 180 ? 180 : rx_msg.data[1];',
+        '                cmd.throttle_pct = (cmd.cmd_type == 2) ? 0 : (rx_msg.data[2] > 100 ? 100 : rx_msg.data[2]);',
+        '            }',
+        '            xQueueOverwrite(xActuatorQueue, &cmd);',
+        '',
+        '            twai_message_t ack = { .identifier = CAN_ID_ACK, .data_length_code = 8 };',
+        '            ack.data[0] = 0xAC; ack.data[1] = 0x5A;',
+        '            ack.data[2] = cmd.cmd_type; ack.data[3] = cmd.steer_deg;',
+        '            ack.data[4] = cmd.throttle_pct; ack.data[5] = 0x01; // STATUS_OK',
+        '            ack.data[6] = (uint8_t)(0xAC ^ 0x5A ^ cmd.steer_deg ^ cmd.throttle_pct);',
+        '            ack.data[7] = ++seq;',
+        '            xQueueSend(xCanTxQueue, &ack, 0);',
+        '        }',
+        '    }',
+        '}',
+        '',
+        '/* Core 0 Priority 9: TWAI Transmit & Automatic Bus-Off Recovery Task */',
+        'static void vCanTxTask(void *pvParameters) {',
+        '    twai_message_t tx_msg;',
+        '    twai_status_info_t status;',
+        '    for (;;) {',
+        '        if (twai_get_status_info(&status) == ESP_OK && status.state == TWAI_STATE_BUS_OFF) {',
+        '            ESP_LOGW(TAG, "TWAI Bus-Off detected, initiating recovery...");',
+        '            twai_initiate_recovery();',
+        '            vTaskDelay(pdMS_TO_TICKS(100));',
+        '            twai_start();',
+        '        }',
+        '        if (xQueueReceive(xCanTxQueue, &tx_msg, pdMS_TO_TICKS(50)) == pdPASS) {',
+        '            twai_transmit(&tx_msg, pdMS_TO_TICKS(20));',
+        '        }',
+        '    }',
+        '}',
+        '',
+        '/* Core 1 Priority 8: 200Hz Servo & 4WD MOSFET PWM Control Loop with CAN Watchdog */',
+        'static void vActuatorTask(void *pvParameters) {',
+        '    rc_can_cmd_t active = { .cmd_type = 0, .steer_deg = 90, .throttle_pct = 0, .rx_tick = xTaskGetTickCount() };',
+        '    TickType_t xLastWakeTime = xTaskGetTickCount();',
+        '    for (;;) {',
+        '        xQueuePeek(xActuatorQueue, &active, 0);',
+        '        if ((xTaskGetTickCount() - active.rx_tick) > pdMS_TO_TICKS(CAN_WATCHDOG_MS)) {',
+        '            active.steer_deg = 90; active.throttle_pct = 0; // Watchdog failsafe neutral',
+        '        }',
+        '        uint32_t servo_duty = servo_deg_to_duty(active.steer_deg);',
+        '        uint32_t motor_duty = ((uint32_t)active.throttle_pct * 255) / 100;',
+        '        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, servo_duty);',
+        '        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);',
+        '        for (int ch = 2; ch < 6; ch++) {',
+        '            ledc_set_duty(LEDC_LOW_SPEED_MODE, (ledc_channel_t)ch, motor_duty);',
+        '            ledc_update_duty(LEDC_LOW_SPEED_MODE, (ledc_channel_t)ch);',
+        '        }',
+        '        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5)); // Deterministic 200Hz RTOS loop',
+        '    }',
+        '}',
+        '',
+        'void app_main(void) {',
+        '    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(CAN_TX_GPIO, CAN_RX_GPIO, TWAI_MODE_NORMAL);',
+        '    g_config.rx_queue_len = 32; g_config.tx_queue_len = 16;',
+        '    twai_timing_config_t  t_config = TWAI_TIMING_CONFIG_500KBITS();',
+        '    twai_filter_config_t  f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();',
+        '    ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));',
+        '    ESP_ERROR_CHECK(twai_start());',
+        '',
+        '    xActuatorQueue = xQueueCreate(1, sizeof(rc_can_cmd_t));',
+        '    xCanTxQueue    = xQueueCreate(16, sizeof(twai_message_t));',
+        '',
+        '    xTaskCreatePinnedToCore(vCanRxTask,    "CAN_RX",   4096, NULL, 10, NULL, 0);',
+        '    xTaskCreatePinnedToCore(vCanTxTask,    "CAN_TX",   4096, NULL,  9, NULL, 0);',
+        '    xTaskCreatePinnedToCore(vActuatorTask, "ACTUATOR", 4096, NULL,  8, NULL, 1);',
+        '    ESP_LOGI(TAG, "FreeRTOS CAN 2.0A (500 kbps) + ${motorV}V 4WD Actuator Tasks started");',
+        '}',
+      ].join('\n').replace('${motorV}', String(motorV));
+
+      const iniCode = [
+        '; platformio.ini — ESP32-S3 FreeRTOS + TWAI (CAN 2.0A) Offline Wokwi Configuration',
+        '[env:esp32-s3-wokwi]',
+        'platform = espressif32',
+        'board = esp32-s3-devkitc-1',
+        'framework = espidf',
+        'monitor_speed = 115200',
+        'build_flags =',
+        '  -DCAN_TX_GPIO=4',
+        '  -DCAN_RX_GPIO=5',
+        '  -DCAN_BAUD_500K=1',
+        `  -DMOTOR_BUS_VOLTAGE=${motorV}`,
+        '',
+        '; ---------------------------------------------------------------------------',
+        '; sdkconfig.defaults — FreeRTOS 1000 Hz Tick + IRAM Safe TWAI CAN Interrupts',
+        '; ---------------------------------------------------------------------------',
+        'CONFIG_FREERTOS_HZ=1000',
+        'CONFIG_FREERTOS_UNICORE=n',
+        'CONFIG_TWAI_ISR_IN_IRAM=y',
+        'CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID=y',
+        'CONFIG_ESP_TASK_WDT_EN=y',
+        'CONFIG_ESP_TASK_WDT_TIMEOUT_S=5',
+      ].join('\n');
+
+      const cBox = document.getElementById('preview-freertos-c');
+      const iBox = document.getElementById('preview-freertos-ini');
+      if (cBox) cBox.value = cCode + '\n';
+      if (iBox) iBox.value = iniCode + '\n';
+      return { cCode: cCode + '\n', iniCode: iniCode + '\n' };
     }
 
     function selectExtVersion(ver) {
@@ -1389,6 +1586,7 @@
       const { toml, diagram } = buildTomlAndDiagram();
       document.getElementById('preview-toml').value = toml;
       document.getElementById('preview-diagram').value = diagram;
+      buildFreeRtosCanSnippets();
       updatePowerSummary();
     }
 
@@ -1646,9 +1844,14 @@
       const t = (p.type || '').toLowerCase();
       if (t.includes('pushbutton')) return { w: 67, h: 48 };
       if (t.includes('esp32')) return { w: 108, h: 280 };
-      if (t.includes('weact_213_bw')) return { w: 138, h: 256 };
+      if (t.includes('weact_213_bw') || t.includes('epaper')) return { w: 156, h: 256 };
       if (t.includes('can_terminal')) return { w: 162, h: 98 };
       if (t.includes('yb_p20m') || t.includes('servo')) return { w: 145, h: 96 };
+      if (t.includes('jgb37_520')) return { w: 142, h: 92 };
+      if (t.includes('irf520_pwm')) return { w: 136, h: 84 };
+      if (t.includes('cjmcu_230')) return { w: 136, h: 84 };
+      if (t.includes('ip5306')) return { w: 136, h: 98 };
+      if (t.includes('reg_7v')) return { w: 136, h: 76 };
       if (t.includes('microsd')) return { w: 84, h: 72 };
       const pins = CHIP_PIN_MAP[p.type] || ['VCC', 'GND', 'IN', 'OUT'];
       const half = Math.max(Math.ceil(pins.length / 2), 2);
@@ -1792,7 +1995,314 @@
         `;
       }
 
-      // 5. Official Wokwi Breakout Custom Chip PCB Graphic (sPe: #087f45 PCB + #wokwi-hole gold pads + display)
+      // 5. Authentic Wokwi-grade JGB37-520 12V All-Metal Helical Gearmotor + Hall Encoder SVG
+      if (t.includes('jgb37_520')) {
+        const throt = visState.lastCanThrottle ?? 50;
+        const rpm = Math.round((throt / 100) * 333);
+        const wheelRot = (throt * 3.6) % 360;
+        return `
+          <svg x="0" y="0" width="${dim.w}" height="${dim.h}" viewBox="0 0 142 92">
+            <defs>
+              <linearGradient id="jgb-can-${idx}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#94a3b8"/>
+                <stop offset="45%" stop-color="#cbd5e1"/>
+                <stop offset="100%" stop-color="#475569"/>
+              </linearGradient>
+              <linearGradient id="jgb-gear-${idx}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#64748b"/>
+                <stop offset="50%" stop-color="#94a3b8"/>
+                <stop offset="100%" stop-color="#334155"/>
+              </linearGradient>
+            </defs>
+            <rect x="4" y="8" width="36" height="76" rx="4" fill="#087f45" stroke="#0ca65a" stroke-width="1.2"/>
+            <rect x="34" y="15" width="11" height="62" rx="2" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+            <use href="#wokwi-hole" x="11" y="16"/>
+            <use href="#wokwi-hole" x="11" y="28"/>
+            <use href="#wokwi-hole" x="11" y="40"/>
+            <use href="#wokwi-hole" x="11" y="52"/>
+            <use href="#wokwi-hole" x="11" y="64"/>
+            <use href="#wokwi-hole" x="11" y="76"/>
+            <g fill="#e2fbe8" font-family="monospace" font-size="6.8" font-weight="bold">
+              <text x="17" y="18.5">M1</text>
+              <text x="17" y="30.5">M2</text>
+              <text x="17" y="42.5">GND</text>
+              <text x="17" y="54.5">C1</text>
+              <text x="17" y="66.5">C2</text>
+              <text x="17" y="78.5">VCC</text>
+            </g>
+            <rect x="44" y="17" width="44" height="58" rx="3" fill="url(#jgb-can-${idx})" stroke="#334155" stroke-width="1.2"/>
+            <line x1="52" y1="17" x2="52" y2="75" stroke="#475569" stroke-width="0.9"/>
+            <rect x="55" y="33" width="30" height="24" rx="2" fill="#0f172a" opacity="0.9"/>
+            <text x="70" y="43" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="6.2" font-weight="bold">JGB37-520</text>
+            <text x="70" y="52" text-anchor="middle" fill="#a78bfa" font-family="monospace" font-size="6">${rpm} RPM</text>
+            <rect x="88" y="13" width="31" height="66" rx="3" fill="url(#jgb-gear-${idx})" stroke="#1e293b" stroke-width="1.2"/>
+            <circle cx="94" cy="20" r="2" fill="#334155"/>
+            <circle cx="113" cy="20" r="2" fill="#334155"/>
+            <circle cx="94" cy="72" r="2" fill="#334155"/>
+            <circle cx="113" cy="72" r="2" fill="#334155"/>
+            <rect x="119" y="37" width="6" height="18" rx="1" fill="#eab308" stroke="#854d0e" stroke-width="0.8"/>
+            <rect x="125" y="42" width="12" height="8" rx="1" fill="#e2e8f0" stroke="#475569" stroke-width="0.9"/>
+            <g transform="translate(131 46) rotate(${wheelRot}) translate(-131 -46)">
+              <circle cx="131" cy="46" r="11" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-dasharray="4 3"/>
+            </g>
+          </svg>
+          <text x="${dim.w / 2}" y="${dim.h + 12}" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(p.id)} (${throt}%)</text>
+        `;
+      }
+
+      // 6. Authentic Wokwi-grade IRF520N Power MOSFET Driver Module SVG
+      if (t.includes('irf520_pwm')) {
+        const throt = visState.lastCanThrottle ?? 50;
+        const ledColor = throt > 0 ? '#22c55e' : '#334155';
+        return `
+          <svg x="0" y="0" width="${dim.w}" height="${dim.h}" viewBox="0 0 136 84">
+            <rect x="2" y="2" width="132" height="80" rx="5" fill="#172554" stroke="#3b82f6" stroke-width="1.2"/>
+            <rect x="5" y="20" width="10" height="44" rx="1.5" fill="#1e293b" stroke="#475569" stroke-width="0.8"/>
+            <use href="#wokwi-hole" x="10" y="27"/>
+            <use href="#wokwi-hole" x="10" y="42"/>
+            <use href="#wokwi-hole" x="10" y="57"/>
+            <g fill="#e2e8f0" font-family="monospace" font-size="7" font-weight="bold">
+              <text x="18" y="29.5">SIG</text>
+              <text x="18" y="44.5">VCC</text>
+              <text x="18" y="59.5">GND</text>
+            </g>
+            <rect x="35" y="24" width="6" height="4.5" rx="0.8" fill="${ledColor}" stroke="#bbf7d0" stroke-width="0.6"/>
+            <rect x="45" y="14" width="9" height="56" rx="1" fill="#cbd5e1" stroke="#64748b" stroke-width="1"/>
+            <circle cx="49.5" cy="42" r="2.5" fill="#0f172a"/>
+            <rect x="54" y="18" width="26" height="48" rx="2" fill="#18181b" stroke="#475569" stroke-width="1"/>
+            <text x="67" y="38" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="6.8" font-weight="bold">IRF520N</text>
+            <text x="67" y="49" text-anchor="middle" fill="#a78bfa" font-family="monospace" font-size="6">PWM ${throt}%</text>
+            <rect x="106" y="12" width="24" height="60" rx="2" fill="#0284c7" stroke="#38bdf8" stroke-width="1"/>
+            <circle cx="115" cy="24" r="4" fill="#cbd5e1" stroke="#475569" stroke-width="0.9"/>
+            <circle cx="115" cy="42" r="4" fill="#cbd5e1" stroke="#475569" stroke-width="0.9"/>
+            <circle cx="115" cy="60" r="4" fill="#cbd5e1" stroke="#475569" stroke-width="0.9"/>
+            <use href="#wokwi-hole" x="126" y="24"/>
+            <use href="#wokwi-hole" x="126" y="42"/>
+            <use href="#wokwi-hole" x="126" y="60"/>
+            <g fill="#e0f2fe" font-family="monospace" font-size="6.5" font-weight="bold" text-anchor="end">
+              <text x="103" y="26.5">VIN</text>
+              <text x="103" y="44.5">VPLUS</text>
+              <text x="103" y="62.5">VMINUS</text>
+            </g>
+          </svg>
+          <text x="${dim.w / 2}" y="${dim.h + 12}" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(p.id)}</text>
+        `;
+      }
+
+      // 7. Authentic Wokwi-grade CJMCU-230 (SN65HVD230) Purple CAN Bus Transceiver SVG
+      if (t.includes('cjmcu_230')) {
+        return `
+          <svg x="0" y="0" width="${dim.w}" height="${dim.h}" viewBox="0 0 136 84">
+            <rect x="2" y="2" width="132" height="80" rx="5" fill="#3b1d6e" stroke="#a78bfa" stroke-width="1.3"/>
+            <text x="68" y="13" text-anchor="middle" fill="#ddd6fe" font-family="monospace" font-size="7" font-weight="bold">CJMCU-230 CAN</text>
+            <use href="#wokwi-hole" x="10" y="20"/>
+            <use href="#wokwi-hole" x="10" y="35"/>
+            <use href="#wokwi-hole" x="10" y="50"/>
+            <use href="#wokwi-hole" x="10" y="65"/>
+            <g fill="#f5f3ff" font-family="monospace" font-size="7.2" font-weight="bold">
+              <text x="17" y="22.5">D</text>
+              <text x="17" y="37.5">GND</text>
+              <text x="17" y="52.5">VCC</text>
+              <text x="17" y="67.5">R</text>
+            </g>
+            <g fill="#cbd5e1">
+              <rect x="44" y="24" width="5" height="3"/><rect x="44" y="32" width="5" height="3"/>
+              <rect x="44" y="40" width="5" height="3"/><rect x="44" y="48" width="5" height="3"/>
+              <rect x="87" y="24" width="5" height="3"/><rect x="87" y="32" width="5" height="3"/>
+              <rect x="87" y="40" width="5" height="3"/><rect x="87" y="48" width="5" height="3"/>
+            </g>
+            <rect x="48" y="20" width="40" height="36" rx="2" fill="#18181b" stroke="#64748b" stroke-width="1"/>
+            <circle cx="53" cy="25" r="2" fill="#a78bfa"/>
+            <text x="68" y="35" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="7" font-weight="bold">VP230</text>
+            <text x="68" y="46" text-anchor="middle" fill="#a78bfa" font-family="monospace" font-size="5.8">SN65HVD230</text>
+            <rect x="56" y="61" width="24" height="11" rx="1.5" fill="#0f172a" stroke="#cbd5e1" stroke-width="0.9"/>
+            <text x="68" y="69" text-anchor="middle" fill="#fde047" font-family="monospace" font-size="6.5" font-weight="bold">120&Omega;</text>
+            <use href="#wokwi-hole" x="126" y="20"/>
+            <use href="#wokwi-hole" x="126" y="35"/>
+            <use href="#wokwi-hole" x="126" y="50"/>
+            <use href="#wokwi-hole" x="126" y="65"/>
+            <g fill="#f5f3ff" font-family="monospace" font-size="7.2" font-weight="bold" text-anchor="end">
+              <text x="119" y="22.5">VREF</text>
+              <text x="119" y="37.5">CANL</text>
+              <text x="119" y="52.5">CANH</text>
+              <text x="119" y="67.5">RS</text>
+            </g>
+          </svg>
+          <text x="${dim.w / 2}" y="${dim.h + 12}" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(p.id)}</text>
+        `;
+      }
+
+      // 8. Authentic Wokwi-grade Simulated CAN 2.0A Bus Analyzer & Telemetry Terminal SVG
+      if (t.includes('can_terminal')) {
+        const steerW = Math.round(((visState.lastCanSteer ?? 90) / 180) * 72);
+        const throtW = Math.round(((visState.lastCanThrottle ?? 50) / 100) * 72);
+        return `
+          <svg x="0" y="0" width="${dim.w}" height="${dim.h}" viewBox="0 0 162 98">
+            <rect x="2" y="2" width="158" height="94" rx="6" fill="#18181b" stroke="#a78bfa" stroke-width="1.4"/>
+            <use href="#wokwi-hole" x="10" y="18"/>
+            <use href="#wokwi-hole" x="10" y="33"/>
+            <use href="#wokwi-hole" x="10" y="48"/>
+            <use href="#wokwi-hole" x="10" y="63"/>
+            <g fill="#e4e4e7" font-family="monospace" font-size="7" font-weight="bold">
+              <text x="17" y="20.5">CANH</text>
+              <text x="17" y="35.5">CANL</text>
+              <text x="17" y="50.5">CANTX</text>
+              <text x="17" y="65.5">CANRX</text>
+            </g>
+            <use href="#wokwi-hole" x="152" y="18"/>
+            <use href="#wokwi-hole" x="152" y="33"/>
+            <use href="#wokwi-hole" x="152" y="48"/>
+            <g fill="#e4e4e7" font-family="monospace" font-size="7" font-weight="bold" text-anchor="end">
+              <text x="145" y="20.5">TRIG</text>
+              <text x="145" y="35.5">VCC</text>
+              <text x="145" y="50.5">GND</text>
+            </g>
+            <circle cx="48" cy="12" r="2.2" fill="#a78bfa"/><text x="53" y="14" fill="#a1a1aa" font-family="monospace" font-size="5.8">TX</text>
+            <circle cx="72" cy="12" r="2.2" fill="#34d399"/><text x="77" y="14" fill="#a1a1aa" font-family="monospace" font-size="5.8">RX</text>
+            <circle cx="96" cy="12" r="2.2" fill="#38bdf8"/><text x="101" y="14" fill="#a1a1aa" font-family="monospace" font-size="5.8">500K</text>
+            <rect x="40" y="19" width="82" height="58" rx="3" fill="#090d14" stroke="#a78bfa" stroke-width="1"/>
+            <text x="81" y="30" text-anchor="middle" fill="#a78bfa" font-family="monospace" font-size="7.5" font-weight="bold">CAN 0x120 TERM</text>
+            <text x="45" y="41" fill="#9be3bd" font-family="monospace" font-size="7">STR:${visState.lastCanSteer}&deg; THR:${visState.lastCanThrottle}%</text>
+            <rect x="45" y="46" width="72" height="5" rx="1" fill="#1e293b"/>
+            <rect x="45" y="46" width="${steerW}" height="5" rx="1" fill="#a78bfa"/>
+            <rect x="45" y="54" width="72" height="5" rx="1" fill="#1e293b"/>
+            <rect x="45" y="54" width="${throtW}" height="5" rx="1" fill="#2fc49a"/>
+            <text x="45" y="70" fill="#94a3b8" font-family="monospace" font-size="6.8">ACK:0x128 RTOS OK</text>
+            <rect x="52" y="81" width="58" height="10" rx="2" fill="#27272a" stroke="#52525b" stroke-width="0.8"/>
+            <text x="81" y="88" text-anchor="middle" fill="#d4d4d8" font-family="monospace" font-size="6" font-weight="bold">ISO 11898 CAN2.0A</text>
+          </svg>
+          <text x="${dim.w / 2}" y="${dim.h + 12}" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(p.id)}</text>
+        `;
+      }
+
+      // 9. Authentic Wokwi-grade IP5306 Power Bank & Li-Ion BMS Module SVG
+      if (t.includes('ip5306')) {
+        return `
+          <svg x="0" y="0" width="${dim.w}" height="${dim.h}" viewBox="0 0 136 98">
+            <rect x="2" y="2" width="132" height="94" rx="5" fill="#065f46" stroke="#10b981" stroke-width="1.2"/>
+            <text x="68" y="13" text-anchor="middle" fill="#a7f3d0" font-family="monospace" font-size="6.8" font-weight="bold">IP5306 5V 2.4A BMS</text>
+            <use href="#wokwi-hole" x="10" y="20"/>
+            <use href="#wokwi-hole" x="10" y="35"/>
+            <use href="#wokwi-hole" x="10" y="50"/>
+            <use href="#wokwi-hole" x="10" y="65"/>
+            <use href="#wokwi-hole" x="10" y="80"/>
+            <g fill="#ecfdf5" font-family="monospace" font-size="7" font-weight="bold">
+              <text x="17" y="22.5">VIN</text>
+              <text x="17" y="37.5">BAT</text>
+              <text x="17" y="52.5">VOUT</text>
+              <text x="17" y="67.5">GND</text>
+              <text x="17" y="82.5">KEY</text>
+            </g>
+            <rect x="44" y="18" width="28" height="28" rx="3" fill="#334155" stroke="#94a3b8" stroke-width="1"/>
+            <circle cx="58" cy="32" r="10" fill="#1e293b"/>
+            <text x="58" y="34.5" text-anchor="middle" fill="#e2e8f0" font-family="monospace" font-size="7.5" font-weight="bold">2R2</text>
+            <rect x="44" y="52" width="32" height="26" rx="2" fill="#18181b" stroke="#64748b" stroke-width="1"/>
+            <text x="60" y="64" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="6.8" font-weight="bold">IP5306</text>
+            <text x="60" y="73" text-anchor="middle" fill="#34d399" font-family="monospace" font-size="5.5">BOOST+CHG</text>
+            <g fill="#38bdf8" stroke="#bae6fd" stroke-width="0.6">
+              <rect x="83" y="18" width="5" height="5" rx="1"/>
+              <rect x="83" y="33" width="5" height="5" rx="1"/>
+              <rect x="83" y="48" width="5" height="5" rx="1"/>
+              <rect x="83" y="63" width="5" height="5" rx="1"/>
+            </g>
+            <use href="#wokwi-hole" x="126" y="20"/>
+            <use href="#wokwi-hole" x="126" y="35"/>
+            <use href="#wokwi-hole" x="126" y="50"/>
+            <use href="#wokwi-hole" x="126" y="65"/>
+            <g fill="#ecfdf5" font-family="monospace" font-size="7" font-weight="bold" text-anchor="end">
+              <text x="119" y="22.5">LED1</text>
+              <text x="119" y="37.5">LED2</text>
+              <text x="119" y="52.5">LED3</text>
+              <text x="119" y="67.5">LED4</text>
+            </g>
+          </svg>
+          <text x="${dim.w / 2}" y="${dim.h + 12}" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(p.id)}</text>
+        `;
+      }
+
+      // 10. Authentic Wokwi-grade DC-DC 7.0V 3A Synchronous Buck BEC Module SVG
+      if (t.includes('reg_7v')) {
+        return `
+          <svg x="0" y="0" width="${dim.w}" height="${dim.h}" viewBox="0 0 136 76">
+            <rect x="2" y="2" width="132" height="72" rx="5" fill="#1e3a8a" stroke="#60a5fa" stroke-width="1.2"/>
+            <text x="68" y="12.5" text-anchor="middle" fill="#bfdbfe" font-family="monospace" font-size="6.6" font-weight="bold">BUCK 7.0V 3A BEC</text>
+            <use href="#wokwi-hole" x="10" y="22"/>
+            <use href="#wokwi-hole" x="10" y="39"/>
+            <use href="#wokwi-hole" x="10" y="56"/>
+            <g fill="#eff6ff" font-family="monospace" font-size="6.5" font-weight="bold">
+              <text x="17" y="24.5">VIN_POS</text>
+              <text x="17" y="41.5">VIN_NEG</text>
+              <text x="17" y="58.5">VOUT_POS</text>
+            </g>
+            <circle cx="52" cy="27" r="8" fill="#cbd5e1" stroke="#475569" stroke-width="1"/>
+            <path d="M47 21 A8 8 0 0 1 47 33 Z" fill="#1e293b"/>
+            <rect x="64" y="18" width="22" height="22" rx="2.5" fill="#334155" stroke="#94a3b8" stroke-width="0.9"/>
+            <text x="75" y="31.5" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="7" font-weight="bold">4R7</text>
+            <rect x="46" y="46" width="40" height="16" rx="1.5" fill="#0284c7" stroke="#7dd3fc" stroke-width="0.8"/>
+            <circle cx="53" cy="54" r="3.5" fill="#eab308" stroke="#713f12" stroke-width="0.7"/>
+            <line x1="51" y1="54" x2="55" y2="54" stroke="#713f12" stroke-width="1"/>
+            <text x="71" y="56.5" text-anchor="middle" fill="#ffffff" font-family="monospace" font-size="6.8" font-weight="bold">7.0V</text>
+            <use href="#wokwi-hole" x="126" y="22"/>
+            <use href="#wokwi-hole" x="126" y="39"/>
+            <g fill="#eff6ff" font-family="monospace" font-size="6.5" font-weight="bold" text-anchor="end">
+              <text x="119" y="24.5">VOUT_NEG</text>
+              <text x="119" y="41.5">EN</text>
+            </g>
+          </svg>
+          <text x="${dim.w / 2}" y="${dim.h + 12}" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(p.id)}</text>
+        `;
+      }
+
+      // 11. Authentic Wokwi-grade WeAct 2.13" / 4.2" E-Paper Screen Module SVG
+      if (t.includes('weact_213_bw') || t.includes('epaper')) {
+        return `
+          <svg x="0" y="0" width="${dim.w}" height="${dim.h}" viewBox="0 0 156 256">
+            <rect x="2" y="2" width="152" height="252" rx="6" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
+            <use href="#wokwi-hole" x="10" y="20"/>
+            <use href="#wokwi-hole" x="10" y="35"/>
+            <use href="#wokwi-hole" x="10" y="50"/>
+            <use href="#wokwi-hole" x="10" y="65"/>
+            <use href="#wokwi-hole" x="146" y="20"/>
+            <use href="#wokwi-hole" x="146" y="35"/>
+            <use href="#wokwi-hole" x="146" y="50"/>
+            <use href="#wokwi-hole" x="146" y="65"/>
+            <g fill="#e2e8f0" font-family="monospace" font-size="6.8" font-weight="bold">
+              <text x="17" y="22.5">BUSY</text>
+              <text x="17" y="37.5">RST</text>
+              <text x="17" y="52.5">DC</text>
+              <text x="17" y="67.5">CS</text>
+            </g>
+            <g fill="#e2e8f0" font-family="monospace" font-size="6.8" font-weight="bold" text-anchor="end">
+              <text x="139" y="22.5">CLK</text>
+              <text x="139" y="37.5">DIN</text>
+              <text x="139" y="52.5">VCC</text>
+              <text x="139" y="67.5">GND</text>
+            </g>
+            <rect x="34" y="12" width="88" height="206" rx="3" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.2"/>
+            <rect x="39" y="18" width="78" height="178" rx="1.5" fill="#f8fafc" stroke="#334155" stroke-width="1"/>
+            <rect x="39" y="18" width="78" height="15" fill="#0f172a"/>
+            <text x="78" y="28.5" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="7" font-weight="bold">WeAct 2.13" EPD</text>
+            <text x="43" y="45" fill="#0f172a" font-family="monospace" font-size="6.8" font-weight="bold">CAS: &int;sin(x)dx</text>
+            <text x="113" y="56" text-anchor="end" fill="#0f172a" font-family="monospace" font-size="7.2" font-weight="bold">= -cos(x) + C</text>
+            <line x1="42" y1="62" x2="114" y2="62" stroke="#94a3b8" stroke-width="0.7" stroke-dasharray="2 2"/>
+            <line x1="44" y1="95" x2="112" y2="95" stroke="#64748b" stroke-width="0.6"/>
+            <line x1="78" y1="68" x2="78" y2="122" stroke="#64748b" stroke-width="0.6"/>
+            <path d="M 44 95 Q 61 66, 78 95 T 112 95" fill="none" stroke="#0f172a" stroke-width="1.6"/>
+            <line x1="42" y1="128" x2="114" y2="128" stroke="#94a3b8" stroke-width="0.7" stroke-dasharray="2 2"/>
+            <text x="43" y="141" fill="#0f172a" font-family="monospace" font-size="6.5" font-weight="bold">CAN: 0x120 500k</text>
+            <text x="43" y="153" fill="#0f172a" font-family="monospace" font-size="6.5">STR:${visState.lastCanSteer ?? 90}&deg; THR:${visState.lastCanThrottle ?? 50}%</text>
+            <text x="43" y="165" fill="#0f172a" font-family="monospace" font-size="6.5">RTOS: 1000Hz OK</text>
+            <rect x="43" y="174" width="70" height="14" rx="1.5" fill="#0f172a"/>
+            <text x="78" y="183.5" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="6.5" font-weight="bold">SSD1680 122x250</text>
+            <path d="M 54 218 L 102 218 L 96 248 L 60 248 Z" fill="#d97706" stroke="#b45309" stroke-width="1"/>
+            <rect x="64" y="222" width="28" height="10" rx="1" fill="#18181b"/>
+            <text x="78" y="243" text-anchor="middle" fill="#fef3c7" font-family="monospace" font-size="5.8" font-weight="bold">FPC-8101</text>
+          </svg>
+          <text x="${dim.w / 2}" y="${dim.h + 12}" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(p.id)}</text>
+        `;
+      }
+
+      // 12. Fallback Generic Wokwi Breakout Custom Chip PCB Graphic
       const pins = CHIP_PIN_MAP[p.type] || ['VCC', 'GND', 'IN', 'OUT'];
       const half = Math.max(Math.ceil(pins.length / 2), 2);
       const holesSvg = pins.map((pinName, i) => {
@@ -1807,39 +2317,12 @@
           <text x="${tx}" y="${hy + 3}" text-anchor="${anchor}" fill="#e2fbe8" font-size="8.5" font-family="monospace">${escXml(pinName)}</text>
         `;
       }).join('');
-
-      let centerScreenSvg = '';
-      if (p.type === 'chip-can_terminal') {
-        const steerW = Math.round(((visState.lastCanSteer || 90) / 180) * 84);
-        const throtW = Math.round(((visState.lastCanThrottle || 50) / 100) * 84);
-        centerScreenSvg = `
-          <rect x="34" y="22" width="94" height="54" rx="3" fill="#090d14" stroke="#38bdf8" stroke-width="1" />
-          <text x="81" y="33" text-anchor="middle" fill="#ff6b6b" font-size="8" font-family="monospace" font-weight="bold">CAN 0x120 TERM</text>
-          <text x="39" y="44" fill="#9be3bd" font-size="7.5" font-family="monospace">STR:${visState.lastCanSteer}&deg; THR:${visState.lastCanThrottle}%</text>
-          <rect x="39" y="49" width="84" height="5" rx="1" fill="#1e293b" />
-          <rect x="39" y="49" width="${steerW}" height="5" rx="1" fill="#ff6b6b" />
-          <rect x="39" y="57" width="84" height="5" rx="1" fill="#1e293b" />
-          <rect x="39" y="57" width="${throtW}" height="5" rx="1" fill="#2fc49a" />
-          <text x="39" y="71" fill="#94a3b8" font-size="7" font-family="monospace">ACK:0x128 OK</text>
-        `;
-      } else if (p.type === 'chip-weact_213_bw') {
-        centerScreenSvg = `
-          <rect x="24" y="24" width="${dim.w - 48}" height="${dim.h - 38}" rx="3" fill="#f8fafc" stroke="#334155" stroke-width="2" />
-          <text x="${dim.w / 2}" y="${dim.h / 2 - 8}" text-anchor="middle" fill="#0f172a" font-size="10" font-family="monospace" font-weight="bold">WeAct 2.13"</text>
-          <text x="${dim.w / 2}" y="${dim.h / 2 + 8}" text-anchor="middle" fill="#334155" font-size="9" font-family="monospace">128x250 EPD</text>
-        `;
-      } else {
-        const shortType = p.type.replace(/^chip-/, '').toUpperCase();
-        centerScreenSvg = `
-          <rect x="39" y="${dim.h / 2 - 13}" width="${dim.w - 78}" height="26" rx="3" fill="#181b20" stroke="#334155" stroke-width="0.8" />
-          <text x="${dim.w / 2}" y="${dim.h / 2 + 3}" text-anchor="middle" fill="#ffffff" font-size="7.5" font-weight="700" font-family="monospace">${escXml(shortType)}</text>
-        `;
-      }
-
+      const shortType = p.type.replace(/^chip-/, '').toUpperCase();
       return `
         <rect x="0" y="0" width="${dim.w}" height="${dim.h}" rx="5" fill="#087f45" stroke="#0ca65a" stroke-width="1.2" />
         ${holesSvg}
-        ${centerScreenSvg}
+        <rect x="39" y="${dim.h / 2 - 13}" width="${dim.w - 78}" height="26" rx="3" fill="#181b20" stroke="#334155" stroke-width="0.8" />
+        <text x="${dim.w / 2}" y="${dim.h / 2 + 3}" text-anchor="middle" fill="#ffffff" font-size="7.5" font-weight="700" font-family="monospace">${escXml(shortType)}</text>
         <text x="${dim.w / 2}" y="${dim.h + 12}" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(p.id)}</text>
       `;
     }
@@ -2220,6 +2703,37 @@
       visSelectPart(visState.parts.length - 1);
       visSyncToStep3Preview();
       showToast(`Added ${id}`);
+    }
+
+    function visAddScreenPart() {
+      let id = 'epd_screen';
+      let n = 1;
+      while (visState.parts.some((p) => p.id === id)) {
+        n++;
+        id = `epd_screen_${n}`;
+      }
+      visState.parts.push({
+        type: 'chip-weact_213_bw',
+        id,
+        left: 780,
+        top: 0,
+        rotate: 0,
+        attrs: {},
+        _exists: true,
+      });
+      const mcu = visState.parts.find((p) => (p.type || '').includes('esp32'));
+      if (mcu) {
+        visState.connections.push(
+          [`${mcu.id}:3V3.1`, `${id}:VCC`, 'red', ['v0']],
+          [`${mcu.id}:GND.1`, `${id}:GND`, 'black', ['v0']],
+          [`${mcu.id}:12`, `${id}:CLK`, 'green', ['v0']],
+          [`${mcu.id}:11`, `${id}:DIN`, 'green', ['v0']],
+          [`${mcu.id}:10`, `${id}:CS`, 'purple', ['v0']]
+        );
+      }
+      visSelectPart(visState.parts.length - 1);
+      visSyncToStep3Preview();
+      showToast(`Added WeAct 2.13" e-Paper Screen (${id})`);
     }
 
     function visAddPartPrompt() {

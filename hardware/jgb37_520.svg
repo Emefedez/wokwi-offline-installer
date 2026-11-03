@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="142" height="92" viewBox="0 0 142 92">
+  <defs>
+    <linearGradient id="jgb-can" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="45%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#475569"/>
+    </linearGradient>
+    <linearGradient id="jgb-gear" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="50%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+    <g id="jgb-hole">
+      <circle cx="0" cy="0" r="3.4" fill="#090d14" stroke="#eab308" stroke-width="1.5"/>
+    </g>
+  </defs>
+  <!-- Rear Black Magnetic Encoder Cap & Green Hall Sensor PCB -->
+  <rect x="6" y="10" width="34" height="72" rx="4" fill="#087f45" stroke="#0ca65a" stroke-width="1.2"/>
+  <rect x="34" y="16" width="12" height="60" rx="2" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+  <!-- 6-Pin Encoder Connector Pads (Left Edge) -->
+  <use href="#jgb-hole" x="13" y="18"/>
+  <use href="#jgb-hole" x="13" y="29"/>
+  <use href="#jgb-hole" x="13" y="40"/>
+  <use href="#jgb-hole" x="13" y="51"/>
+  <use href="#jgb-hole" x="13" y="62"/>
+  <use href="#jgb-hole" x="13" y="73"/>
+  <g fill="#e2fbe8" font-family="monospace" font-size="6.8" font-weight="bold">
+    <text x="19" y="20.5">M1</text>
+    <text x="19" y="31.5">M2</text>
+    <text x="19" y="42.5">GND</text>
+    <text x="19" y="53.5">C1</text>
+    <text x="19" y="64.5">C2</text>
+    <text x="19" y="75.5">VCC</text>
+  </g>
+  <!-- 520 Brushed DC Motor Cylinder -->
+  <rect x="44" y="18" width="44" height="56" rx="3" fill="url(#jgb-can)" stroke="#334155" stroke-width="1.2"/>
+  <line x1="52" y1="18" x2="52" y2="74" stroke="#475569" stroke-width="0.9"/>
+  <rect x="57" y="36" width="28" height="20" rx="2" fill="#0f172a" opacity="0.88"/>
+  <text x="71" y="45" text-anchor="middle" fill="#f8fafc" font-family="monospace" font-size="6.5" font-weight="bold">JGB37-520</text>
+  <text x="71" y="53" text-anchor="middle" fill="#a78bfa" font-family="monospace" font-size="5.8">12V 333RPM</text>
+  <!-- 37mm All-Metal Helical Gearbox -->
+  <rect x="88" y="14" width="32" height="64" rx="3" fill="url(#jgb-gear)" stroke="#1e293b" stroke-width="1.2"/>
+  <circle cx="95" cy="21" r="2" fill="#334155"/>
+  <circle cx="113" cy="21" r="2" fill="#334155"/>
+  <circle cx="95" cy="71" r="2" fill="#334155"/>
+  <circle cx="113" cy="71" r="2" fill="#334155"/>
+  <!-- Brass Collar & 6mm D-Shaft + Drive Wheel Hub -->
+  <rect x="120" y="37" width="6" height="18" rx="1" fill="#eab308" stroke="#854d0e" stroke-width="0.8"/>
+  <rect x="126" y="42" width="12" height="8" rx="1" fill="#e2e8f0" stroke="#475569" stroke-width="0.9"/>
+  <circle cx="133" cy="46" r="13" fill="none" stroke="#a78bfa" stroke-width="1.6" stroke-dasharray="4 3"/>
+</svg>

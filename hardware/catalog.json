@@ -17,7 +17,7 @@
         "reg_7v": 1,
         "pushbutton": 1,
         "esp32_s3_n16r16": 0,
-        "weact_213_bw": 0,
+        "weact_213_bw": 1,
         "microsd_card": 0
       }
     },

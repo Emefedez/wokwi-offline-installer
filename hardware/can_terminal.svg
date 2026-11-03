@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="162" height="98" viewBox="0 0 162 98">
+  <defs>
+    <g id="cant-hole">
+      <circle cx="0" cy="0" r="3.4" fill="#090d14" stroke="#eab308" stroke-width="1.5"/>
+    </g>
+  </defs>
+  <!-- Anodized Dark Slate CAN Bus Terminal & Analyzer Housing -->
+  <rect x="2" y="2" width="158" height="94" rx="6" fill="#18181b" stroke="#a78bfa" stroke-width="1.4"/>
+  <!-- Left 4 Gold Pads (CANH, CANL, CANTX, CANRX) -->
+  <use href="#cant-hole" x="10" y="18"/>
+  <use href="#cant-hole" x="10" y="33"/>
+  <use href="#cant-hole" x="10" y="48"/>
+  <use href="#cant-hole" x="10" y="63"/>
+  <g fill="#e4e4e7" font-family="monospace" font-size="7" font-weight="bold">
+    <text x="17" y="20.5">CANH</text>
+    <text x="17" y="35.5">CANL</text>
+    <text x="17" y="50.5">CANTX</text>
+    <text x="17" y="65.5">CANRX</text>
+  </g>
+  <!-- Right 3 Gold Pads (TRIG, VCC, GND) -->
+  <use href="#cant-hole" x="152" y="18"/>
+  <use href="#cant-hole" x="152" y="33"/>
+  <use href="#cant-hole" x="152" y="48"/>
+  <g fill="#e4e4e7" font-family="monospace" font-size="7" font-weight="bold" text-anchor="end">
+    <text x="145" y="20.5">TRIG</text>
+    <text x="145" y="35.5">VCC</text>
+    <text x="145" y="50.5">GND</text>
+  </g>
+  <!-- Status LEDs (TX, RX, BUS OK) -->
+  <circle cx="48" cy="12" r="2.2" fill="#a78bfa"/>
+  <text x="53" y="14" fill="#a1a1aa" font-family="monospace" font-size="5.8">TX</text>
+  <circle cx="72" cy="12" r="2.2" fill="#34d399"/>
+  <text x="77" y="14" fill="#a1a1aa" font-family="monospace" font-size="5.8">RX</text>
+  <circle cx="96" cy="12" r="2.2" fill="#38bdf8"/>
+  <text x="101" y="14" fill="#a1a1aa" font-family="monospace" font-size="5.8">500K</text>
+  <!-- OLED Telemetry Screen -->
+  <rect x="40" y="19" width="82" height="58" rx="3" fill="#090d14" stroke="#a78bfa" stroke-width="1"/>
+  <text x="81" y="30" text-anchor="middle" fill="#a78bfa" font-family="monospace" font-size="7.5" font-weight="bold">CAN 0x120 TERM</text>
+  <text x="45" y="41" fill="#34d399" font-family="monospace" font-size="7">STR:90° THR:50%</text>
+  <rect x="45" y="46" width="72" height="5" rx="1" fill="#1e293b"/>
+  <rect x="45" y="46" width="36" height="5" rx="1" fill="#a78bfa"/>
+  <rect x="45" y="54" width="72" height="5" rx="1" fill="#1e293b"/>
+  <rect x="45" y="54" width="36" height="5" rx="1" fill="#34d399"/>
+  <text x="45" y="70" fill="#94a3b8" font-family="monospace" font-size="6.8">ACK:0x128 OK</text>
+  <!-- Bottom Differential Bus Port Label -->
+  <rect x="52" y="81" width="58" height="10" rx="2" fill="#27272a" stroke="#52525b" stroke-width="0.8"/>
+  <text x="81" y="88" text-anchor="middle" fill="#d4d4d8" font-family="monospace" font-size="6" font-weight="bold">ISO 11898 CAN2.0A</text>
+</svg>
