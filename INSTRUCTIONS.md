@@ -55,7 +55,37 @@ This repository (`/Users/m1-max/Documents/wokwi-offline-installer`) contains the
      --bundle ~/.wokwi/bundle.wpk \
      --license ~/.wokwi/user.tok \
      --mcp "t3 anthropic opencode"
+
+   # Load & overwrite ~/.wokwi/user.tok manually via CLI (no LLM needed):
+   ./wokwi-offline-setup-macos --cli --load-user-tok /path/to/my-user.tok
+   # Windows:
+   WokwiOfflineSetup.exe --cli --load-user-tok C:\path\to\my-user.tok
    ```
+
+---
+
+## 2. Loading & Overwriting Your Own `user.tok` (Manual & MCP)
+
+You can load and overwrite `~/.wokwi/user.tok` **manually without any LLM** in 4 ways (all automatically back up any existing file to `~/.wokwi/user.tok.bak` and hot-reload the running VS Code extension if open):
+
+1. **Standalone GUI (`--gui`)**:
+   Open Tab 2 (**2. Offline Setup, user.tok Loader & MCP**) -> **Manual `user.tok` Loader & Overwrite (No LLM Required)**:
+   - Use the **Browser File Picker** (`Pick a .tok File from Your Computer`) and click **Overwrite `~/.wokwi/user.tok` with Picked File**, OR
+   - Enter any disk path (`/path/to/user.tok` or `C:\path\to\user.tok`) and click **Load Path & Overwrite**, OR
+   - View/edit the raw `key=...` / `ts=...` content directly in the live text editor (with real-time decoded User, Email, Plan, and Expiration preview) and click **Save & Overwrite `~/.wokwi/user.tok` Now**.
+2. **VS Code Command Palette (No LLM)**:
+   Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows) in VS Code and run:
+   - **`Wokwi: Load and Overwrite user.tok`** (opens a native OS file picker to select any `.tok` file and immediately overwrites `~/.wokwi/user.tok` + reloads `LicenseService` in memory).
+3. **Interactive TUI (`--tui`)**:
+   Run `./wokwi-offline-setup-macos --tui` (or `WokwiOfflineSetup.exe --tui`) and choose **Option `4) Load & Overwrite your own user.tok (Manual, no LLM required)`**.
+4. **CLI (`--load-user-tok` / `--overwrite-user-tok`)**:
+   ```bash
+   ./wokwi-offline-setup-macos --cli --load-user-tok /path/to/custom-user.tok
+   # or via install.sh:
+   ./install.sh --load-user-tok /path/to/custom-user.tok
+   ```
+5. **Via MCP Tool (`wokwi_load_user_tok`)**:
+   Also exposed as an MCP tool (`filePath` or `content`) for AI clients when desired.
 
 ---
 

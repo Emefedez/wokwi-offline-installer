@@ -71,6 +71,11 @@
 				"icon": "$(edit)"
 			},
 			{
+				"command": "wokwi-vscode.loadUserTok",
+				"title": "Wokwi: Load and Overwrite user.tok",
+				"icon": "$(key)"
+			},
+			{
 				"command": "wokwi-vscode.selectConfigFile",
 				"title": "Wokwi: Select Config File",
 				"icon": "$(file)"

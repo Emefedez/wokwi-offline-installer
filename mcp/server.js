@@ -1103,6 +1103,28 @@ const TOOLS = [
       required: ['targetPath'],
     },
   },
+  {
+    name: 'wokwi_load_user_tok',
+    description:
+      'Load and overwrite ~/.wokwi/user.tok from a custom user.tok file path or raw token/key content, and sync it with the active VS Code Wokwi extension.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        filePath: {
+          type: 'string',
+          description: 'Path to a user.tok file on disk to copy and overwrite ~/.wokwi/user.tok with',
+        },
+        content: {
+          type: 'string',
+          description: 'Raw user.tok file content or Wokwi license key string to write into ~/.wokwi/user.tok',
+        },
+        backupExisting: {
+          type: 'boolean',
+          description: 'Create ~/.wokwi/user.tok.bak before overwriting (default: true)',
+        },
+      },
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -1874,6 +1896,42 @@ ${pinInits}
         success: true,
         targetPath: targetDir,
         copiedFiles: copied,
+      };
+    }
+
+    case 'wokwi_load_user_tok': {
+      fs.mkdirSync(WOKWI_HOME, { recursive: true });
+      const tokDest = path.join(WOKWI_HOME, 'user.tok');
+      if (args.backupExisting !== false && fs.existsSync(tokDest)) {
+        fs.copyFileSync(tokDest, `${tokDest}.bak`);
+      }
+
+      let rawContent = '';
+      if (args.filePath) {
+        const src = resolveProjectPath(args.filePath);
+        if (!fs.existsSync(src)) {
+          throw new Error(`user.tok source file not found: ${src}`);
+        }
+        rawContent = fs.readFileSync(src, 'utf8');
+      } else if (args.content) {
+        const c = String(args.content).trim();
+        if (c.includes('key=')) {
+          rawContent = c.endsWith('\n') ? c : c + '\n';
+        } else {
+          rawContent = `# Wokwi License\n\nkey=${c}\nts=${Date.now()}\n`;
+        }
+      } else {
+        throw new Error('Provide either filePath or content to overwrite ~/.wokwi/user.tok.');
+      }
+
+      fs.writeFileSync(tokDest, rawContent, 'utf8');
+      const bridgeRes = await callVsCodeBridge('load_user_tok', { content: rawContent });
+
+      return {
+        overwritten: true,
+        userTokPath: tokDest,
+        backupCreated: fs.existsSync(`${tokDest}.bak`),
+        vsCodeSynced: Boolean(bridgeRes && bridgeRes.ok),
       };
     }
 

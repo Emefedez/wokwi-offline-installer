@@ -238,46 +238,125 @@ func extractWpkBundle(bundlePath, cacheDir string) (int, error) {
 	return count, nil
 }
 
-func saveLicenseToken(input string) (string, error) {
-	input = expandHome(strings.TrimSpace(input))
-	if input == "" {
-		return "", nil
-	}
-	home, _ := os.UserHomeDir()
-	wokwiDir := filepath.Join(home, ".wokwi")
-	_ = os.MkdirAll(wokwiDir, 0755)
-	tokPath := filepath.Join(wokwiDir, "user.tok")
-
-	if info, err := os.Stat(input); err == nil && !info.IsDir() {
-		if filepath.Clean(input) != filepath.Clean(tokPath) {
-			if err := copyFile(input, tokPath); err != nil {
-				return "", err
-			}
+func parseUserTokMetadata(raw string) map[string]string {
+	keyVal := strings.TrimSpace(raw)
+	for _, line := range strings.Split(raw, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "key=") {
+			keyVal = strings.TrimSpace(strings.TrimPrefix(line, "key="))
+			break
 		}
-		return fmt.Sprintf("Loaded license token file into %s", tokPath), nil
 	}
-
-	b64 := strings.ReplaceAll(strings.ReplaceAll(strings.TrimRight(input, "="), "_P", "+"), "_S", "/")
+	b64 := strings.ReplaceAll(strings.ReplaceAll(strings.TrimRight(keyVal, "="), "_P", "+"), "_S", "/")
 	switch len(b64) % 4 {
 	case 2:
 		b64 += "=="
 	case 3:
 		b64 += "="
 	}
-	userDesc := "Validated User"
+	meta := map[string]string{}
 	if decoded, err := base64.StdEncoding.DecodeString(b64); err == nil {
 		if nul := bytes.IndexByte(decoded, 0); nul > 0 {
 			if vals, err := url.ParseQuery(string(decoded[:nul])); err == nil {
-				userDesc = fmt.Sprintf("%s <%s> (Plan: %s)", vals.Get("n"), vals.Get("e"), vals.Get("p"))
+				meta["userId"] = vals.Get("u")
+				meta["name"] = vals.Get("n")
+				meta["email"] = vals.Get("e")
+				meta["expiration"] = vals.Get("x")
+				meta["plan"] = vals.Get("p")
 			}
 		}
 	}
+	return meta
+}
 
-	content := fmt.Sprintf("# Wokwi License\n# User: %s\n\nkey=%s\nts=%d\n", userDesc, input, time.Now().UnixMilli())
-	if err := os.WriteFile(tokPath, []byte(content), 0600); err != nil {
+func overwriteUserTok(srcPath, rawContent string, backup bool) (map[string]interface{}, error) {
+	home, _ := os.UserHomeDir()
+	wokwiDir := filepath.Join(home, ".wokwi")
+	_ = os.MkdirAll(wokwiDir, 0755)
+	tokPath := filepath.Join(wokwiDir, "user.tok")
+
+	if backup {
+		if _, err := os.Stat(tokPath); err == nil {
+			_ = copyFile(tokPath, tokPath+".bak")
+		}
+	}
+
+	var finalText string
+	if strings.TrimSpace(srcPath) != "" {
+		resolved := expandHome(strings.TrimSpace(srcPath))
+		b, err := os.ReadFile(resolved)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read %s: %w", resolved, err)
+		}
+		finalText = string(b)
+	} else {
+		finalText = rawContent
+	}
+
+	finalText = strings.TrimSpace(finalText)
+	if finalText == "" {
+		return nil, fmt.Errorf("empty user.tok content provided")
+	}
+
+	meta := parseUserTokMetadata(finalText)
+	if !strings.Contains(finalText, "key=") {
+		userDesc := "Validated User"
+		if meta["name"] != "" || meta["email"] != "" {
+			userDesc = fmt.Sprintf("%s <%s> (Plan: %s)", meta["name"], meta["email"], meta["plan"])
+		}
+		finalText = fmt.Sprintf("# Wokwi License\n# User: %s\n\nkey=%s\nts=%d\n", userDesc, finalText, time.Now().UnixMilli())
+	} else if !strings.HasSuffix(finalText, "\n") {
+		finalText += "\n"
+	}
+
+	if err := os.WriteFile(tokPath, []byte(finalText), 0600); err != nil {
+		return nil, err
+	}
+
+	// Best-effort hot reload into running VS Code extension bridge if active
+	go func() {
+		payload, _ := json.Marshal(map[string]interface{}{
+			"action":  "load_user_tok",
+			"content": finalText,
+			"backup":  false,
+		})
+		client := &http.Client{Timeout: 800 * time.Millisecond}
+		resp, err := client.Post("http://127.0.0.1:47129/mcp", "application/json", bytes.NewReader(payload))
+		if err == nil && resp != nil {
+			resp.Body.Close()
+		}
+	}()
+
+	msg := fmt.Sprintf("Overwrote %s", tokPath)
+	if meta["name"] != "" || meta["email"] != "" {
+		msg = fmt.Sprintf("Overwrote %s — User: %s <%s> (Plan: %s, Expires: %s)", tokPath, meta["name"], meta["email"], meta["plan"], meta["expiration"])
+	}
+	return map[string]interface{}{
+		"ok":       true,
+		"path":     tokPath,
+		"content":  finalText,
+		"metadata": meta,
+		"message":  msg,
+	}, nil
+}
+
+func saveLicenseToken(input string) (string, error) {
+	input = expandHome(strings.TrimSpace(input))
+	if input == "" {
+		return "", nil
+	}
+	if info, err := os.Stat(input); err == nil && !info.IsDir() {
+		res, err := overwriteUserTok(input, "", true)
+		if err != nil {
+			return "", err
+		}
+		return res["message"].(string), nil
+	}
+	res, err := overwriteUserTok("", input, true)
+	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Saved license (%s) to %s", userDesc, tokPath), nil
+	return res["message"].(string), nil
 }
 
 func runFullEnvironmentSetup(root, bundlePath, licenseInput string, mcpTargets []string) (string, error) {
@@ -606,6 +685,48 @@ func runGUIServer(root string, port int) error {
 		})
 	})
 
+	mux.HandleFunc("/api/user-tok", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		home, _ := os.UserHomeDir()
+		tokPath := filepath.Join(home, ".wokwi", "user.tok")
+		if r.Method == http.MethodGet {
+			raw, err := os.ReadFile(tokPath)
+			if err != nil {
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"ok":      true,
+					"exists":  false,
+					"path":    tokPath,
+					"content": "",
+				})
+				return
+			}
+			meta := parseUserTokMetadata(string(raw))
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"ok":       true,
+				"exists":   true,
+				"path":     tokPath,
+				"content":  string(raw),
+				"metadata": meta,
+			})
+			return
+		}
+		var req struct {
+			FilePath string `json:"filePath"`
+			Content  string `json:"content"`
+			Backup   bool   `json:"backup"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+		res, err := overwriteUserTok(req.FilePath, req.Content, req.Backup)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(res)
+	})
+
 	mux.HandleFunc("/api/run-setup", func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			BundlePath   string   `json:"bundlePath"`
@@ -666,7 +787,35 @@ func runTUI(root string) error {
 	fmt.Println("  1) Generate RC Car / Custom Hardware Project (wokwi.toml + diagram.json)")
 	fmt.Println("  2) Run Full Offline Environment Setup (Extension + Bundle + License + MCP)")
 	fmt.Println("  3) Run Both (Full Offline Setup + Hardware Project Generator)")
-	choice := promptLine(reader, "Select action (1/2/3)", "3")
+	fmt.Println("  4) Load & Overwrite your own user.tok (Manual, no LLM required)")
+	choice := promptLine(reader, "Select action (1/2/3/4)", "3")
+
+	if choice == "4" {
+		fmt.Println("\n--- Manual user.tok Loader & Overwrite (No LLM) ---")
+		home, _ := os.UserHomeDir()
+		curTok := filepath.Join(home, ".wokwi", "user.tok")
+		if raw, err := os.ReadFile(curTok); err == nil {
+			meta := parseUserTokMetadata(string(raw))
+			fmt.Printf("Current ~/.wokwi/user.tok: %s <%s> (Plan: %s, Expires: %s)\n", meta["name"], meta["email"], meta["plan"], meta["expiration"])
+		}
+		src := promptLine(reader, "Enter path to your custom .tok file OR paste raw key= / token string", "")
+		if strings.TrimSpace(src) == "" {
+			return fmt.Errorf("no user.tok path or content provided")
+		}
+		var res map[string]interface{}
+		var err error
+		resolved := expandHome(src)
+		if info, statErr := os.Stat(resolved); statErr == nil && !info.IsDir() {
+			res, err = overwriteUserTok(resolved, "", true)
+		} else {
+			res, err = overwriteUserTok("", src, true)
+		}
+		if err != nil {
+			return err
+		}
+		fmt.Println("[+] " + res["message"].(string))
+		return nil
+	}
 
 	if choice == "2" || choice == "3" {
 		fmt.Println("\n--- Offline Environment & License Setup ---")
@@ -750,10 +899,35 @@ func main() {
 	elf := flag.String("elf", "build/firmware.elf", "ELF path in wokwi.toml")
 	bundle := flag.String("bundle", "", "Path to offline bundle.wpk")
 	license := flag.String("license", "", "Valid Wokwi license key or path to user.tok")
+	loadTok := flag.String("load-user-tok", "", "Manually load and overwrite ~/.wokwi/user.tok from file path or raw token (no LLM)")
+	overwriteTok := flag.String("overwrite-user-tok", "", "Alias for --load-user-tok: overwrite ~/.wokwi/user.tok from file path or raw token")
 	mcp := flag.String("mcp", "", "Space/comma separated MCP targets to install")
 	flag.Parse()
 
 	root := resolveInstallerRoot()
+
+	tokInput := strings.TrimSpace(*loadTok)
+	if tokInput == "" {
+		tokInput = strings.TrimSpace(*overwriteTok)
+	}
+	if tokInput != "" {
+		var res map[string]interface{}
+		var err error
+		resolved := expandHome(tokInput)
+		if info, statErr := os.Stat(resolved); statErr == nil && !info.IsDir() {
+			res, err = overwriteUserTok(resolved, "", true)
+		} else {
+			res, err = overwriteUserTok("", tokInput, true)
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "user.tok overwrite error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("[+] " + res["message"].(string))
+		if *outDir == "" && *countsArg == "" && *bundle == "" && *license == "" && *mcp == "" && !*guiMode && !*tuiMode {
+			return
+		}
+	}
 
 	if *tuiMode {
 		if err := runTUI(root); err != nil {

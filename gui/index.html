@@ -306,7 +306,7 @@
     </h1>
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('generator')">1. Hardware &amp; TOML Generator (RC Car)</button>
-      <button class="tab-btn" onclick="switchTab('installer')">2. Offline Setup, Bundle &amp; MCP Installer</button>
+      <button class="tab-btn" onclick="switchTab('installer')">2. Offline Setup, user.tok Loader &amp; MCP</button>
     </div>
   </header>
 
@@ -437,54 +437,99 @@
     <!-- TAB 2: INSTALLER -->
     <div id="tab-installer" class="hidden">
       <div class="grid-2">
-        <div class="card">
-          <h2>Offline Wokwi Environment &amp; MCP Setup</h2>
-          <p style="font-size:0.86rem;color:var(--muted);">
-            Configure your local air-gapped Wokwi VS Code extension (auto-offline mode + MCP bridge), disable VS Code extension auto-updates, load your offline <code>.wpk</code> bundle, and save your valid Wokwi license key.
-          </p>
-          <div class="form-grid">
-            <div class="form-group full">
-              <label>Path to Offline Bundle (<code>bundle.wpk</code>)</label>
-              <input type="text" id="inst-bundle" value="~/.wokwi/bundle.wpk" />
+        <div>
+          <div class="card">
+            <h2>
+              <span>Manual <code>user.tok</code> Loader &amp; Overwrite (No LLM Required)</span>
+              <span class="badge">Direct ~/.wokwi/user.tok</span>
+            </h2>
+            <p style="font-size:0.85rem;color:var(--muted);margin-top:0;">
+              Directly load, inspect, edit, or overwrite <code>~/.wokwi/user.tok</code> from a local file or raw text — completely independent of any LLM or MCP client.
+            </p>
+            <div class="form-grid">
+              <div class="form-group full">
+                <label>1. Pick a <code>.tok</code> File from Your Computer (Browser File Picker)</label>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <input type="file" id="tok-file-picker" accept=".tok,text/plain" onchange="onPickTokFile(event)" style="flex:1;" />
+                  <button class="btn btn-success" onclick="uploadPickedTokAndOverwrite()">Overwrite <code>~/.wokwi/user.tok</code> with Picked File</button>
+                </div>
+              </div>
+              <div class="form-group full">
+                <label>2. Or Load &amp; Overwrite from Disk File Path</label>
+                <div style="display:flex;gap:8px;">
+                  <input type="text" id="tok-disk-path" placeholder="/path/to/my-custom-user.tok or C:\path\to\user.tok" style="flex:1;" />
+                  <button class="btn btn-primary" onclick="overwriteTokFromPath()">Load Path &amp; Overwrite</button>
+                </div>
+              </div>
+              <div class="form-group full">
+                <label>3. Current / Editable <code>~/.wokwi/user.tok</code> Content (Edit &amp; Click Overwrite)</label>
+                <textarea id="tok-raw-editor" class="code-box" style="height:135px;" oninput="updateDecodedTokPreview()" placeholder="# Wokwi License&#10;key=...&#10;ts=..."></textarea>
+              </div>
             </div>
-            <div class="form-group full">
-              <label>Valid Wokwi License Key or Path to <code>user.tok</code></label>
-              <input type="text" id="inst-license" value="~/.wokwi/user.tok" />
+            <div id="tok-decoded-box" class="rail-card" style="margin-bottom:12px;font-size:0.82rem;">
+              <div class="rail-name">Decoded License Metadata (Live Preview)</div>
+              <div id="tok-decoded-info" style="color:var(--accent);font-weight:600;margin-top:4px;">Loading current ~/.wokwi/user.tok...</div>
             </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-success" onclick="overwriteTokFromEditor()">Save &amp; Overwrite <code>~/.wokwi/user.tok</code> Now</button>
+              <button class="btn" onclick="loadCurrentUserTok()">Reload Current <code>~/.wokwi/user.tok</code></button>
+              <button class="btn" onclick="downloadFile('user.tok', document.getElementById('tok-raw-editor').value)">Export / Download <code>user.tok</code></button>
+            </div>
+            <div id="tok-toast" class="status-toast"></div>
           </div>
 
-          <label>Select AI Clients to Install the Wokwi Offline MCP Server Into:</label>
-          <div class="checkbox-grid" id="mcp-client-checks">
-            <label class="chk-item"><input type="checkbox" value="t3" checked /> T3 Code</label>
-            <label class="chk-item"><input type="checkbox" value="anthropic" checked /> Anthropic (Claude Desktop &amp; Code)</label>
-            <label class="chk-item"><input type="checkbox" value="opencode" checked /> OpenCode</label>
-            <label class="chk-item"><input type="checkbox" value="codex" checked /> Codex</label>
-            <label class="chk-item"><input type="checkbox" value="antigravity" checked /> Antigravity / Gemini</label>
-            <label class="chk-item"><input type="checkbox" value="vscode" checked /> VS Code MCP</label>
-            <label class="chk-item"><input type="checkbox" value="cursor" /> Cursor</label>
-            <label class="chk-item"><input type="checkbox" value="zed" /> Zed</label>
-          </div>
+          <div class="card">
+            <h2>Offline Wokwi Environment &amp; MCP Setup</h2>
+            <p style="font-size:0.86rem;color:var(--muted);">
+              Configure your local air-gapped Wokwi VS Code extension (auto-offline mode + MCP bridge), disable VS Code extension auto-updates, load your offline <code>.wpk</code> bundle, and save your valid Wokwi license key.
+            </p>
+            <div class="form-grid">
+              <div class="form-group full">
+                <label>Path to Offline Bundle (<code>bundle.wpk</code>)</label>
+                <input type="text" id="inst-bundle" value="~/.wokwi/bundle.wpk" />
+              </div>
+              <div class="form-group full">
+                <label>Valid Wokwi License Key or Path to <code>user.tok</code></label>
+                <input type="text" id="inst-license" value="~/.wokwi/user.tok" />
+              </div>
+            </div>
 
-          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="btn btn-success" onclick="runFullSetup()">Run Offline Setup &amp; Install Selected MCPs</button>
+            <label>Select AI Clients to Install the Wokwi Offline MCP Server Into:</label>
+            <div class="checkbox-grid" id="mcp-client-checks">
+              <label class="chk-item"><input type="checkbox" value="t3" checked /> T3 Code</label>
+              <label class="chk-item"><input type="checkbox" value="anthropic" checked /> Anthropic (Claude Desktop &amp; Code)</label>
+              <label class="chk-item"><input type="checkbox" value="opencode" checked /> OpenCode</label>
+              <label class="chk-item"><input type="checkbox" value="codex" checked /> Codex</label>
+              <label class="chk-item"><input type="checkbox" value="antigravity" checked /> Antigravity / Gemini</label>
+              <label class="chk-item"><input type="checkbox" value="vscode" checked /> VS Code MCP</label>
+              <label class="chk-item"><input type="checkbox" value="cursor" /> Cursor</label>
+              <label class="chk-item"><input type="checkbox" value="zed" /> Zed</label>
+            </div>
+
+            <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-success" onclick="runFullSetup()">Run Offline Setup &amp; Install Selected MCPs</button>
+            </div>
+            <div id="inst-toast" class="status-toast"></div>
           </div>
-          <div id="inst-toast" class="status-toast"></div>
         </div>
 
-        <div class="card">
-          <h2>Instructions &amp; Extension Auto-Update Protection</h2>
-          <ol style="font-size:0.88rem;color:#e2e8f0;padding-left:20px;line-height:1.6;">
-            <li><strong>Automatic Extension Protection:</strong> Running setup sets <code>"extensions.autoUpdate": false</code> and <code>"extensions.autoCheckUpdates": false</code> in your VS Code <code>settings.json</code> so VS Code never overwrites the offline-first Wokwi extension.</li>
-            <li><strong>Manual Check in VS Code:</strong> Open Settings (<code>Cmd+,</code> on macOS / <code>Ctrl+,</code> on Windows), search for <code>extensions.autoUpdate</code>, and verify it is set to <code>None</code>. In the Extensions panel, right-click <strong>Wokwi Simulator</strong> and ensure <strong>Auto Update</strong> is unchecked.</li>
-            <li><strong>Automatic Offline Launch:</strong> Whenever a valid offline license (<code>user.tok</code>) and extracted <code>bundle.wpk</code> are present, the extension opens directly in <strong>Wokwi Simulator (Offline)</strong> without waiting for the online iframe.</li>
-            <li><strong>Cross-Platform Executables:</strong>
-              <ul>
-                <li>Windows: Run <code>WokwiOfflineSetup.exe</code> (or <code>install.bat</code>)</li>
-                <li>macOS: Run <code>./wokwi-offline-setup-macos</code> (or <code>./install.sh</code>)</li>
-                <li>Modes: Pass <code>--gui</code> (Browser GUI), <code>--tui</code> (Interactive Terminal UI), or <code>--cli</code> (Flag-driven CLI).</li>
-              </ul>
-            </li>
-          </ol>
+        <div>
+          <div class="card">
+            <h2>Instructions &amp; Manual <code>user.tok</code> Workflows (No LLM)</h2>
+            <ol style="font-size:0.88rem;color:#e2e8f0;padding-left:20px;line-height:1.6;">
+              <li><strong>Manual <code>user.tok</code> Overwrite (4 Ways without an LLM):</strong>
+                <ul>
+                  <li><strong>GUI (This Window):</strong> Pick a <code>.tok</code> file, enter a path, or edit the text box on the left and click <strong>Save &amp; Overwrite <code>~/.wokwi/user.tok</code> Now</strong>.</li>
+                  <li><strong>VS Code Command Palette:</strong> Press <code>Cmd+Shift+P</code> (macOS) or <code>Ctrl+Shift+P</code> (Windows) and run <strong>Wokwi: Load and Overwrite user.tok</strong> to choose any <code>.tok</code> file via native dialog.</li>
+                  <li><strong>Interactive TUI:</strong> Run <code>./wokwi-offline-setup-macos --tui</code> (or <code>WokwiOfflineSetup.exe --tui</code>) and select Option <code>4) Load &amp; Overwrite your own user.tok</code>.</li>
+                  <li><strong>CLI Flag:</strong> Run <code>./wokwi-offline-setup-macos --cli --load-user-tok /path/to/user.tok</code> (or <code>WokwiOfflineSetup.exe --cli --load-user-tok C:\path\to\user.tok</code>).</li>
+                </ul>
+              </li>
+              <li><strong>Automatic Extension Protection:</strong> Running setup sets <code>"extensions.autoUpdate": false</code> and <code>"extensions.autoCheckUpdates": false</code> in your VS Code <code>settings.json</code> so VS Code never overwrites the offline-first Wokwi extension.</li>
+              <li><strong>Manual Check in VS Code:</strong> Open Settings (<code>Cmd+,</code> on macOS / <code>Ctrl+,</code> on Windows), search for <code>extensions.autoUpdate</code>, and verify it is set to <code>None</code>. In the Extensions panel, right-click <strong>Wokwi Simulator</strong> and ensure <strong>Auto Update</strong> is unchecked.</li>
+              <li><strong>Automatic Offline Launch:</strong> Whenever a valid offline license (<code>user.tok</code>) and extracted <code>bundle.wpk</code> are present, the extension opens directly in <strong>Wokwi Simulator (Offline)</strong> without waiting for the online iframe.</li>
+            </ol>
+          </div>
         </div>
       </div>
     </div>
@@ -508,6 +553,7 @@
         catalog = FALLBACK_CATALOG;
       }
       applyPreset(catalog.defaultPreset || 'rc-car');
+      loadCurrentUserTok();
     }
 
     function switchTab(tab) {
@@ -858,6 +904,132 @@
       } catch (err) {
         toast.style.display = 'block';
         toast.textContent = 'Error connecting to local setup server: ' + err.message;
+      }
+    }
+
+    function decodeTokMetadataClient(rawText) {
+      if (!rawText || !rawText.trim()) return 'Empty user.tok content';
+      let keyVal = rawText.trim();
+      const m = rawText.match(/^\s*key\s*=\s*(.+)$/m);
+      if (m) keyVal = m[1].trim();
+      try {
+        let b64 = keyVal.replace(/=+$/, '').replace(/_P/g, '+').replace(/_S/g, '/');
+        while (b64.length % 4 !== 0) b64 += '=';
+        const bin = atob(b64);
+        const nulIdx = bin.indexOf('\0');
+        if (nulIdx > 0) {
+          const qs = new URLSearchParams(bin.slice(0, nulIdx));
+          const name = qs.get('n') || 'Unknown';
+          const email = qs.get('e') || 'Unknown';
+          const plan = qs.get('p') || 'Unknown';
+          const exp = qs.get('x') || 'N/A';
+          return `User: ${name} <${email}> | Plan: ${plan} | Expires: ${exp}`;
+        }
+      } catch {}
+      return 'Custom / Unparsed key format (ready to write to ~/.wokwi/user.tok)';
+    }
+
+    function updateDecodedTokPreview() {
+      const raw = document.getElementById('tok-raw-editor').value;
+      document.getElementById('tok-decoded-info').textContent = decodeTokMetadataClient(raw);
+    }
+
+    async function loadCurrentUserTok() {
+      try {
+        const res = await fetch('/api/user-tok');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.content !== undefined) {
+          document.getElementById('tok-raw-editor').value = data.content;
+          updateDecodedTokPreview();
+        }
+      } catch {}
+    }
+
+    function onPickTokFile(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        document.getElementById('tok-raw-editor').value = String(reader.result || '');
+        updateDecodedTokPreview();
+      };
+      reader.readAsText(file);
+    }
+
+    async function uploadPickedTokAndOverwrite() {
+      const fileInput = document.getElementById('tok-file-picker');
+      const file = fileInput.files && fileInput.files[0];
+      if (!file && !document.getElementById('tok-raw-editor').value.trim()) {
+        alert('Please pick a .tok file first.');
+        return;
+      }
+      if (file) {
+        const text = await file.text();
+        document.getElementById('tok-raw-editor').value = text;
+        updateDecodedTokPreview();
+      }
+      await overwriteTokFromEditor();
+    }
+
+    async function overwriteTokFromPath() {
+      const filePath = document.getElementById('tok-disk-path').value.trim();
+      const toast = document.getElementById('tok-toast');
+      if (!filePath) {
+        alert('Please enter a file path on disk.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/user-tok', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filePath, backup: true }),
+        });
+        const out = await res.json();
+        toast.style.display = 'block';
+        if (out.ok) {
+          if (out.content) {
+            document.getElementById('tok-raw-editor').value = out.content;
+            updateDecodedTokPreview();
+          }
+          toast.textContent = out.message || `Overwrote ~/.wokwi/user.tok from ${filePath}`;
+        } else {
+          toast.textContent = 'Error: ' + (out.error || 'Failed to overwrite user.tok');
+        }
+      } catch (err) {
+        toast.style.display = 'block';
+        toast.textContent = 'Error communicating with local setup server: ' + err.message;
+      }
+    }
+
+    async function overwriteTokFromEditor() {
+      const content = document.getElementById('tok-raw-editor').value;
+      const toast = document.getElementById('tok-toast');
+      if (!content.trim()) {
+        alert('user.tok content is empty.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/user-tok', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content, backup: true }),
+        });
+        const out = await res.json();
+        toast.style.display = 'block';
+        if (out.ok) {
+          if (out.content) {
+            document.getElementById('tok-raw-editor').value = out.content;
+            updateDecodedTokPreview();
+          }
+          toast.textContent = out.message || 'Successfully overwrote ~/.wokwi/user.tok!';
+        } else {
+          toast.textContent = 'Error: ' + (out.error || 'Failed to overwrite user.tok');
+        }
+      } catch (err) {
+        toast.style.display = 'block';
+        toast.textContent = 'Running in browser-only mode — downloading user.tok so you can place it in ~/.wokwi/user.tok.';
+        downloadFile('user.tok', content);
       }
     }
 

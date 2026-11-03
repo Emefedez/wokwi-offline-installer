@@ -5,7 +5,7 @@ INSTALLER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 for arg in "$@"; do
   case "$arg" in
-    --gui|--tui|--cli|--preset|--counts|--out)
+    --gui|--tui|--cli|--preset|--counts|--out|--load-user-tok|--overwrite-user-tok)
       exec "${INSTALLER_DIR}/wokwi-offline-setup-macos" "$@"
       ;;
   esac
