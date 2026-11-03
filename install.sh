@@ -3,19 +3,34 @@ set -euo pipefail
 
 INSTALLER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+OS_NAME="$(uname -s)"
+ARCH_NAME="$(uname -m)"
+SETUP_BIN="${INSTALLER_DIR}/wokwi-offline-setup-macos"
+if [ "${OS_NAME}" = "Linux" ]; then
+  if [ "${ARCH_NAME}" = "aarch64" ] || [ "${ARCH_NAME}" = "arm64" ]; then
+    SETUP_BIN="${INSTALLER_DIR}/wokwi-offline-setup-linux-arm64"
+  else
+    SETUP_BIN="${INSTALLER_DIR}/wokwi-offline-setup-linux-amd64"
+  fi
+fi
+
 for arg in "$@"; do
   case "$arg" in
-    --gui|--tui|--cli|--preset|--counts|--out|--load-user-tok|--overwrite-user-tok)
-      exec "${INSTALLER_DIR}/wokwi-offline-setup-macos" "$@"
+    --gui|--tui|--cli|--preset|--counts|--out|--load-user-tok|--overwrite-user-tok|--ext-version)
+      exec "${SETUP_BIN}" "$@"
       ;;
   esac
 done
 
 WOKWI_HOME="${HOME}/.wokwi"
-VSCODE_EXT_DIR="${HOME}/.vscode/extensions/wokwi.wokwi-vscode-4.1.0"
-NODE_BIN="/opt/homebrew/bin/node"
-if [ ! -x "${NODE_BIN}" ]; then
+EXT_VERSION="${WOKWI_EXT_VERSION:-3.7.0}"
+VSCODE_EXT_DIR="${HOME}/.vscode/extensions/wokwi.wokwi-vscode-${EXT_VERSION}"
+if command -v node >/dev/null 2>&1; then
   NODE_BIN="$(command -v node)"
+elif [ -x "/opt/homebrew/bin/node" ]; then
+  NODE_BIN="/opt/homebrew/bin/node"
+else
+  NODE_BIN="node"
 fi
 
 MCP_TARGETS=""

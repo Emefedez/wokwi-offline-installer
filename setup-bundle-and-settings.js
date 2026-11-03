@@ -13,9 +13,15 @@ const zlib = require('zlib');
 
 const HOME = os.homedir();
 const WOKWI_DIR = path.join(HOME, '.wokwi');
-const EXT_DIR = path.join(HOME, '.vscode', 'extensions', 'wokwi.wokwi-vscode-4.1.0');
+const EXT_VERSION = process.env.WOKWI_EXT_VERSION || '3.7.0';
+const EXT_DIR = path.join(HOME, '.vscode', 'extensions', `wokwi.wokwi-vscode-${EXT_VERSION}`);
 const CACHE_DIR = path.join(EXT_DIR, '.cache');
-const VSCODE_SETTINGS = path.join(HOME, 'Library', 'Application Support', 'Code', 'User', 'settings.json');
+const VSCODE_SETTINGS =
+  os.platform() === 'win32'
+    ? path.join(process.env.APPDATA || path.join(HOME, 'AppData', 'Roaming'), 'Code', 'User', 'settings.json')
+    : os.platform() === 'darwin'
+    ? path.join(HOME, 'Library', 'Application Support', 'Code', 'User', 'settings.json')
+    : path.join(HOME, '.config', 'Code', 'User', 'settings.json');
 
 function disableVsCodeAutoUpdate() {
   fs.mkdirSync(path.dirname(VSCODE_SETTINGS), { recursive: true });

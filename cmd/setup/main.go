@@ -679,7 +679,7 @@ func openBrowser(urlStr string) {
 	_ = cmd.Start()
 }
 
-func runGUIServer(root string, port int) error {
+func runGUIServer(root string, port int, noBrowser bool) error {
 	cat, err := loadCatalog(root)
 	if err != nil {
 		return err
@@ -847,7 +847,9 @@ func runGUIServer(root string, port int) error {
 	fmt.Printf("  Wokwi Offline Suite GUI running at: %s\n", actualURL)
 	fmt.Printf("  Press Ctrl+C to stop the GUI server.\n")
 	fmt.Printf("==================================================================\n")
-	openBrowser(actualURL)
+	if !noBrowser {
+		openBrowser(actualURL)
+	}
 	return http.Serve(ln, mux)
 }
 
@@ -981,6 +983,7 @@ func runTUI(root string) error {
 
 func main() {
 	guiMode := flag.Bool("gui", false, "Launch interactive Browser/Desktop GUI")
+	noBrowser := flag.Bool("no-browser", false, "Do not auto-open browser window when starting GUI server")
 	tuiMode := flag.Bool("tui", false, "Launch interactive Terminal UI (TUI)")
 	cliMode := flag.Bool("cli", false, "Run in non-interactive CLI mode")
 	port := flag.Int("port", 47130, "Port for GUI mode")
@@ -1078,7 +1081,7 @@ func main() {
 
 	// Default to GUI mode (or if --gui passed)
 	_ = guiMode
-	if err := runGUIServer(root, *port); err != nil {
+	if err := runGUIServer(root, *port, *noBrowser); err != nil {
 		fmt.Fprintf(os.Stderr, "GUI error: %v\n", err)
 		os.Exit(1)
 	}

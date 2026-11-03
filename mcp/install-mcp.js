@@ -22,9 +22,32 @@ const path = require('path');
 const os = require('os');
 
 const HOME = os.homedir();
-const NODE_BIN = process.execPath || '/opt/homebrew/bin/node';
+const PLATFORM = os.platform();
+const NODE_BIN = process.execPath || 'node';
 const SERVER_SCRIPT = path.join(HOME, '.wokwi', 'mcp', 'server.js');
 const SERVER_NAME = 'wokwi';
+
+function getClaudeDesktopConfigPath() {
+  if (PLATFORM === 'win32') {
+    const appData = process.env.APPDATA || path.join(HOME, 'AppData', 'Roaming');
+    return path.join(appData, 'Claude', 'claude_desktop_config.json');
+  }
+  if (PLATFORM === 'darwin') {
+    return path.join(HOME, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json');
+  }
+  return path.join(HOME, '.config', 'Claude', 'claude_desktop_config.json');
+}
+
+function getVsCodeMcpConfigPath() {
+  if (PLATFORM === 'win32') {
+    const appData = process.env.APPDATA || path.join(HOME, 'AppData', 'Roaming');
+    return path.join(appData, 'Code', 'User', 'mcp.json');
+  }
+  if (PLATFORM === 'darwin') {
+    return path.join(HOME, 'Library', 'Application Support', 'Code', 'User', 'mcp.json');
+  }
+  return path.join(HOME, '.config', 'Code', 'User', 'mcp.json');
+}
 
 const TARGETS = {
   'claude-code': {
@@ -34,7 +57,7 @@ const TARGETS = {
   },
   'claude-desktop': {
     label: 'Anthropic Claude Desktop (claude_desktop_config.json)',
-    configPath: path.join(HOME, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json'),
+    configPath: getClaudeDesktopConfigPath(),
     format: 'mcpServers',
   },
   opencode: {
@@ -58,8 +81,8 @@ const TARGETS = {
     format: 'mcpServers',
   },
   vscode: {
-    label: 'VS Code (~/Library/Application Support/Code/User/mcp.json)',
-    configPath: path.join(HOME, 'Library', 'Application Support', 'Code', 'User', 'mcp.json'),
+    label: 'VS Code (User/mcp.json)',
+    configPath: getVsCodeMcpConfigPath(),
     format: 'vscode-servers',
   },
   cursor: {

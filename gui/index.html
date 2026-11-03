@@ -561,6 +561,9 @@
       }
       applyPreset(catalog.defaultPreset || 'rc-car');
       loadCurrentUserTok();
+      if (new URLSearchParams(window.location.search).get('tab') === 'installer') {
+        switchTab('installer');
+      }
     }
 
     function switchTab(tab) {
