@@ -931,6 +931,12 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": fmt.Sprintf("API endpoint not found: %s", r.URL.Path)})
+			return
+		}
 		htmlBytes, err := os.ReadFile(filepath.Join(root, "gui", "index.html"))
 		if err != nil {
 			http.Error(w, err.Error(), 500)

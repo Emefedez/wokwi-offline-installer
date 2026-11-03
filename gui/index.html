@@ -1768,7 +1768,15 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action, projectPath: targetDir }),
         });
-        const out = await res.json();
+        const rawText = await res.text();
+        let out;
+        try {
+          out = JSON.parse(rawText);
+        } catch (jsonErr) {
+          updateSimVisualUi(false);
+          showToast('Toolkit API returned non-JSON response (please restart toolkit with new binary)');
+          return;
+        }
         if (out.ok) {
           if (action === 'start') {
             updateSimVisualUi(true, out.autoLaunched ? 'Launched VS Code · Initializing Wokwi Simulator...' : 'Wokwi Simulation Running in VS Code!');

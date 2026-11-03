@@ -3,8 +3,9 @@
 version = 1
 firmware = "build/firmware.bin"
 elf = "build/firmware.elf"
-rfc2217ServerPort = 4000
-gdbServerPort = 3333
+# Optional debug & telnet ports (uncomment if using external GDB or telnet terminal)
+# rfc2217ServerPort = 4000
+# gdbServerPort = 3333
 
 [[chip]]
 name = "yb_p20m"
