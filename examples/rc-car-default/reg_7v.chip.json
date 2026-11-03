@@ -1,0 +1,29 @@
+{
+  "name": "7V Buck Voltage Regulator (12-24V IN -> 7V Servo Rail)",
+  "author": "Wokwi Offline Suite",
+  "pins": [
+    "VIN_POS",
+    "VIN_NEG",
+    "VOUT_POS",
+    "VOUT_NEG",
+    "EN"
+  ],
+  "controls": [
+    {
+      "id": "vinVolts",
+      "label": "Input Supply (12V-24V)",
+      "type": "range",
+      "min": 8,
+      "max": 28,
+      "step": 1
+    },
+    {
+      "id": "voutMv",
+      "label": "Regulated Output (mV, default 7000mV for YB-P20M)",
+      "type": "range",
+      "min": 6000,
+      "max": 7400,
+      "step": 100
+    }
+  ]
+}

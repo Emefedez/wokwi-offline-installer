@@ -1,0 +1,434 @@
+{
+  "author": "Wokwi Offline Suite Generator",
+  "connections": [
+    [
+      "esp:GND.1",
+      "servo_ybp20m_1:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "buck_7v:VOUT_POS",
+      "servo_ybp20m_1:VCC",
+      "orange",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:4",
+      "servo_ybp20m_1:PWM",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "servo_ybp20m_2:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "buck_7v:VOUT_POS",
+      "servo_ybp20m_2:VCC",
+      "orange",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:5",
+      "servo_ybp20m_2:PWM",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "motor_jgb37_1:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:3V3.1",
+      "motor_jgb37_1:VCC",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:6",
+      "motor_jgb37_1:C1",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "motor_jgb37_2:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:3V3.1",
+      "motor_jgb37_2:VCC",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:7",
+      "motor_jgb37_2:C1",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "motor_jgb37_3:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:3V3.1",
+      "motor_jgb37_3:VCC",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:15",
+      "motor_jgb37_3:C1",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "motor_jgb37_4:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:3V3.1",
+      "motor_jgb37_4:VCC",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:16",
+      "motor_jgb37_4:C1",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "can_cjmcu230:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:3V3.1",
+      "can_cjmcu230:VCC",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:17",
+      "can_cjmcu230:D",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "mosfet_irf520_1:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:3V3.1",
+      "mosfet_irf520_1:VCC",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:18",
+      "mosfet_irf520_1:SIG",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "mosfet_irf520_2:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:3V3.1",
+      "mosfet_irf520_2:VCC",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:8",
+      "mosfet_irf520_2:SIG",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "mosfet_irf520_3:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:3V3.1",
+      "mosfet_irf520_3:VCC",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:9",
+      "mosfet_irf520_3:SIG",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "mosfet_irf520_4:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:3V3.1",
+      "mosfet_irf520_4:VCC",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:10",
+      "mosfet_irf520_4:SIG",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "pmic_ip5306:GND",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "pmic_ip5306:VOUT",
+      "pmic_ip5306:VOUT",
+      "red",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:11",
+      "pmic_ip5306:KEY",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "buck_7v:VOUT_NEG",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "buck_7v:VOUT_POS",
+      "buck_7v:VOUT_POS",
+      "orange",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:12",
+      "buck_7v:EN",
+      "green",
+      [
+        "v0"
+      ]
+    ]
+  ],
+  "editor": "wokwi",
+  "parts": [
+    {
+      "attrs": {
+        "flashSize": "16",
+        "psramSize": "8"
+      },
+      "id": "esp",
+      "left": 0,
+      "top": 0,
+      "type": "board-esp32-s3-devkitc-1"
+    },
+    {
+      "attrs": {},
+      "id": "servo_ybp20m_1",
+      "left": 240,
+      "top": 0,
+      "type": "chip-yb_p20m"
+    },
+    {
+      "attrs": {},
+      "id": "servo_ybp20m_2",
+      "left": 480,
+      "top": 0,
+      "type": "chip-yb_p20m"
+    },
+    {
+      "attrs": {
+        "nominalVoltage": "12"
+      },
+      "id": "motor_jgb37_1",
+      "left": 720,
+      "top": 0,
+      "type": "chip-jgb37_520"
+    },
+    {
+      "attrs": {
+        "nominalVoltage": "12"
+      },
+      "id": "motor_jgb37_2",
+      "left": 0,
+      "top": 150,
+      "type": "chip-jgb37_520"
+    },
+    {
+      "attrs": {
+        "nominalVoltage": "12"
+      },
+      "id": "motor_jgb37_3",
+      "left": 240,
+      "top": 150,
+      "type": "chip-jgb37_520"
+    },
+    {
+      "attrs": {
+        "nominalVoltage": "12"
+      },
+      "id": "motor_jgb37_4",
+      "left": 480,
+      "top": 150,
+      "type": "chip-jgb37_520"
+    },
+    {
+      "attrs": {},
+      "id": "can_cjmcu230",
+      "left": 720,
+      "top": 150,
+      "type": "chip-cjmcu_230"
+    },
+    {
+      "attrs": {},
+      "id": "mosfet_irf520_1",
+      "left": 0,
+      "top": 300,
+      "type": "chip-irf520_pwm"
+    },
+    {
+      "attrs": {},
+      "id": "mosfet_irf520_2",
+      "left": 240,
+      "top": 300,
+      "type": "chip-irf520_pwm"
+    },
+    {
+      "attrs": {},
+      "id": "mosfet_irf520_3",
+      "left": 480,
+      "top": 300,
+      "type": "chip-irf520_pwm"
+    },
+    {
+      "attrs": {},
+      "id": "mosfet_irf520_4",
+      "left": 720,
+      "top": 300,
+      "type": "chip-irf520_pwm"
+    },
+    {
+      "attrs": {},
+      "id": "pmic_ip5306",
+      "left": 0,
+      "top": 450,
+      "type": "chip-ip5306"
+    },
+    {
+      "attrs": {},
+      "id": "buck_7v",
+      "left": 240,
+      "top": 450,
+      "type": "chip-reg_7v"
+    }
+  ],
+  "serialMonitor": {
+    "display": "always",
+    "newline": "lf"
+  },
+  "version": 1
+}

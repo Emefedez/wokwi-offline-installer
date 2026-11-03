@@ -1,0 +1,29 @@
+{
+  "name": "CJMCU-230 SN65HVD230 CAN Transceiver",
+  "author": "Wokwi Offline Suite",
+  "pins": [
+    "D",
+    "GND",
+    "VCC",
+    "R",
+    "VREF",
+    "CANL",
+    "CANH",
+    "RS"
+  ],
+  "controls": [
+    {
+      "id": "vccMv",
+      "label": "VCC Supply (mV, -300 to 6000, typ 3300)",
+      "type": "range",
+      "min": 0,
+      "max": 6000,
+      "step": 100
+    },
+    {
+      "id": "loopback",
+      "label": "CAN Bus Loopback Mode",
+      "type": "boolean"
+    }
+  ]
+}

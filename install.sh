@@ -2,6 +2,15 @@
 set -euo pipefail
 
 INSTALLER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+for arg in "$@"; do
+  case "$arg" in
+    --gui|--tui|--cli|--preset|--counts|--out)
+      exec "${INSTALLER_DIR}/wokwi-offline-setup-macos" "$@"
+      ;;
+  esac
+done
+
 WOKWI_HOME="${HOME}/.wokwi"
 VSCODE_EXT_DIR="${HOME}/.vscode/extensions/wokwi.wokwi-vscode-4.1.0"
 NODE_BIN="/opt/homebrew/bin/node"

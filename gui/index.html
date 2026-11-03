@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wokwi Offline Suite — RC Car & Hardware TOML Generator + Setup</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --panel-alt: #273549;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --success: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    header {
+      background: #0b1120;
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+    }
+    .tab-btn {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: #0b1120;
+      border-color: var(--accent);
+    }
+    main {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 20px 24px 48px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 1024px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    .card h2 {
+      margin: 0 0 12px 0;
+      font-size: 1.08rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .preset-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .btn {
+      background: var(--panel-alt);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.86rem;
+      transition: 0.15s;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .btn-primary {
+      background: var(--accent);
+      color: #0b1120;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover { background: var(--accent-hover); color: #fff; }
+    .btn-success {
+      background: var(--success);
+      color: #052e16;
+      border-color: var(--success);
+    }
+    .elem-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .elem-row {
+      background: var(--panel-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+    }
+    .elem-row.active-row {
+      border-color: rgba(56, 189, 248, 0.65);
+      background: rgba(56, 189, 248, 0.07);
+    }
+    .elem-info { flex: 1; }
+    .elem-title {
+      font-weight: 700;
+      font-size: 0.96rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .elem-cat {
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: #0f172a;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .elem-specs {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .elem-pins {
+      font-size: 0.74rem;
+      color: #cbd5e1;
+      margin-top: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .qty-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .qty-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: var(--text);
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .qty-input {
+      width: 56px;
+      height: 32px;
+      text-align: center;
+      background: #0f172a;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .form-group.full { grid-column: 1 / -1; }
+    label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    input[type="text"], input[type="number"], select, textarea {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-family: inherit;
+    }
+    textarea.code-box {
+      width: 100%;
+      height: 250px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.8rem;
+      white-space: pre;
+      resize: vertical;
+    }
+    .rail-box {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .rail-card {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .rail-card .rail-name {
+      font-size: 0.76rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .rail-card .rail-val {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+    .callout {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      color: #fde68a;
+      margin-top: 8px;
+    }
+    .status-toast {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: #86efac;
+      font-size: 0.85rem;
+      display: none;
+    }
+    .hidden { display: none !important; }
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .chk-item {
+      background: var(--panel-alt);
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>
+      <span>Wokwi Offline Suite</span>
+      <span class="badge">RC Car &amp; Embedded TOML / Diagram Generator</span>
+      <span class="badge">v4.1.0-MCP</span>
+    </h1>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('generator')">1. Hardware &amp; TOML Generator (RC Car)</button>
+      <button class="tab-btn" onclick="switchTab('installer')">2. Offline Setup, Bundle &amp; MCP Installer</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- TAB 1: GENERATOR -->
+    <div id="tab-generator" class="grid-2">
+      <div>
+        <div class="card">
+          <h2>
+            <span>Select Hardware Elements (N of each)</span>
+            <span style="font-size:0.8rem;color:var(--muted)">tabla_piezas_voltajes_amperajes.pdf</span>
+          </h2>
+          <div class="preset-bar">
+            <button class="btn btn-primary" onclick="applyPreset('rc-car')">Load RC Car Preset (Default)</button>
+            <button class="btn" onclick="applyPreset('esp32calc')">Load ESP32 Calculator Preset</button>
+            <button class="btn" onclick="applyPreset('zero')">Clear All (0)</button>
+          </div>
+          <div id="elements-container" class="elem-list"></div>
+        </div>
+
+        <div class="card">
+          <h2>
+            <span>Import Other / Custom Hardware Element</span>
+            <span class="badge">+ Custom Chip / Part</span>
+          </h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Element ID / Chip Name (e.g. ultrasonic_sr04)</label>
+              <input type="text" id="imp-id" placeholder="custom_sensor" />
+            </div>
+            <div class="form-group">
+              <label>Display Name</label>
+              <input type="text" id="imp-name" placeholder="Custom Sensor / Actuator" />
+            </div>
+            <div class="form-group">
+              <label>Wokwi Type (chip-&lt;name&gt; or wokwi-&lt;part&gt;)</label>
+              <input type="text" id="imp-type" placeholder="chip-custom_sensor" />
+            </div>
+            <div class="form-group">
+              <label>Pins (comma-separated)</label>
+              <input type="text" id="imp-pins" placeholder="VCC, GND, SIG, OUT" />
+            </div>
+            <div class="form-group">
+              <label>Voltage Range / Notes</label>
+              <input type="text" id="imp-specs" placeholder="3.3V - 5V, 50mA max" />
+            </div>
+            <div class="form-group">
+              <label>Initial Quantity (N)</label>
+              <input type="number" id="imp-count" value="1" min="1" />
+            </div>
+            <div class="form-group full">
+              <label>Optional: Path to existing .chip.json / .chip.wasm / .chip.c on disk (auto-compiled if .c)</label>
+              <input type="text" id="imp-path" placeholder="/path/to/my_custom.chip.json (optional)" />
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="importCustomElement()">+ Add / Import Element to Catalog</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Electrical &amp; Power Rail Summary (Live Calculation)</h2>
+          <div class="rail-box" id="power-summary"></div>
+          <div class="callout">
+            <strong>7V Buck Regulator Wiring Note (Sec. 7 of PDF):</strong><br/>
+            Connect <strong>12V–24V</strong> (JGB37-520 motor battery bus) to <code>VIN_POS</code> of the <strong>7V Regulator</strong>, and its <strong>7.0V</strong> output (<code>VOUT_POS</code>) to the <strong>YB-P20M Servos' VCC</strong> (rated 6.0–7.4V, &le;3.6A stall). Connect the servos' <code>PWM</code> and <code>FB</code> pins directly to the <strong>ESP32-S3 N16R8</strong> (3.3V logic) with a <strong>shared common GND</strong>.
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Project &amp; Output Settings</h2>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Target Project Directory (to write wokwi.toml, diagram.json &amp; copy .chip.wasm files)</label>
+              <input type="text" id="cfg-project-dir" value="./rc-car-wokwi" />
+            </div>
+            <div class="form-group">
+              <label>Firmware Path (in wokwi.toml)</label>
+              <input type="text" id="cfg-firmware" value="build/firmware.bin" oninput="regeneratePreviews()" />
+            </div>
+            <div class="form-group">
+              <label>ELF Path (in wokwi.toml)</label>
+              <input type="text" id="cfg-elf" value="build/firmware.elf" oninput="regeneratePreviews()" />
+            </div>
+            <div class="form-group">
+              <label>RFC2217 Serial Port (Offline UART)</label>
+              <input type="number" id="cfg-rfc-port" value="4000" oninput="regeneratePreviews()" />
+            </div>
+            <div class="form-group">
+              <label>GDB Server Port</label>
+              <input type="number" id="cfg-gdb-port" value="3333" oninput="regeneratePreviews()" />
+            </div>
+            <div class="form-group">
+              <label>Motor Bus Voltage (JGB37-520)</label>
+              <select id="cfg-motor-v" onchange="regeneratePreviews()">
+                <option value="12">12 V (120 mA no-load / 400 mA load)</option>
+                <option value="24">24 V (50 mA no-load / 200 mA load)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Auto-Wire Power &amp; GPIO Signals</label>
+              <select id="cfg-autowire" onchange="regeneratePreviews()">
+                <option value="yes">Yes — Wire to ESP32-S3 &amp; Power Rails</option>
+                <option value="no">No — Place parts without wires</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-success" onclick="saveGeneratedProject()">Generate &amp; Write Project Files to Disk</button>
+            <button class="btn" onclick="downloadFile('wokwi.toml', document.getElementById('preview-toml').value)">Download wokwi.toml</button>
+            <button class="btn" onclick="downloadFile('diagram.json', document.getElementById('preview-diagram').value)">Download diagram.json</button>
+          </div>
+          <div id="gen-toast" class="status-toast"></div>
+        </div>
+
+        <div class="card">
+          <h2>Generated <code>wokwi.toml</code> Preview</h2>
+          <textarea id="preview-toml" class="code-box"></textarea>
+        </div>
+
+        <div class="card">
+          <h2>Generated <code>diagram.json</code> Preview</h2>
+          <textarea id="preview-diagram" class="code-box"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: INSTALLER -->
+    <div id="tab-installer" class="hidden">
+      <div class="grid-2">
+        <div class="card">
+          <h2>Offline Wokwi Environment &amp; MCP Setup</h2>
+          <p style="font-size:0.86rem;color:var(--muted);">
+            Configure your local air-gapped Wokwi VS Code extension (auto-offline mode + MCP bridge), disable VS Code extension auto-updates, load your offline <code>.wpk</code> bundle, and save your valid Wokwi license key.
+          </p>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Path to Offline Bundle (<code>bundle.wpk</code>)</label>
+              <input type="text" id="inst-bundle" value="~/.wokwi/bundle.wpk" />
+            </div>
+            <div class="form-group full">
+              <label>Valid Wokwi License Key or Path to <code>user.tok</code></label>
+              <input type="text" id="inst-license" value="~/.wokwi/user.tok" />
+            </div>
+          </div>
+
+          <label>Select AI Clients to Install the Wokwi Offline MCP Server Into:</label>
+          <div class="checkbox-grid" id="mcp-client-checks">
+            <label class="chk-item"><input type="checkbox" value="t3" checked /> T3 Code</label>
+            <label class="chk-item"><input type="checkbox" value="anthropic" checked /> Anthropic (Claude Desktop &amp; Code)</label>
+            <label class="chk-item"><input type="checkbox" value="opencode" checked /> OpenCode</label>
+            <label class="chk-item"><input type="checkbox" value="codex" checked /> Codex</label>
+            <label class="chk-item"><input type="checkbox" value="antigravity" checked /> Antigravity / Gemini</label>
+            <label class="chk-item"><input type="checkbox" value="vscode" checked /> VS Code MCP</label>
+            <label class="chk-item"><input type="checkbox" value="cursor" /> Cursor</label>
+            <label class="chk-item"><input type="checkbox" value="zed" /> Zed</label>
+          </div>
+
+          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-success" onclick="runFullSetup()">Run Offline Setup &amp; Install Selected MCPs</button>
+          </div>
+          <div id="inst-toast" class="status-toast"></div>
+        </div>
+
+        <div class="card">
+          <h2>Instructions &amp; Extension Auto-Update Protection</h2>
+          <ol style="font-size:0.88rem;color:#e2e8f0;padding-left:20px;line-height:1.6;">
+            <li><strong>Automatic Extension Protection:</strong> Running setup sets <code>"extensions.autoUpdate": false</code> and <code>"extensions.autoCheckUpdates": false</code> in your VS Code <code>settings.json</code> so VS Code never overwrites the offline-first Wokwi extension.</li>
+            <li><strong>Manual Check in VS Code:</strong> Open Settings (<code>Cmd+,</code> on macOS / <code>Ctrl+,</code> on Windows), search for <code>extensions.autoUpdate</code>, and verify it is set to <code>None</code>. In the Extensions panel, right-click <strong>Wokwi Simulator</strong> and ensure <strong>Auto Update</strong> is unchecked.</li>
+            <li><strong>Automatic Offline Launch:</strong> Whenever a valid offline license (<code>user.tok</code>) and extracted <code>bundle.wpk</code> are present, the extension opens directly in <strong>Wokwi Simulator (Offline)</strong> without waiting for the online iframe.</li>
+            <li><strong>Cross-Platform Executables:</strong>
+              <ul>
+                <li>Windows: Run <code>WokwiOfflineSetup.exe</code> (or <code>install.bat</code>)</li>
+                <li>macOS: Run <code>./wokwi-offline-setup-macos</code> (or <code>./install.sh</code>)</li>
+                <li>Modes: Pass <code>--gui</code> (Browser GUI), <code>--tui</code> (Interactive Terminal UI), or <code>--cli</code> (Flag-driven CLI).</li>
+              </ul>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let catalog = null;
+    let counts = {};
+
+    const FALLBACK_CATALOG = __CATALOG_JSON_PLACEHOLDER__;
+
+    async function init() {
+      try {
+        const res = await fetch('/api/catalog');
+        if (res.ok) {
+          catalog = await res.json();
+        } else {
+          catalog = FALLBACK_CATALOG;
+        }
+      } catch {
+        catalog = FALLBACK_CATALOG;
+      }
+      applyPreset(catalog.defaultPreset || 'rc-car');
+    }
+
+    function switchTab(tab) {
+      document.getElementById('tab-generator').classList.toggle('hidden', tab !== 'generator');
+      document.getElementById('tab-installer').classList.toggle('hidden', tab !== 'installer');
+      const btns = document.querySelectorAll('.tab-btn');
+      btns[0].classList.toggle('active', tab === 'generator');
+      btns[1].classList.toggle('active', tab === 'installer');
+    }
+
+    function applyPreset(presetKey) {
+      counts = {};
+      for (const el of catalog.elements) {
+        if (presetKey === 'zero') {
+          counts[el.id] = 0;
+        } else if (catalog.presets && catalog.presets[presetKey] && catalog.presets[presetKey].counts[el.id] !== undefined) {
+          counts[el.id] = catalog.presets[presetKey].counts[el.id];
+        } else {
+          counts[el.id] = el.defaultCount || 0;
+        }
+      }
+      renderElements();
+      regeneratePreviews();
+    }
+
+    function changeQty(id, delta) {
+      counts[id] = Math.max(0, (counts[id] || 0) + delta);
+      renderElements();
+      regeneratePreviews();
+    }
+
+    function setQty(id, val) {
+      counts[id] = Math.max(0, parseInt(val, 10) || 0);
+      renderElements();
+      regeneratePreviews();
+    }
+
+    function renderElements() {
+      const container = document.getElementById('elements-container');
+      container.innerHTML = '';
+      for (const el of catalog.elements) {
+        const n = counts[el.id] || 0;
+        const row = document.createElement('div');
+        row.className = 'elem-row' + (n > 0 ? ' active-row' : '');
+        row.innerHTML = `
+          <div class="elem-info">
+            <div class="elem-title">
+              <span>${el.name}</span>
+              <span class="elem-cat">${el.category || 'Component'}</span>
+              <code style="font-size:0.75rem;color:#93c5fd;">${el.wokwiType}</code>
+            </div>
+            <div class="elem-specs">${(el.specs && el.specs.notes) || ''}</div>
+            <div class="elem-pins">Pins: [${(el.pins || []).join(', ')}]</div>
+          </div>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="changeQty('${el.id}', -1)">-</button>
+            <input class="qty-input" type="number" min="0" value="${n}" onchange="setQty('${el.id}', this.value)" />
+            <button class="qty-btn" onclick="changeQty('${el.id}', 1)">+</button>
+          </div>
+        `;
+        container.appendChild(row);
+      }
+    }
+
+    function buildTomlAndDiagram() {
+      const firmware = document.getElementById('cfg-firmware').value || 'build/firmware.bin';
+      const elf = document.getElementById('cfg-elf').value || 'build/firmware.elf';
+      const rfcPort = parseInt(document.getElementById('cfg-rfc-port').value, 10) || 4000;
+      const gdbPort = parseInt(document.getElementById('cfg-gdb-port').value, 10) || 3333;
+      const motorV = parseInt(document.getElementById('cfg-motor-v').value, 10) || 12;
+      const autoWire = document.getElementById('cfg-autowire').value === 'yes';
+
+      const tomlLines = [
+        '# Generated by Wokwi Offline Suite — RC Car & Hardware TOML Generator',
+        '[wokwi]',
+        'version = 1',
+        `firmware = "${firmware}"`,
+        `elf = "${elf}"`,
+        `rfc2217ServerPort = ${rfcPort}`,
+        `gdbServerPort = ${gdbPort}`,
+      ];
+
+      if ((counts['microsd_card'] || 0) > 0) {
+        tomlLines.push('', '[[sdcard]]', 'folder = "sdcard"', 'size = "8M"', 'writeback = true');
+      }
+
+      const usedChips = new Map();
+      const parts = [];
+      const connections = [];
+
+      let mainMcuId = null;
+      let reg7vId = null;
+      let pmicId = null;
+      const mcuGpioPool = ['4', '5', '6', '7', '15', '16', '17', '18', '8', '9', '10', '11', '12', '13', '14', '1', '2', '38', '39', '40', '41', '42'];
+      let gpioIdx = 0;
+
+      let col = 0;
+      let row = 0;
+
+      for (const el of catalog.elements) {
+        const n = counts[el.id] || 0;
+        if (n <= 0) continue;
+
+        if (el.chipName && el.chipBinary) {
+          usedChips.set(el.chipName, el.chipBinary);
+        }
+
+        for (let i = 1; i <= n; i++) {
+          const partId = n === 1 ? el.idPrefix : `${el.idPrefix}_${i}`;
+          const top = row * 150;
+          const left = col * 240;
+          col++;
+          if (col >= 4) {
+            col = 0;
+            row++;
+          }
+
+          const attrs = { ...(el.attrs || {}) };
+          if (el.id === 'jgb37_520') {
+            attrs.nominalVoltage = String(motorV);
+          }
+
+          parts.push({
+            type: el.wokwiType,
+            id: partId,
+            top,
+            left,
+            attrs,
+          });
+
+          if (el.isBoard && !mainMcuId) mainMcuId = partId;
+          if (el.id === 'reg_7v' && !reg7vId) reg7vId = partId;
+          if (el.id === 'ip5306' && !pmicId) pmicId = partId;
+        }
+      }
+
+      if (autoWire && mainMcuId) {
+        for (const p of parts) {
+          if (p.id === mainMcuId) continue;
+          const el = catalog.elements.find((e) => e.wokwiType === p.type);
+          if (!el) continue;
+
+          // Common GND wiring
+          const gndPin = el.gndPin || (el.pins && el.pins.includes('GND') ? 'GND' : null);
+          if (gndPin) {
+            connections.push([`${mainMcuId}:GND.1`, `${p.id}:${gndPin}`, 'black', ['v0']]);
+          }
+
+          // Power rail wiring
+          if (el.powerRail === '7V' && reg7vId && el.powerPin) {
+            connections.push([`${reg7vId}:VOUT_POS`, `${p.id}:${el.powerPin}`, 'orange', ['v0']]);
+          } else if (el.powerRail === '5V' && pmicId && el.powerPin) {
+            connections.push([`${pmicId}:VOUT`, `${p.id}:${el.powerPin}`, 'red', ['v0']]);
+          } else if (el.powerPin) {
+            connections.push([`${mainMcuId}:3V3.1`, `${p.id}:${el.powerPin}`, 'red', ['v0']]);
+          }
+
+          // Signal pin to next free ESP32-S3 GPIO
+          if (el.signalPin && gpioIdx < mcuGpioPool.length) {
+            const gpio = mcuGpioPool[gpioIdx++];
+            connections.push([`${mainMcuId}:${gpio}`, `${p.id}:${el.signalPin}`, 'green', ['v0']]);
+          }
+        }
+      }
+
+      for (const [chipName, chipBin] of usedChips.entries()) {
+        tomlLines.push('', '[[chip]]', `name = "${chipName}"`, `binary = "${chipBin}"`);
+      }
+
+      tomlLines.push('', '# Hardware Elements Bill of Materials & Electrical Ratings');
+      for (const el of catalog.elements) {
+        const n = counts[el.id] || 0;
+        if (n <= 0) continue;
+        tomlLines.push(
+          '',
+          '[[hardware.element]]',
+          `id = "${el.id}"`,
+          `name = ${JSON.stringify(el.name)}`,
+          `type = "${el.wokwiType}"`,
+          `count = ${n}`
+        );
+        if (el.specs && el.specs.notes) {
+          tomlLines.push(`specs = ${JSON.stringify(el.specs.notes)}`);
+        }
+      }
+
+      const diagramObj = {
+        version: 1,
+        author: 'Wokwi Offline Suite Generator',
+        editor: 'wokwi',
+        parts,
+        connections,
+        serialMonitor: { display: 'always', newline: 'lf' },
+      };
+
+      return {
+        toml: tomlLines.join('\n') + '\n',
+        diagram: JSON.stringify(diagramObj, null, 2) + '\n',
+        usedChips: Array.from(usedChips.keys()),
+      };
+    }
+
+    function updatePowerSummary() {
+      const motorV = parseInt(document.getElementById('cfg-motor-v').value, 10) || 12;
+      const nServos = counts['yb_p20m'] || 0;
+      const nMotors = counts['jgb37_520'] || 0;
+      const nCan = counts['cjmcu_230'] || 0;
+      const nMosfet = counts['irf520_pwm'] || 0;
+      const nReg7v = counts['reg_7v'] || 0;
+
+      const servoStallA = (nServos * 3.6).toFixed(1);
+      const motorNoLoadMa = nMotors * (motorV === 24 ? 50 : 120);
+      const motorLoadMa = nMotors * (motorV === 24 ? 200 : 400);
+      const canIoMa = nCan * 11;
+
+      const summaryEl = document.getElementById('power-summary');
+      summaryEl.innerHTML = `
+        <div class="rail-card">
+          <div class="rail-name">7.0V Servo Rail (${nServos}x YB-P20M)</div>
+          <div class="rail-val">&le; ${servoStallA} A stall</div>
+          <div style="font-size:0.74rem;color:var(--muted)">6–7.4V | 7V Buck count: ${nReg7v}</div>
+        </div>
+        <div class="rail-card">
+          <div class="rail-name">${motorV}V Motor Bus (${nMotors}x JGB37-520)</div>
+          <div class="rail-val">${motorNoLoadMa} mA no-load</div>
+          <div style="font-size:0.74rem;color:var(--muted)">Load/Stall spec: ${motorLoadMa} | ${nMosfet}x IRF520</div>
+        </div>
+        <div class="rail-card">
+          <div class="rail-name">3.3V Logic &amp; CAN (${nCan}x CJMCU-230)</div>
+          <div class="rail-val">&ge; 500 mA supply</div>
+          <div style="font-size:0.74rem;color:var(--muted)">ESP32-S3 IO max: 1500mA | CAN IO: &plusmn;${canIoMa}mA</div>
+        </div>
+      `;
+    }
+
+    function regeneratePreviews() {
+      if (!catalog) return;
+      const { toml, diagram } = buildTomlAndDiagram();
+      document.getElementById('preview-toml').value = toml;
+      document.getElementById('preview-diagram').value = diagram;
+      updatePowerSummary();
+    }
+
+    async function importCustomElement() {
+      const id = document.getElementById('imp-id').value.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+      const name = document.getElementById('imp-name').value.trim() || id;
+      const wokwiType = document.getElementById('imp-type').value.trim() || `chip-${id}`;
+      const pinsRaw = document.getElementById('imp-pins').value.trim();
+      const specsNotes = document.getElementById('imp-specs').value.trim() || 'User-imported custom element';
+      const initialCount = Math.max(1, parseInt(document.getElementById('imp-count').value, 10) || 1);
+      const diskPath = document.getElementById('imp-path').value.trim();
+
+      if (!id) {
+        alert('Please enter an Element ID / Chip Name.');
+        return;
+      }
+
+      const pins = pinsRaw ? pinsRaw.split(',').map((s) => s.trim()).filter(Boolean) : ['VCC', 'GND', 'SIG'];
+      const isChip = wokwiType.startsWith('chip-');
+      const chipName = isChip ? wokwiType.replace(/^chip-/, '') : null;
+
+      const newElem = {
+        id,
+        name,
+        category: 'Imported Custom',
+        wokwiType,
+        ...(chipName ? { chipName, chipBinary: `${chipName}.chip.wasm`, chipJson: `${chipName}.chip.json` } : {}),
+        idPrefix: id,
+        defaultCount: initialCount,
+        attrs: {},
+        pins,
+        signalPin: pins.find((p) => !['VCC', 'GND'].includes(p.toUpperCase())) || pins[0],
+        powerPin: pins.find((p) => p.toUpperCase().includes('VCC') || p.toUpperCase().includes('VIN')) || null,
+        gndPin: pins.find((p) => p.toUpperCase().includes('GND')) || null,
+        powerRail: '3V3',
+        specs: { notes: specsNotes },
+        importDiskPath: diskPath || null,
+      };
+
+      try {
+        const res = await fetch('/api/import-element', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newElem),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.element) Object.assign(newElem, data.element);
+        }
+      } catch {}
+
+      const existingIdx = catalog.elements.findIndex((e) => e.id === id);
+      if (existingIdx >= 0) {
+        catalog.elements[existingIdx] = newElem;
+      } else {
+        catalog.elements.push(newElem);
+      }
+      counts[id] = initialCount;
+      renderElements();
+      regeneratePreviews();
+    }
+
+    async function saveGeneratedProject() {
+      const targetDir = document.getElementById('cfg-project-dir').value.trim();
+      const { toml, diagram, usedChips } = buildTomlAndDiagram();
+      const toast = document.getElementById('gen-toast');
+      try {
+        const res = await fetch('/api/generate-project', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetDir,
+            toml: document.getElementById('preview-toml').value || toml,
+            diagram: document.getElementById('preview-diagram').value || diagram,
+            usedChips,
+            counts,
+          }),
+        });
+        const out = await res.json();
+        toast.style.display = 'block';
+        if (out.ok) {
+          toast.textContent = `Saved wokwi.toml, diagram.json, and [${(out.copiedChips || []).join(', ')}] to ${out.targetDir}`;
+        } else {
+          toast.textContent = `Error: ${out.error}`;
+        }
+      } catch (err) {
+        toast.style.display = 'block';
+        toast.textContent = 'Running in standalone browser mode — downloading files directly.';
+        downloadFile('wokwi.toml', document.getElementById('preview-toml').value);
+        downloadFile('diagram.json', document.getElementById('preview-diagram').value);
+      }
+    }
+
+    async function runFullSetup() {
+      const bundlePath = document.getElementById('inst-bundle').value.trim();
+      const licenseInput = document.getElementById('inst-license').value.trim();
+      const checked = Array.from(document.querySelectorAll('#mcp-client-checks input:checked')).map((c) => c.value);
+      const toast = document.getElementById('inst-toast');
+      try {
+        const res = await fetch('/api/run-setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bundlePath, licenseInput, mcpTargets: checked }),
+        });
+        const out = await res.json();
+        toast.style.display = 'block';
+        toast.textContent = out.message || 'Offline Setup completed successfully!';
+      } catch (err) {
+        toast.style.display = 'block';
+        toast.textContent = 'Error connecting to local setup server: ' + err.message;
+      }
+    }
+
+    function downloadFile(filename, content) {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+    }
+
+    init();
+  </script>
+</body>
+</html>

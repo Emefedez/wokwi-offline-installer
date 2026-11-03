@@ -1,0 +1,28 @@
+{
+  "name": "YB-P20M High-Torque Servo (6-7.4V)",
+  "author": "Wokwi Offline Suite",
+  "pins": [
+    "PWM",
+    "VCC",
+    "GND",
+    "FB"
+  ],
+  "controls": [
+    {
+      "id": "voltageMv",
+      "label": "Supply Voltage (mV, 6000-7400)",
+      "type": "range",
+      "min": 5000,
+      "max": 8400,
+      "step": 100
+    },
+    {
+      "id": "torqueMnm",
+      "label": "Load Torque (mN*m, 0-2700)",
+      "type": "range",
+      "min": 0,
+      "max": 2700,
+      "step": 50
+    }
+  ]
+}

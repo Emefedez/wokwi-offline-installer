@@ -1,116 +1,107 @@
-# Wokwi Offline Suite & Hardware Elements Installer — Instructions
+# Wokwi Offline Suite — RC Car & Embedded Hardware Setup + TOML Generator
 
-This folder (`/Users/m1-max/Documents/wokwi-offline-installer`) is a self-contained installer package for your air-gapped / offline hardware testing workflow.
-
----
-
-## 1. What Is Included in This Folder
-
-```text
-wokwi-offline-installer/
-├── install.sh                      # Interactive & CLI installer script
-├── setup-bundle-and-settings.js    # Bundle (.wpk) extractor, license writer, and VS Code settings helper
-├── INSTRUCTIONS.md                 # This guide
-├── extension/                      # Wokwi VS Code Extension (4.1.0) with:
-│   └── dist/extension.js           #   - Automatic Offline Mode launch (no cloud iframe timeout)
-│                                   #   - Backported localhost MCP Bridge (127.0.0.1:47129)
-├── mcp/                            # Wokwi Offline MCP Server & Multi-Client Installer
-│   ├── server.js                   #   - Zero-dependency Node.js MCP server
-│   ├── install-mcp.sh              #   - Installer for T3 Code, Anthropic, OpenCode, Codex, etc.
-│   └── assets/                     #   - Offline wokwi-api.h, diagram.schema.json, chip.schema.json
-└── hardware/                       # Pre-packaged ESP32Calc Hardware Elements:
-    ├── diagram.json                #   - ESP32-S3 (16MB Flash / 16MB PSRAM), WeAct EPD, SD card, Keypad
-    ├── wokwi.toml                  #   - Firmware, ELF, and custom chip config
-    ├── weact_213_bw.chip.json      #   - WeAct 2.13" B/W e-Paper Display (128x250) definition
-    ├── weact_213_bw.chip.wasm      #   - Compiled WebAssembly binary for the e-Paper display
-    ├── partitions.csv              #   - ESP32-S3 partition table
-    ├── flasher_args.json           #   - ESP-IDF multi-partition flasher configuration
-    ├── sdcard/                     #   - Seeded MicroSD card directory (/sdcard/config, /sdcard/programs)
-    └── scenarios/                  #   - Automated test scenarios (solve-linear.yaml, keypad-press-only.yaml)
-```
+This repository (`/Users/m1-max/Documents/wokwi-offline-installer`) contains the complete offline Wokwi setup tool, MCP server, custom WebAssembly hardware chips, and the multi-mode (**GUI**, **TUI**, and **CLI**) `wokwi.toml` + `diagram.json` generator for **Windows** and **macOS**.
 
 ---
 
-## 2. Running the Installer
+## 1. Executables & Supported Modes (GUI, TUI, CLI)
 
-### Interactive Mode (Recommended)
-Run the installer from a terminal and follow the prompts:
+| Platform | Executable / Launcher | Description |
+| :--- | :--- | :--- |
+| **Windows (x86_64)** | `WokwiOfflineSetup.exe` / `install.bat` | Standalone native 64-bit Windows executable |
+| **macOS (ARM64)** | `./wokwi-offline-setup-macos` / `./install.sh` | Standalone native Apple Silicon executable & shell script |
 
-```bash
-cd /Users/m1-max/Documents/wokwi-offline-installer
-./install.sh
-```
+### Launch Modes
 
-During interactive setup, the script will:
-1. Install the offline-first Wokwi extension into `~/.vscode/extensions/wokwi.wokwi-vscode-4.1.0`.
-2. Automatically disable VS Code extension auto-updates so your extension is never overwritten.
-3. Install the ESP32-S3 + WeAct 2.13" e-Paper screen + SD + Keypad elements into `~/.wokwi/hardware-elements/` (and optionally copy them into a project folder of your choice).
-4. Ask which AI tools you want to register the Wokwi MCP server in (`t3`, `anthropic`, `opencode`, `codex`, `antigravity`, `vscode`, `cursor`, `zed`, `all`, or `none`).
-5. Prompt for the path to your `.wpk` offline bundle (e.g. `~/.wokwi/bundle.wpk`) and extract it into the extension's `.cache` directory.
-6. Prompt for your valid Wokwi license key (or path to `user.tok`) and save it to `~/.wokwi/user.tok`.
+1. **GUI Mode (Default when launched without arguments or with `--gui`)**:
+   ```bash
+   # macOS
+   ./wokwi-offline-setup-macos --gui
+   # or: ./install.sh --gui
 
-### Non-Interactive / Automated CLI Mode
-You can also pass all options via flags for automated provisioning across machines:
+   # Windows
+   WokwiOfflineSetup.exe --gui
+   # or double-click WokwiOfflineSetup.exe / install.bat
+   ```
+   Opens the interactive **Hardware & TOML Generator + Offline Setup GUI** at `http://127.0.0.1:47130`, where you can:
+   - Choose the **RC Car Preset (Default)**, **ESP32 Calculator Preset**, or **Custom** counts.
+   - Set quantity **$N$** of each component (`0, 1, 2, 3, 4...`) with live power-rail calculations (`7.0V Servo Buck Rail`, `12V/24V Motor Bus`, `5.0V IP5306 Rail`, `3.3V ESP32-S3 Logic Rail`).
+   - **Import Other / Custom Elements** (`.chip.json`, `.chip.wasm`, `.chip.c`, or custom Wokwi parts).
+   - Preview and write `wokwi.toml`, `diagram.json`, and all required `.chip.wasm` + `.chip.json` files directly to any project folder.
+   - Run the full **Offline Environment Setup** (install extension, disable extension auto-updates, extract `.wpk` bundle, save valid license key to `user.tok`, and register the MCP server in T3 Code, Anthropic, OpenCode, Codex, Antigravity, VS Code, Cursor, Zed).
 
-```bash
-./install.sh \
-  --mcp "t3 anthropic opencode" \
-  --bundle /Users/m1-max/.wokwi/bundle.wpk \
-  --license /Users/m1-max/.wokwi/user.tok \
-  --project /Users/m1-max/Documents/ESP32Calc/ESP32Calc/XCasFW \
-  --non-interactive
-```
+2. **TUI Mode (`--tui` — Interactive Terminal UI)**:
+   ```bash
+   # macOS
+   ./wokwi-offline-setup-macos --tui
 
----
+   # Windows
+   WokwiOfflineSetup.exe --tui
+   ```
+   Walks you interactively in the terminal through:
+   - Full Offline Environment Setup (`.wpk` bundle, valid license key, MCP client installation)
+   - Picking a preset (`rc-car`, `esp32calc`, `zero`), setting $N$ of each component, importing custom chips, and generating `wokwi.toml` + `diagram.json`.
 
-## 3. Disabling Auto-Update for Extensions in VS Code
+3. **CLI Mode (`--cli` — Flag-Driven Automation)**:
+   ```bash
+   # Generate an RC Car project with custom N counts:
+   ./wokwi-offline-setup-macos --cli \
+     --preset rc-car \
+     --counts "esp32_s3_n16r8=1,yb_p20m=2,jgb37_520=4,cjmcu_230=1,irf520_pwm=4,ip5306=1,reg_7v=1" \
+     --out ./my-rc-car
 
-Keeping VS Code from auto-updating extensions is critical so it does not overwrite the backported MCP bridge and automatic offline-mode launch in `wokwi.wokwi-vscode-4.1.0`.
-
-### A. Automatic (Done by `install.sh`)
-`install.sh` automatically sets the following in `~/Library/Application Support/Code/User/settings.json`:
-
-```json
-{
-  "extensions.autoUpdate": false,
-  "extensions.autoCheckUpdates": false
-}
-```
-
-### B. Manual Verification in VS Code UI
-1. Open **Visual Studio Code**.
-2. Press `Cmd + ,` to open **Settings**.
-3. Search for `extensions.autoUpdate` and set **Extensions: Auto Update** to **`None`** (`false`).
-4. Search for `extensions.autoCheckUpdates` and uncheck **Extensions: Auto Check Updates**.
-5. Open the **Extensions** sidebar (`Cmd + Shift + X`), right-click **Wokwi Simulator**, and ensure **Auto Update** is **unchecked**.
-
----
-
-## 4. Loading the Offline Bundle (`.wpk`) & Valid License
-
-### Option 1: Via the Installer Script
-Run:
-```bash
-./install.sh --bundle /path/to/bundle.wpk --license "YOUR_VALID_WOKWI_LICENSE_KEY"
-```
-
-### Option 2: Inside VS Code
-1. Open the Command Palette (`Cmd + Shift + P`).
-2. Run **`Wokwi: Manually Enter License Key`** and paste your valid Wokwi license key.
-3. Run **`Wokwi: View License Information`** and click **Install Offline Bundle** (or **Update Offline Bundle**) to select your `.wpk` file.
-
-Once both a valid offline license and the extracted `.wpk` bundle are present, opening `diagram.json` or running **`Wokwi: Start Simulator`** will **immediately launch in Offline Mode** (`Wokwi Simulator (Offline)`) without attempting to load the online `wokwi.com` iframe.
+   # Run full offline setup + MCP registration via CLI:
+   ./wokwi-offline-setup-macos --cli \
+     --bundle ~/.wokwi/bundle.wpk \
+     --license ~/.wokwi/user.tok \
+     --mcp "t3 anthropic opencode"
+   ```
 
 ---
 
-## 5. How the Extension + MCP Architecture Works
+## 2. Bundled Hardware Elements (`tabla_piezas_voltajes_amperajes.pdf`)
 
-- **VS Code Extension (`wokwi.wokwi-vscode-4.1.0`)**:
-  - Automatically opens in **Offline Mode** whenever your valid license and offline bundle are present.
-  - Runs a local MCP Bridge on `http://127.0.0.1:47129/mcp` on startup so local AI agents can start/stop/restart simulations, read/write UART serial output, press buttons (`wokwi_set_control`), and export VCD captures directly against the running offline simulator.
-- **Wokwi MCP Server (`~/.wokwi/mcp/server.js`)**:
-  - Connects to the VS Code Extension Bridge (`127.0.0.1:47129`) or `rfc2217ServerPort` for offline simulations, and falls back to `wokwi-cli` when online.
-  - Handles network/gateway configuration via `wokwi_configure_network` (setting up `[net]` and `[[net.forward]]` TCP port forwarding in `wokwi.toml`).
-  - Compiles custom chips 100% offline (`wokwi_chip_compile`) using `~/.wokwi/wasi-sdk` and the bundled `wokwi-api.h`.
-  - Lints and edits `diagram.json` 100% offline (`wokwi_lint_diagram`, `wokwi_edit_diagram`).
-  - Provisions the ESP32-S3 + WeAct 2.13" e-Paper screen + SD card + keypad hardware template into any project via `wokwi_provision_hardware`.
+All elements below are pre-compiled into WebAssembly custom chips (`.chip.wasm` + `.chip.json` + `.chip.c` in `hardware/`) using `wasi-sdk` and registered in `hardware/catalog.json`:
+
+1. **YB-P20M High-Torque Digital Servo (`chip-yb_p20m`)**:
+   - **Operating Voltage**: `6.0 – 7.4 V`
+   - **Current-per-Torque Ratio**: `1.317 A / (N·m)` (`0.0093 A/oz-in`)
+   - **Stall Current (Max)**: `≤ 3.6 A`
+   - **Torque**: `2.7 N·m @ 7.4 V`
+   - **Pins**: `["PWM", "VCC", "GND", "FB"]`
+2. **JGB37-520 Geared DC Motor + Encoder (`chip-jgb37_520`)**:
+   - **12 V Mode**: `120 mA` no-load, `400 mA` (`400` in sheet) load/stall
+   - **24 V Mode**: `50 mA` no-load, `200 mA` (`200` in sheet) load/stall
+   - **Pins**: `["M1", "M2", "GND", "C1", "C2", "VCC"]`
+3. **ESP32-S3 N16R8 (`board-esp32-s3-devkitc-1`, 16MB Flash / 8MB PSRAM)**:
+   - **VDD33**: `3.0 – 3.6 V` (Typ `3.3 V`), external supply `≥ 0.5 A`
+   - **Cumulative IO Output Current**: `1500 mA` max (`-40 to 105 °C`)
+4. **CJMCU-230 SN65HVD230 CAN Bus Transceiver (`chip-cjmcu_230`)**:
+   - **Vcc**: `-0.3 V to 6 V` (Typ `3.3 V`)
+   - **CANH / CANL Voltage**: `-4 V to 6 V`
+   - **Digital Input/Output Voltage VI (D or R)**: `-0.5 V to (VCC + 0.5) V`
+   - **Receiver Output Current IO**: `-11 mA to +11 mA`
+   - **Pins**: `["D", "GND", "VCC", "R", "VREF", "CANL", "CANH", "RS"]`
+5. **IRF520 PWM MOSFET Driver Module (`chip-irf520_pwm`)**:
+   - **Drain-Source Voltage ($V_{DS}$)**: `100 V` max | **Gate-Source Voltage ($V_{GS}$)**: `±20 V`
+   - **Continuous Drain Current ($I_D$)**: `9.2 A` ($T_C=25^\circ\text{C}$) / `6.5 A` ($T_C=100^\circ\text{C}$) | **Pulsed ($I_{DM}$)**: `37 A` | **$P_D$**: `60 W`
+   - **Pins**: `["SIG", "VCC", "GND", "VIN", "VPLUS", "VMINUS"]`
+6. **IP5306 Power Bank & Li-Ion PMIC (`chip-ip5306`)**:
+   - **Port Input Voltage ($V_{IN}$)**: `-0.3 V to 5.5 V` | **Operating Temp**: `0 ~ 70 °C` | **$R_{\theta JA}$**: `50 °C/W` | **ESD HBM**: `4 kV`
+   - **Pins**: `["VIN", "BAT", "VOUT", "GND", "KEY", "LED1", "LED2", "LED3", "LED4"]`
+7. **7V Buck Voltage Regulator (`chip-reg_7v`)**:
+   - **Wiring Answer (PDF Section 7)**: Input is **12–24 V** (from the main motor battery rail) and output is regulated **7.0 V** (`VOUT_POS`) to power the **YB-P20M servos** (`6–7.4 V`). Connect the servos' `PWM` and `FB` signal lines to the **ESP32-S3** (`3.3 V` GPIO) with a **shared common `GND`**.
+   - **Pins**: `["VIN_POS", "VIN_NEG", "VOUT_POS", "VOUT_NEG", "EN"]`
+8. **Optional Elements**: `ESP32-S3 N16R16`, `WeAct 2.13" B/W e-Paper Display (weact_213_bw)`, and `MicroSD Card (wokwi-microsd-card)`.
+
+---
+
+## 3. Disabling VS Code Extension Auto-Updates
+
+1. **Automatic (Done by Setup)**:
+   Running setup automatically writes `"extensions.autoUpdate": false` and `"extensions.autoCheckUpdates": false` into your VS Code `settings.json` (`~/Library/Application Support/Code/User/settings.json` on macOS, `%APPDATA%\Code\User\settings.json` on Windows).
+2. **Manual Verification in VS Code**:
+   - Open Settings (`Cmd+,` on macOS / `Ctrl+,` on Windows).
+   - Search for `extensions.autoUpdate` and set **Extensions: Auto Update** to **`None`**.
+   - Uncheck **Extensions: Auto Check Updates**.
+   - In the Extensions sidebar (`Cmd+Shift+X` / `Ctrl+Shift+X`), right-click **Wokwi Simulator** and ensure **Auto Update** is **unchecked**.

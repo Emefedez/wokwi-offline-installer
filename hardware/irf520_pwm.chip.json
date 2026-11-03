@@ -1,0 +1,30 @@
+{
+  "name": "IRF520 PWM MOSFET Driver Module",
+  "author": "Wokwi Offline Suite",
+  "pins": [
+    "SIG",
+    "VCC",
+    "GND",
+    "VIN",
+    "VPLUS",
+    "VMINUS"
+  ],
+  "controls": [
+    {
+      "id": "vdsVolts",
+      "label": "Drain-Source Voltage Vds (0-100V)",
+      "type": "range",
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "id": "loadCurrentMa",
+      "label": "Load Current Id (mA, max 9200mA @ 25C)",
+      "type": "range",
+      "min": 0,
+      "max": 9200,
+      "step": 100
+    }
+  ]
+}

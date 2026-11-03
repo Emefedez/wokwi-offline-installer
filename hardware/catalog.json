@@ -1,0 +1,277 @@
+{
+  "version": 1,
+  "title": "Wokwi Offline Hardware & Electrical Catalog (RC Car & Embedded Systems)",
+  "defaultPreset": "rc-car",
+  "presets": {
+    "rc-car": {
+      "name": "RC Car (ESP32-S3 N16R8 + Servos + Geared Motors + CAN + MOSFETs + 7V Buck + IP5306)",
+      "description": "Primary RC Car configuration from tabla_piezas_voltajes_amperajes.pdf",
+      "counts": {
+        "esp32_s3_n16r8": 1,
+        "yb_p20m": 2,
+        "jgb37_520": 4,
+        "cjmcu_230": 1,
+        "irf520_pwm": 4,
+        "ip5306": 1,
+        "reg_7v": 1,
+        "esp32_s3_n16r16": 0,
+        "weact_213_bw": 0,
+        "microsd_card": 0
+      }
+    },
+    "esp32calc": {
+      "name": "ESP32 Calculator (ESP32-S3 N16R16 + WeAct 2.13\" EPD + MicroSD)",
+      "description": "Calculator configuration with e-Paper screen and SD card",
+      "counts": {
+        "esp32_s3_n16r8": 0,
+        "yb_p20m": 0,
+        "jgb37_520": 0,
+        "cjmcu_230": 0,
+        "irf520_pwm": 0,
+        "ip5306": 0,
+        "reg_7v": 0,
+        "esp32_s3_n16r16": 1,
+        "weact_213_bw": 1,
+        "microsd_card": 1
+      }
+    }
+  },
+  "elements": [
+    {
+      "id": "esp32_s3_n16r8",
+      "name": "ESP32-S3 N16R8 (16MB Flash / 8MB PSRAM)",
+      "category": "MCU (RC Car Main Controller)",
+      "wokwiType": "board-esp32-s3-devkitc-1",
+      "idPrefix": "esp",
+      "isBoard": true,
+      "defaultCount": 1,
+      "attrs": { "flashSize": "16", "psramSize": "8" },
+      "pins": ["3V3", "GND.1", "4", "5", "6", "7", "15", "16", "17", "18", "8", "9", "10", "11", "12", "13", "14", "1", "2"],
+      "specs": {
+        "voltageMinV": 3.0,
+        "voltageTypV": 3.3,
+        "voltageMaxV": 3.6,
+        "minSupplyCurrentA": 0.5,
+        "maxCumulativeIoCurrentMa": 1500,
+        "tempRangeC": "-40 to 105 °C",
+        "notes": "Table 6-2 & 5-1: VDD33 3.0-3.6V (Typ 3.3V), external supply >=0.5A, max cumulative IO current 1500 mA."
+      }
+    },
+    {
+      "id": "yb_p20m",
+      "name": "YB-P20M High-Torque Digital Servo (Steering / Actuators)",
+      "category": "RC Car Actuator / Servo",
+      "wokwiType": "chip-yb_p20m",
+      "chipName": "yb_p20m",
+      "chipBinary": "yb_p20m.chip.wasm",
+      "chipJson": "yb_p20m.chip.json",
+      "idPrefix": "servo_ybp20m",
+      "defaultCount": 2,
+      "attrs": {},
+      "pins": ["PWM", "VCC", "GND", "FB"],
+      "signalPin": "PWM",
+      "powerPin": "VCC",
+      "gndPin": "GND",
+      "powerRail": "7V",
+      "specs": {
+        "voltageMinV": 6.0,
+        "voltageTypV": 7.0,
+        "voltageMaxV": 7.4,
+        "currentPerTorqueNm": 1.317,
+        "currentPerTorqueOzIn": 0.0093,
+        "stallCurrentMaxA": 3.6,
+        "maxTorqueNm": 2.7,
+        "notes": "Operating Voltage: 6-7.4V | Current/Torque: 1.317 A/(N*m) (0.0093 A/oz-in) | Stall Current: <=3.6A | Torque: 2.7 N*m @ 7.4V."
+      }
+    },
+    {
+      "id": "jgb37_520",
+      "name": "JGB37-520 Geared DC Motor + Encoder (12V / 24V Drive Motor)",
+      "category": "RC Car Drive Motor",
+      "wokwiType": "chip-jgb37_520",
+      "chipName": "jgb37_520",
+      "chipBinary": "jgb37_520.chip.wasm",
+      "chipJson": "jgb37_520.chip.json",
+      "idPrefix": "motor_jgb37",
+      "defaultCount": 4,
+      "attrs": {},
+      "pins": ["M1", "M2", "GND", "C1", "C2", "VCC"],
+      "signalPin": "C1",
+      "powerPin": "VCC",
+      "gndPin": "GND",
+      "powerRail": "12V_24V",
+      "specs": {
+        "voltageMinV": 12.0,
+        "voltageTypV": 12.0,
+        "voltageMaxV": 24.0,
+        "noLoadCurrent12VMa": 120,
+        "noLoadCurrent24VMa": 50,
+        "loadCurrent12VMa": 400,
+        "loadCurrent24VMa": 200,
+        "notes": "Shenzhen Jinshunlaite Motor: 12V (No-load 120mA, Load/Stall 400) | 24V (No-load 50mA, Load/Stall 200)."
+      }
+    },
+    {
+      "id": "cjmcu_230",
+      "name": "CJMCU-230 SN65HVD230 CAN Bus Transceiver",
+      "category": "RC Car Telemetry / CAN Bus",
+      "wokwiType": "chip-cjmcu_230",
+      "chipName": "cjmcu_230",
+      "chipBinary": "cjmcu_230.chip.wasm",
+      "chipJson": "cjmcu_230.chip.json",
+      "idPrefix": "can_cjmcu230",
+      "defaultCount": 1,
+      "attrs": {},
+      "pins": ["D", "GND", "VCC", "R", "VREF", "CANL", "CANH", "RS"],
+      "signalPin": "D",
+      "powerPin": "VCC",
+      "gndPin": "GND",
+      "powerRail": "3V3",
+      "specs": {
+        "voltageMinV": -0.3,
+        "voltageTypV": 3.3,
+        "voltageMaxV": 6.0,
+        "busVoltageRangeV": "-4V to 6V",
+        "ioCurrentRangeMa": "-11mA to +11mA",
+        "notes": "Vcc: -0.3V to 6V (3.3V typ) | CANH/CANL: -4V to 6V | VI(D or R): -0.5V to (VCC+0.5)V | Receiver IO: -11mA to 11mA."
+      }
+    },
+    {
+      "id": "irf520_pwm",
+      "name": "IRF520 PWM MOSFET Driver Module",
+      "category": "RC Car Power / PWM Driver",
+      "wokwiType": "chip-irf520_pwm",
+      "chipName": "irf520_pwm",
+      "chipBinary": "irf520_pwm.chip.wasm",
+      "chipJson": "irf520_pwm.chip.json",
+      "idPrefix": "mosfet_irf520",
+      "defaultCount": 4,
+      "attrs": {},
+      "pins": ["SIG", "VCC", "GND", "VIN", "VPLUS", "VMINUS"],
+      "signalPin": "SIG",
+      "powerPin": "VCC",
+      "gndPin": "GND",
+      "powerRail": "12V_24V",
+      "specs": {
+        "vdsMaxV": 100,
+        "vgsMaxV": 20,
+        "idCont25CA": 9.2,
+        "idCont100CA": 6.5,
+        "idmPulsedA": 37,
+        "pdMaxW": 60,
+        "notes": "Vds max: 100V | Vgs max: +-20V | Id cont: 9.2A (25C) / 6.5A (100C) | Idm pulsed: 37A | Pd max: 60W."
+      }
+    },
+    {
+      "id": "ip5306",
+      "name": "IP5306 Power Bank & Battery Management PMIC",
+      "category": "Power Management",
+      "wokwiType": "chip-ip5306",
+      "chipName": "ip5306",
+      "chipBinary": "ip5306.chip.wasm",
+      "chipJson": "ip5306.chip.json",
+      "idPrefix": "pmic_ip5306",
+      "defaultCount": 1,
+      "attrs": {},
+      "pins": ["VIN", "BAT", "VOUT", "GND", "KEY", "LED1", "LED2", "LED3", "LED4"],
+      "signalPin": "KEY",
+      "powerPin": "VOUT",
+      "gndPin": "GND",
+      "powerRail": "5V",
+      "specs": {
+        "voltageMinV": -0.3,
+        "voltageTypV": 5.0,
+        "voltageMaxV": 5.5,
+        "thermalResistanceCW": 50,
+        "esdHbmKv": 4,
+        "tempRangeC": "0 to 70 °C",
+        "notes": "Port input voltage VIN: -0.3V to 5.5V | Ta: 0~70C | RthetaJA: 50 C/W | ESD HBM: 4kV."
+      }
+    },
+    {
+      "id": "reg_7v",
+      "name": "7V Voltage Regulator (Buck 12-24V IN -> 7V Servo Rail)",
+      "category": "Power Management",
+      "wokwiType": "chip-reg_7v",
+      "chipName": "reg_7v",
+      "chipBinary": "reg_7v.chip.wasm",
+      "chipJson": "reg_7v.chip.json",
+      "idPrefix": "buck_7v",
+      "defaultCount": 1,
+      "attrs": {},
+      "pins": ["VIN_POS", "VIN_NEG", "VOUT_POS", "VOUT_NEG", "EN"],
+      "signalPin": "EN",
+      "powerPin": "VOUT_POS",
+      "gndPin": "VOUT_NEG",
+      "powerRail": "7V",
+      "specs": {
+        "inputVoltageRangeV": "12V - 24V",
+        "outputVoltageTypV": 7.0,
+        "notes": "Answer to PDF Sec. 7: Input is 12-24V (from main battery) and Output is 7.0V to power the YB-P20M servos (6-7.4V). The ESP32-S3 sends 3.3V PWM to the servos; share a common GND so signals and telemetry work safely without blowing the ESP32!"
+      }
+    },
+    {
+      "id": "esp32_s3_n16r16",
+      "name": "ESP32-S3 N16R16 (16MB Flash / 16MB PSRAM)",
+      "category": "MCU (Optional / Calculator)",
+      "wokwiType": "board-esp32-s3-devkitc-1",
+      "idPrefix": "esp_r16",
+      "isBoard": true,
+      "defaultCount": 0,
+      "attrs": { "flashSize": "16", "psramSize": "16" },
+      "pins": ["3V3", "GND.1", "4", "5", "6", "7", "15", "16", "17", "18"],
+      "specs": {
+        "voltageMinV": 3.0,
+        "voltageTypV": 3.3,
+        "voltageMaxV": 3.6,
+        "minSupplyCurrentA": 0.5,
+        "maxCumulativeIoCurrentMa": 1500,
+        "tempRangeC": "-40 to 105 °C",
+        "notes": "16MB Flash + 16MB PSRAM variant."
+      }
+    },
+    {
+      "id": "weact_213_bw",
+      "name": "WeAct 2.13\" B/W e-Paper Display (128x250)",
+      "category": "Display",
+      "wokwiType": "chip-weact_213_bw",
+      "chipName": "weact_213_bw",
+      "chipBinary": "weact_213_bw.chip.wasm",
+      "chipJson": "weact_213_bw.chip.json",
+      "idPrefix": "epd",
+      "defaultCount": 0,
+      "attrs": {},
+      "pins": ["BUSY", "RST", "DC", "CS", "CLK", "DIN", "VCC", "GND"],
+      "signalPin": "CS",
+      "powerPin": "VCC",
+      "gndPin": "GND",
+      "powerRail": "3V3",
+      "specs": {
+        "voltageMinV": 2.3,
+        "voltageTypV": 3.3,
+        "voltageMaxV": 3.6,
+        "notes": "128x250 SPI e-Paper display custom chip."
+      }
+    },
+    {
+      "id": "microsd_card",
+      "name": "MicroSD Card Module (SPI)",
+      "category": "Storage",
+      "wokwiType": "wokwi-microsd-card",
+      "idPrefix": "sd",
+      "defaultCount": 0,
+      "attrs": {},
+      "pins": ["CS", "DI", "VCC", "SCK", "GND", "DO", "CD"],
+      "signalPin": "CS",
+      "powerPin": "VCC",
+      "gndPin": "GND",
+      "powerRail": "3V3",
+      "specs": {
+        "voltageMinV": 2.7,
+        "voltageTypV": 3.3,
+        "voltageMaxV": 3.6,
+        "notes": "SPI MicroSD card slot; pairs with [[sdcard]] in wokwi.toml."
+      }
+    }
+  ]
+}
