@@ -420,8 +420,13 @@
       <span class="badge">Guided 3-Step Setup &amp; TOML Generator</span>
       <span id="hdr-ext-badge" class="badge badge-ok">Checking Extension...</span>
     </h1>
-    <div style="font-size:0.82rem;color:var(--muted);">
-      Step 1: Install Extension &amp; Bundle &rarr; Step 2: Load <code>user.tok</code> (if needed) &rarr; Step 3: Build <code>wokwi.toml</code>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span style="font-size:0.82rem;color:var(--muted);">
+        Step 1: Install Extension &amp; Bundle &rarr; Step 2: Load <code>user.tok</code> &rarr; Step 3: Build <code>wokwi.toml</code>
+      </span>
+      <button class="btn btn-primary" onclick="launchTUI()" title="Open the interactive Terminal UI (--tui) in a new terminal window">
+        &gt;_ Launch TUI (<code>--tui</code>)
+      </button>
     </div>
   </header>
 
@@ -1429,6 +1434,23 @@
       } catch (err) {
         toast.style.display = 'block';
         toast.textContent = 'Error communicating with local setup server: ' + err.message;
+      }
+    }
+
+    async function launchTUI() {
+      const toast = document.getElementById('inst-toast');
+      try {
+        const res = await fetch('/api/launch-tui', { method: 'POST' });
+        const out = await res.json();
+        if (toast) {
+          toast.style.display = 'block';
+          toast.textContent = out.ok ? out.message : ('TUI Launch Error: ' + (out.error || 'Failed to open terminal'));
+        }
+        if (!out.ok) {
+          alert(out.error || 'Could not launch terminal automatically. Run ./install.sh --tui or WokwiOfflineSetup.exe --tui.');
+        }
+      } catch (err) {
+        alert('To run TUI mode, execute ./install.sh --tui (macOS/Linux) or WokwiOfflineSetup.exe --tui (Windows).');
       }
     }
 

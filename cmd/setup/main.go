@@ -831,6 +831,63 @@ func openBrowser(urlStr string) {
 	_ = cmd.Start()
 }
 
+func launchTUIInTerminal(root string) (string, error) {
+	exe, err := os.Executable()
+	if err != nil || exe == "" {
+		if runtime.GOOS == "windows" {
+			exe = filepath.Join(root, "WokwiOfflineSetup.exe")
+		} else {
+			exe = filepath.Join(root, "install.sh")
+		}
+	}
+
+	switch runtime.GOOS {
+	case "darwin":
+		script := fmt.Sprintf("tell application \"Terminal\" to do script \"cd %q && %q --tui\"", root, exe)
+		cmd := exec.Command("osascript", "-e", "tell application \"Terminal\" to activate", "-e", script)
+		if err := cmd.Start(); err == nil {
+			return fmt.Sprintf("Launched interactive TUI in macOS Terminal (%s --tui)", filepath.Base(exe)), nil
+		}
+		// Fallback to .command launcher via open -a Terminal
+		cmdFile := filepath.Join(os.TempDir(), "wokwi-offline-tui.command")
+		content := fmt.Sprintf("#!/usr/bin/env sh\ncd %q\n%q --tui\n", root, exe)
+		_ = os.WriteFile(cmdFile, []byte(content), 0755)
+		_ = os.Chmod(cmdFile, 0755)
+		if err := exec.Command("open", "-a", "Terminal", cmdFile).Start(); err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("Launched interactive TUI in macOS Terminal via %s", cmdFile), nil
+
+	case "windows":
+		cmdline := fmt.Sprintf("cd /d \"%s\" && \"%s\" --tui", root, exe)
+		cmd := exec.Command("cmd.exe", "/c", "start", "Wokwi Offline Suite TUI", "cmd.exe", "/k", cmdline)
+		if err := cmd.Start(); err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("Launched interactive TUI in new Windows Command Prompt (%s --tui)", filepath.Base(exe)), nil
+
+	default:
+		shCmd := fmt.Sprintf("cd %q && %q --tui; exec ${SHELL:-sh}", root, exe)
+		candidates := [][]string{
+			{"x-terminal-emulator", "-e", "sh", "-c", shCmd},
+			{"gnome-terminal", "--", "sh", "-c", shCmd},
+			{"konsole", "-e", "sh", "-c", shCmd},
+			{"xfce4-terminal", "-x", "sh", "-c", shCmd},
+			{"alacritty", "-e", "sh", "-c", shCmd},
+			{"kitty", "sh", "-c", shCmd},
+			{"xterm", "-e", "sh", "-c", shCmd},
+		}
+		for _, c := range candidates {
+			if _, lookErr := exec.LookPath(c[0]); lookErr == nil {
+				if startErr := exec.Command(c[0], c[1:]...).Start(); startErr == nil {
+					return fmt.Sprintf("Launched interactive TUI in %s (%s --tui)", c[0], filepath.Base(exe)), nil
+				}
+			}
+		}
+		return "", fmt.Errorf("no supported terminal emulator found in PATH; run '%s --tui' in your terminal", exe)
+	}
+}
+
 func runGUIServer(root string, port int, noBrowser bool) error {
 	cat, err := loadCatalog(root)
 	if err != nil {
@@ -1084,6 +1141,16 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 			"bundlePath": dest,
 			"size":       len(data),
 		})
+	})
+
+	mux.HandleFunc("/api/launch-tui", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		msg, err := launchTUIInTerminal(root)
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"ok": true, "message": msg})
 	})
 
 	mux.HandleFunc("/api/run-setup", func(w http.ResponseWriter, r *http.Request) {
