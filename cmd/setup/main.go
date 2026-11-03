@@ -1203,6 +1203,29 @@ func runGUIServer(root string, port int, noBrowser bool) error {
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"version": 1, "parts": []interface{}{}, "connections": []interface{}{}})
 	})
 
+	mux.HandleFunc("/api/board-svg", func(w http.ResponseWriter, r *http.Request) {
+		board := strings.TrimSpace(r.URL.Query().Get("board"))
+		board = strings.TrimPrefix(board, "board-")
+		if board == "" || strings.Contains(board, "..") || strings.Contains(board, "/") {
+			board = "esp32-s3-devkitc-1"
+		}
+		home, _ := os.UserHomeDir()
+		for _, cand := range []string{
+			filepath.Join(root, "hardware", board+".svg"),
+			filepath.Join(home, ".wokwi", "hardware-elements", board+".svg"),
+			filepath.Join(root, "hardware", "esp32-s3-devkitc-1.svg"),
+			filepath.Join(home, ".wokwi", "hardware-elements", "esp32-s3-devkitc-1.svg"),
+		} {
+			if b, err := os.ReadFile(cand); err == nil && len(b) > 0 {
+				w.Header().Set("Content-Type", "image/svg+xml")
+				w.Header().Set("Cache-Control", "public, max-age=3600")
+				_, _ = w.Write(b)
+				return
+			}
+		}
+		http.NotFound(w, r)
+	})
+
 	mux.HandleFunc("/api/diagram-file", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		var req struct {

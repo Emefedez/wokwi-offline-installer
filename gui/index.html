@@ -1,1014 +1,988 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" spellcheck="false">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wokwi Offline Suite — 3-Step Setup & Hardware TOML Generator</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wokwi Offline Suite — Setup &amp; Visual Layout Manager</title>
   <style>
+    /* =========================================================================
+       NoteComplete polished-apps Design System — Desktop Dark + Red Accent
+       ========================================================================= */
     :root {
-      --bg: #0f172a;
-      --panel: #1e293b;
-      --panel-alt: #273549;
-      --border: #334155;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-hover: #0284c7;
-      --success: #22c55e;
-      --warn: #f59e0b;
-      --danger: #ef4444;
+      color-scheme: dark;
+      font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+      --ink: #e5e8ed;
+      --muted: #a6aeb9;
+      --line: #3b4048;
+      --canvas: #15171b;
+      --chrome: #202328;
+      --surface: #24272c;
+      --menu: #292d33;
+      --fill: #30343b;
+
+      /* Red UI Accent Trio (main, soft, hover) */
+      --accent: #ff6b6b;
+      --accent-soft: #482124;
+      --accent-hover: #5c2a2e;
+
+      --danger: #ffaaa3;
+      --danger-soft: #432220;
+      --ok: #9be3bd;
+      --ok-soft: #173a2a;
+      --warn: #f2c06b;
+      --warn-soft: #4a3a1c;
+
+      /* Categorical Data Series (Okabe-Ito based, separate from UI accent) */
+      --series-1: #56a8e8;
+      --series-2: #f0b43c;
+      --series-3: #2fc49a;
+      --series-4: #f07a3a;
+      --series-5: #9ed6f5;
+      --series-6: #e3a3cc;
+
+      --control: 28px;
+      --radius: 6px;
+      --radius-box: 8px;
+      --shadow-pop: 0 8px 24px #0006;
+      --shadow-dialog: 0 18px 60px #0008;
+
+      --z-view: 1;
+      --z-panel: 26;
+      --z-bar: 40;
+      --z-toast: 70;
+
+      color: var(--ink);
+      background: var(--chrome);
     }
+
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.45;
-    }
-    header {
-      background: #0b1120;
-      border-bottom: 1px solid var(--border);
-      padding: 16px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 14px;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.22rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .badge {
-      background: rgba(56, 189, 248, 0.15);
-      color: var(--accent);
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 0.76rem;
-      font-weight: 600;
-    }
-    .badge-ok {
-      background: rgba(34, 197, 94, 0.16);
-      color: #86efac;
-      border: 1px solid rgba(34, 197, 94, 0.4);
-    }
-    .stepper {
-      max-width: 1440px;
-      margin: 18px auto 0;
-      padding: 0 24px;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-    }
-    @media (max-width: 1100px) {
-      .stepper { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 640px) {
-      .stepper { grid-template-columns: 1fr; }
-    }
-    .step-tab {
-      background: var(--panel);
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-align: left;
-      color: var(--text);
-      transition: 0.15s;
-    }
-    .step-tab:hover {
-      border-color: var(--accent);
-    }
-    .step-tab.active {
-      border-color: var(--accent);
-      background: rgba(56, 189, 248, 0.11);
-      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25);
-    }
-    .step-tab.done .step-num {
-      background: var(--success);
-      color: #052e16;
-      border-color: var(--success);
-    }
-    .step-num {
-      width: 34px;
-      height: 34px;
-      border-radius: 999px;
-      background: #0f172a;
-      border: 2px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 0.95rem;
-      flex-shrink: 0;
-    }
-    .step-tab.active .step-num {
-      background: var(--accent);
-      color: #0b1120;
-      border-color: var(--accent);
-    }
-    .step-meta {
-      flex: 1;
-    }
-    .step-title {
-      font-weight: 700;
-      font-size: 0.94rem;
-    }
-    .step-sub {
-      font-size: 0.77rem;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-    main {
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 18px 24px 48px;
-    }
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1.3fr 1fr;
-      gap: 20px;
-    }
-    @media (max-width: 1024px) {
-      .grid-2 { grid-template-columns: 1fr; }
-    }
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 18px;
-      margin-bottom: 18px;
-    }
-    .card h2 {
-      margin: 0 0 12px 0;
-      font-size: 1.06rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .ver-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-    @media (max-width: 700px) {
-      .ver-grid { grid-template-columns: 1fr; }
-    }
-    .ver-card {
-      background: var(--panel-alt);
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      padding: 14px;
-      cursor: pointer;
-      transition: 0.15s;
-    }
-    .ver-card.selected {
-      border-color: var(--accent);
-      background: rgba(56, 189, 248, 0.1);
-    }
-    .ver-card-title {
-      font-weight: 700;
-      font-size: 0.96rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-    .ver-card-desc {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-    .preset-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    .btn {
-      background: var(--panel-alt);
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 9px 15px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.88rem;
-      transition: 0.15s;
-    }
-    .btn:hover { border-color: var(--accent); }
-    .btn-primary {
-      background: var(--accent);
-      color: #0b1120;
-      border-color: var(--accent);
-    }
-    .btn-primary:hover { background: var(--accent-hover); color: #fff; }
-    .btn-success {
-      background: var(--success);
-      color: #052e16;
-      border-color: var(--success);
-      font-weight: 700;
-    }
-    .btn-lg {
-      padding: 12px 20px;
-      font-size: 0.96rem;
-    }
-    .elem-list {
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      overflow: hidden;
+      background: var(--chrome);
+      color: var(--ink);
     }
-    .elem-row {
-      background: var(--panel-alt);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 14px;
-      display: flex;
-      justify-content: space-between;
+
+    button, input, select, textarea, summary {
+      font: inherit;
+      color: inherit;
+    }
+    button, summary {
+      display: inline-flex;
       align-items: center;
-      gap: 14px;
+      justify-content: center;
+      gap: 6px;
+      min-height: var(--control);
+      padding: 3px 10px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      background: var(--fill);
+      font-size: 12.5px;
+      cursor: pointer;
+      white-space: nowrap;
     }
-    .elem-row.active-row {
-      border-color: rgba(56, 189, 248, 0.65);
-      background: rgba(56, 189, 248, 0.07);
+    button:hover, summary:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
     }
-    .elem-info { flex: 1; }
-    .elem-title {
-      font-weight: 700;
-      font-size: 0.95rem;
+    button:disabled { opacity: 0.4; cursor: default; }
+    :is(button, input, select, textarea, summary):focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .primary, [aria-pressed="true"], [aria-selected="true"] {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: rgba(255, 107, 107, 0.35);
+      font-weight: 600;
+    }
+    .primary:hover { background: var(--accent-hover); }
+    .ok-btn {
+      background: var(--ok-soft);
+      color: var(--ok);
+      border-color: rgba(155, 227, 189, 0.3);
+      font-weight: 600;
+    }
+    .ok-btn:hover { filter: brightness(1.12); }
+    .danger {
+      background: var(--danger-soft);
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .icon {
+      width: 15px;
+      height: 15px;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    kbd {
+      padding: 0 5px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: var(--muted);
+      font: 600 10px/1.5 var(--mono);
+    }
+
+    :is(input[type="text"], input[type="number"], input[type="search"], select, textarea) {
+      min-height: var(--control);
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      font-size: 12.5px;
+      color: var(--ink);
+    }
+    textarea {
+      padding: 6px 8px;
+      resize: vertical;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    /* Top Bar (36px) */
+    header.bar {
+      position: relative;
+      z-index: var(--z-bar);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 38px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .brand {
       display: flex;
       align-items: center;
       gap: 8px;
-      flex-wrap: wrap;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
     }
-    .elem-cat {
-      font-size: 0.72rem;
-      padding: 2px 7px;
-      border-radius: 4px;
-      background: #0f172a;
+    .brand-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 99px;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+    .segmented {
+      display: inline-flex;
+      gap: 2px;
+      padding: 2px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--chrome);
+    }
+    .segmented button {
+      min-height: 26px;
+      padding: 2px 14px;
+      font-size: 12.5px;
+      background: transparent;
+      border: 0;
+    }
+    .segmented button[aria-selected="true"] {
+      background: var(--accent-soft);
       color: var(--accent);
+      font-weight: 700;
+    }
+    .bar-spacer { flex: 1; }
+
+    /* Pills: only for secondary status items (tags, job chips, toasts) */
+    .tag {
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 11px;
       font-weight: 600;
     }
-    .elem-specs {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 4px;
+    .tag.ok {
+      background: var(--ok-soft);
+      color: var(--ok);
     }
-    .elem-pins {
-      font-size: 0.74rem;
-      color: #cbd5e1;
-      margin-top: 4px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    }
-    .qty-ctrl {
+
+    /* Context Toolbar (28px controls) */
+    .toolbar {
       display: flex;
       align-items: center;
       gap: 6px;
+      height: 36px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--chrome);
     }
-    .qty-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: #0f172a;
-      color: var(--text);
-      font-size: 1.05rem;
-      font-weight: 700;
-      cursor: pointer;
+    .toolbar button {
+      background: transparent;
+      padding: 3px 9px;
+      font-size: 12px;
     }
-    .qty-input {
-      width: 56px;
-      height: 32px;
-      text-align: center;
-      background: #0f172a;
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-weight: 700;
-      font-size: 0.95rem;
+    .toolbar button:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
     }
-    .form-grid {
+    .toolbar button.primary {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .toolbar .divider {
+      width: 1px;
+      height: 18px;
+      background: var(--line);
+      margin: 0 2px;
+    }
+
+    /* Workspace Grid: Left Dock | Main View | Right Inspector + Bottom Dock */
+    .workspace {
+      flex: 1;
+      min-height: 0;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 12px;
+      grid-template-columns: 340px minmax(0, 1fr) 330px;
+      grid-template-rows: minmax(0, 1fr) 215px;
+      grid-template-areas:
+        "left main right"
+        "bottom bottom bottom";
     }
-    .form-group {
+    .workspace.setup-grid {
+      grid-template-columns: 400px minmax(0, 1fr) 340px;
+      grid-template-rows: minmax(0, 1fr);
+      grid-template-areas: "left main right";
+    }
+
+    .dock {
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      background: var(--chrome);
     }
-    .form-group.full { grid-column: 1 / -1; }
-    label {
-      font-size: 0.8rem;
+    .dock-left { grid-area: left; border-right: 1px solid var(--line); }
+    .dock-right { grid-area: right; border-left: 1px solid var(--line); }
+    .dock-bottom { grid-area: bottom; border-top: 1px solid var(--line); }
+
+    .dock-title {
+      padding: 8px 12px 6px;
+      font-size: 11px;
+      font-weight: 700;
       color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .dock-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .dock-tabs button {
+      min-height: 24px;
+      padding: 2px 10px;
+      font-size: 12px;
+      background: transparent;
+    }
+    .dock-tabs button[aria-selected="true"] {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .main-view {
+      grid-area: main;
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background: var(--canvas);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Inspector Property Grid: label | control | unit */
+    .inspector details {
+      border-bottom: 1px solid var(--line);
+    }
+    .inspector summary {
+      width: 100%;
+      justify-content: space-between;
+      min-height: 30px;
+      padding: 4px 12px;
+      border-radius: 0;
+      background: var(--surface);
+      font-size: 12px;
       font-weight: 600;
     }
-    input[type="text"], input[type="number"], select, textarea {
-      background: #0f172a;
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 8px 10px;
-      border-radius: 6px;
-      font-size: 0.88rem;
-      font-family: inherit;
+    .inspector summary::after {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      opacity: 0.6;
+      transform: rotate(45deg);
+      transition: transform 0.15s;
     }
-    textarea.code-box {
-      width: 100%;
-      height: 230px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 0.8rem;
-      white-space: pre;
-      resize: vertical;
+    .inspector details[open] > summary::after {
+      transform: translateY(2px) rotate(-135deg);
     }
-    .rail-box {
+    .prop {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
-      gap: 10px;
+      grid-template-columns: 8.2em minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 4px 8px;
+      padding: 4px 12px;
+      font-size: 12px;
+    }
+    .prop > span:first-child {
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .prop > :is(input, select) {
+      width: 100%;
+      min-width: 0;
+    }
+    .unit {
+      color: var(--muted);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+    .num, .readout, input[type="number"] {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Setup Panels */
+    .panel-box {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-box);
+      padding: 12px 14px;
       margin-bottom: 12px;
     }
-    .rail-card {
-      background: #0f172a;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-    }
-    .rail-card .rail-name {
-      font-size: 0.76rem;
-      color: var(--muted);
-      font-weight: 600;
-    }
-    .rail-card .rail-val {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--accent);
-      margin-top: 2px;
-    }
-    .callout {
-      background: rgba(245, 158, 11, 0.12);
-      border: 1px solid rgba(245, 158, 11, 0.4);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.82rem;
-      color: #fde68a;
-      margin-top: 8px;
-    }
-    .status-banner {
-      background: rgba(34, 197, 94, 0.12);
-      border: 1px solid rgba(34, 197, 94, 0.4);
-      border-radius: 10px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
+    .panel-box h3 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
+      justify-content: space-between;
     }
-    .status-toast {
-      margin-top: 12px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      background: rgba(34, 197, 94, 0.15);
-      border: 1px solid rgba(34, 197, 94, 0.4);
-      color: #86efac;
-      font-size: 0.86rem;
-      display: none;
-    }
-    .hidden { display: none !important; }
-    .checkbox-grid {
+    .field-row {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
-      gap: 8px;
-      margin: 8px 0;
-    }
-    .chk-item {
-      background: var(--panel-alt);
-      border: 1px solid var(--border);
-      padding: 8px 10px;
-      border-radius: 6px;
-      display: flex;
+      grid-template-columns: 9.5em minmax(0, 1fr);
       align-items: center;
       gap: 8px;
-      font-size: 0.84rem;
-      cursor: pointer;
+      margin-bottom: 8px;
+      font-size: 12.5px;
     }
-    .step-footer {
+    .field-row > label { color: var(--muted); }
+
+    /* Hardware Catalog List in Left Dock */
+    .elem-item {
       display: flex;
+      align-items: center;
       justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--line);
+      background: var(--chrome);
+      font-size: 12px;
+    }
+    .elem-item.active {
+      background: rgba(255, 107, 107, 0.08);
+      border-left: 3px solid var(--accent);
+    }
+    .qty-stepper {
+      display: inline-flex;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border);
+      gap: 3px;
+    }
+    .qty-stepper button {
+      min-height: 22px;
+      width: 22px;
+      padding: 0;
+    }
+    .qty-stepper input {
+      width: 40px;
+      min-height: 22px;
+      text-align: center;
+      padding: 0 2px;
+    }
+
+    /* Interactive SVG Stage */
+    #svg-stage {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+      user-select: none;
+      background:
+        radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px) 0 0 / 20px 20px,
+        var(--canvas);
+    }
+    #svg-stage:active { cursor: grabbing; }
+    .wokwi-part-group { cursor: move; }
+    .wokwi-part-group.selected .part-selection-outline {
+      stroke: var(--accent);
+      stroke-width: 2.5;
+      stroke-dasharray: none;
+    }
+    .wokwi-part-group:hover .part-selection-outline {
+      stroke: rgba(255, 107, 107, 0.65);
+      stroke-width: 1.5;
+    }
+
+    /* Status Line (22px, only live readouts) */
+    footer.status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      height: 24px;
+      padding: 0 12px;
+      border-top: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+    footer.status .spacer { flex: 1; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 32px;
+      z-index: var(--z-toast);
+      padding: 7px 16px;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      background: var(--menu);
+      color: var(--ink);
+      box-shadow: var(--shadow-pop);
+      font-size: 12px;
+      opacity: 0;
+      transform: translate(-50%, 8px);
+      transition: opacity 0.18s, transform 0.18s;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>
+  <!-- SVG Icon Sprite (24x24, 1.65 stroke, round caps) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><path d="m4 17 6-6-6-6M12 19h8"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/></symbol>
+  </svg>
+
+  <!-- TOP BAR: Brand · Two Main Workspaces Switcher · Status & TUI -->
+  <header class="bar" role="banner">
+    <div class="brand">
+      <span class="brand-dot"></span>
       <span>Wokwi Offline Suite</span>
-      <span class="badge">Guided 3-Step Setup &amp; TOML Generator</span>
-      <span id="hdr-ext-badge" class="badge badge-ok">Checking Extension...</span>
-    </h1>
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <span style="font-size:0.82rem;color:var(--muted);">
-        Step 1: Install Extension &amp; Bundle &rarr; Step 2: Load <code>user.tok</code> &rarr; Step 3: Build <code>wokwi.toml</code>
-      </span>
-      <button class="btn btn-primary" onclick="launchTUI()" title="Open the interactive Terminal UI (--tui) in a new terminal window">
-        &gt;_ Launch TUI (<code>--tui</code>)
+      <span id="hdr-ext-badge" class="tag ok">Checking...</span>
+    </div>
+
+    <div class="bar-spacer"></div>
+
+    <!-- TWO MAIN PARTS SWITCHER -->
+    <div class="segmented" role="tablist" aria-label="Main Workspaces">
+      <button id="mode-btn-setup" role="tab" aria-selected="true" onclick="switchMainMode('setup')">
+        <svg class="icon"><use href="#i-wrench"/></svg>
+        1. Setup &amp; License
+      </button>
+      <button id="mode-btn-layout" role="tab" aria-selected="false" onclick="switchMainMode('layout')">
+        <svg class="icon"><use href="#i-grid"/></svg>
+        2. Layout &amp; Part Changing
       </button>
     </div>
+
+    <div class="bar-spacer"></div>
+
+    <button class="primary" onclick="launchTUI()" title="Open interactive Terminal UI (--tui)">
+      <svg class="icon"><use href="#i-terminal"/></svg>
+      Launch TUI (<kbd>--tui</kbd>)
+    </button>
   </header>
 
-  <!-- 3-STEP WIZARD BAR -->
-  <nav class="stepper">
-    <button id="nav-step-1" class="step-tab active" onclick="goToStep(1)">
-      <div class="step-num" id="num-step-1">1</div>
-      <div class="step-meta">
-        <div class="step-title">Step 1: Install Extension &amp; Load <code>bundle.wpk</code></div>
-        <div class="step-sub" id="sub-step-1">First install Wokwi v3.7.0 or v4.1.0 &amp; offline simulator bundle</div>
-      </div>
-    </button>
-    <button id="nav-step-2" class="step-tab" onclick="goToStep(2)">
-      <div class="step-num" id="num-step-2">2</div>
-      <div class="step-meta">
-        <div class="step-title">Step 2: Load <code>user.tok</code> License (If Needed)</div>
-        <div class="step-sub" id="sub-step-2">Pick or verify your offline <code>user.tok</code> file (no LLM needed)</div>
-      </div>
-    </button>
-    <button id="nav-step-3" class="step-tab" onclick="goToStep(3)">
-      <div class="step-num" id="num-step-3">3</div>
-      <div class="step-meta">
-        <div class="step-title">Step 3: Choose Hardware &amp; Generate <code>wokwi.toml</code></div>
-        <div class="step-sub" id="sub-step-3">Select N of each component (incl. CAN Terminal) &amp; write <code>wokwi.toml</code></div>
-      </div>
-    </button>
-    <button id="nav-step-4" class="step-tab" onclick="goToStep(4)">
-      <div class="step-num" id="num-step-4">4</div>
-      <div class="step-meta">
-        <div class="step-title">Step 4: Visual Layout Editor &amp; CAN Bus Terminal</div>
-        <div class="step-sub" id="sub-step-4">Visually move/add/toggle buttons &amp; test RC Car CAN messages</div>
-      </div>
-    </button>
-  </nav>
-
-  <main>
-    <!-- ======================================================================= -->
-    <!-- STEP 1: INSTALL EXTENSION & LOAD BUNDLE.WPK                             -->
-    <!-- ======================================================================= -->
-    <div id="step-1">
-      <div class="status-banner" id="step1-status-banner">
-        <div>
-          <div style="font-weight:700;font-size:0.94rem;" id="step1-status-title">Checking current Wokwi Offline installation...</div>
-          <div style="font-size:0.82rem;color:#cbd5e1;margin-top:2px;" id="step1-status-detail">Detecting extension in ~/.vscode/extensions and bundle.wpk in ~/.wokwi...</div>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn" onclick="goToStep(2)">Skip to Step 2 (<code>user.tok</code>) &rarr;</button>
-          <button class="btn btn-primary" onclick="goToStep(3)">Skip to Step 3 (<code>wokwi.toml</code>) &rarr;</button>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <div>
-          <div class="card">
-            <h2>
-              <span>1A. First: Choose Wokwi VS Code Extension Version</span>
-              <span class="badge">Auto-Updates Disabled Automatically</span>
-            </h2>
-            <input type="hidden" id="inst-ext-version" value="3.7.0" />
-            <div class="ver-grid">
-              <div id="ver-card-370" class="ver-card selected" onclick="selectExtVersion('3.7.0')">
-                <div class="ver-card-title">
-                  <span>Wokwi v3.7.0</span>
-                  <span class="badge badge-ok">Recommended</span>
-                </div>
-                <div class="ver-card-desc">
-                  Original target for custom offline <code>bundle.wpk</code> &amp; <code>user.tok</code> + backported HTTP MCP bridge (<code>127.0.0.1:47129/mcp</code>).
-                </div>
-              </div>
-              <div id="ver-card-410" class="ver-card" onclick="selectExtVersion('4.1.0')">
-                <div class="ver-card-title">
-                  <span>Wokwi v4.1.0</span>
-                  <span class="badge">Patched Offline</span>
-                </div>
-                <div class="ver-card-desc">
-                  Latest extension patched to auto-extract <code>bundle.wpk</code> on startup and launch directly in offline webview mode.
-                </div>
-              </div>
-            </div>
-
-            <h2 style="margin-top:16px;">
-              <span>1B. Offline Simulator Bundle (<code>bundle.wpk</code>) — Auto-Loaded for Internal Testing</span>
-              <span class="badge badge-ok" id="bundle-detected-badge">Internal Testing Bundle Ready</span>
-            </h2>
-            <div class="form-grid">
-              <div class="form-group full">
-                <label>Default Internal Testing Bundle (Auto-fetched from <code>files/bundle.wpk</code> &rarr; <code>~/.wokwi/bundle.wpk</code>)</label>
-                <input type="text" id="inst-bundle" value="~/.wokwi/bundle.wpk" />
-              </div>
-              <div class="form-group full">
-                <label>Optional: Pick a Different <code>bundle.wpk</code> File from Your Computer (If You Want to Override Default)</label>
-                <input type="file" id="bundle-file-picker" accept=".wpk,application/octet-stream" onchange="onPickBundleFile(event)" />
-              </div>
-            </div>
-
-            <h2 style="margin-top:16px;">
-              <span>1C. Optional: Register Offline MCP Server in AI Clients</span>
-            </h2>
-            <div class="checkbox-grid" id="mcp-client-checks">
-              <label class="chk-item"><input type="checkbox" value="t3" checked /> T3 Code</label>
-              <label class="chk-item"><input type="checkbox" value="anthropic" checked /> Anthropic (Claude)</label>
-              <label class="chk-item"><input type="checkbox" value="opencode" checked /> OpenCode</label>
-              <label class="chk-item"><input type="checkbox" value="codex" checked /> Codex</label>
-              <label class="chk-item"><input type="checkbox" value="antigravity" checked /> Antigravity / Gemini</label>
-              <label class="chk-item"><input type="checkbox" value="vscode" checked /> VS Code MCP</label>
-              <label class="chk-item"><input type="checkbox" value="cursor" /> Cursor</label>
-              <label class="chk-item"><input type="checkbox" value="zed" /> Zed</label>
-            </div>
-
-            <div class="step-footer">
-              <button class="btn btn-success btn-lg" onclick="runStep1AndContinue()">
-                Step 1: Install Extension &amp; Load Bundle &rarr; Continue to Step 2
-              </button>
-              <button class="btn" onclick="goToStep(2)">
-                Already Installed? Go to Step 2 &rarr;
-              </button>
-            </div>
-            <div id="inst-toast" class="status-toast"></div>
-          </div>
-        </div>
-
-        <div>
-          <div class="card">
-            <h2>What Step 1 Does Automatically</h2>
-            <ol style="font-size:0.88rem;color:#e2e8f0;padding-left:20px;line-height:1.65;margin-top:4px;">
-              <li><strong>Installs the Patched Wokwi VS Code Extension First:</strong> Copies your chosen version (<code>v3.7.0</code> or <code>v4.1.0</code>) into <code>~/.vscode/extensions/</code> and updates VS Code's <code>extensions.json</code> manifest.</li>
-              <li><strong>Disables VS Code Extension Auto-Updates:</strong> Writes <code>"extensions.autoUpdate": false</code> and <code>"extensions.autoCheckUpdates": false</code> into your VS Code <code>settings.json</code> (macOS, Linux, and Windows).</li>
-              <li><strong>Extracts <code>bundle.wpk</code> into <code>.cache/</code>:</strong> Unpacks the offline simulator UI &amp; WebAssembly cores (<code>entry.js</code>, <code>index.html</code>) directly into the extension's <code>.cache/</code> folder.</li>
-              <li><strong>Forces Offline Simulator Launch:</strong> Patched <code>WokwiWebview.getHTML()</code> immediately loads your local <code>.cache/entry.js</code> (using your bundle's public key) instead of connecting to <code>wokwi.com</code>.</li>
-              <li><strong>Cross-Platform <code>pio</code> Wrapper &amp; Automatic <code>.bin</code> Fallback (Windows, macOS, Linux):</strong> Installs <code>~/.wokwi/bin/pio</code> (and <code>pio.cmd</code>) + pre-built ESP32-S3 / XCasFW <code>bootloader.bin</code>, <code>partitions.bin</code>, and <code>firmware.bin</code> in <code>~/.wokwi/firmware-fallbacks/</code>. If PlatformIO is not installed or fails to produce a <code>.bin</code>, Wokwi automatically provisions and boots the pre-built <code>.bin</code> firmware without errors!</li>
-            </ol>
-          </div>
-
-          <div class="card">
-            <h2>
-              <span>Fix Missing <code>.bin</code> / No-PIO Error in Existing Project (e.g. <code>XCasFW</code>)</span>
-              <span class="badge badge-ok">Windows / macOS / Linux</span>
-            </h2>
-            <p style="font-size:0.83rem;color:var(--muted);margin-top:0;">
-              Even without clicking this, the patched Wokwi extension automatically populates missing <code>.bin</code> files on startup. You can also pre-populate any project folder (like <code>XCasFW</code>) with pre-built <code>.pio/build/esp32-s3-wokwi/*.bin</code>, <code>build/*.bin</code>, <code>flasher_args.json</code>, and <code>build_wokwi.bat</code> / <code>build_wokwi.sh</code> right here:
-            </p>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <input type="text" id="fix-proj-dir" placeholder="Path to XCasFW or ESP32 project folder (e.g. C:\...\ESP32Calc\XCasFW)" style="flex:1;" />
-              <button class="btn btn-primary" onclick="fixExistingProjectBins()">Populate Pre-Built <code>.bin</code> Files Now</button>
-            </div>
-            <div id="fix-proj-toast" class="status-toast"></div>
-          </div>
-        </div>
-      </div>
+  <!-- =========================================================================
+       PART 1: SETUP & LICENSE WORKSPACE
+       ========================================================================= -->
+  <div id="view-setup" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+    <div class="toolbar" role="toolbar" aria-label="Setup actions">
+      <button class="primary" onclick="runStep1AndContinue()">
+        <svg class="icon"><use href="#i-save"/></svg>
+        Install Extension &amp; Extract Bundle Now
+      </button>
+      <div class="divider"></div>
+      <button onclick="overwriteTokFromEditor(false)">Activate / Overwrite <code>~/.wokwi/user.tok</code></button>
+      <button onclick="restoreDefaultTestingTok()">Restore Internal Testing <code>user.tok</code></button>
+      <div class="divider"></div>
+      <button onclick="switchMainMode('layout')">Open Part 2: Layout &amp; Part Changing &rarr;</button>
+      <span style="margin-left:auto;color:var(--muted);font-size:11.5px;" id="step1-status-title">Ready to install offline extension &amp; bundle</span>
     </div>
 
-    <!-- ======================================================================= -->
-    <!-- STEP 2: LOAD USER.TOK LICENSE (IF NEEDED)                               -->
-    <!-- ======================================================================= -->
-    <div id="step-2" class="hidden">
-      <div class="status-banner" id="step2-status-banner">
-        <div>
-          <div style="font-weight:700;font-size:0.95rem;" id="step2-status-title">Checking ~/.wokwi/user.tok...</div>
-          <div style="font-size:0.83rem;color:#86efac;margin-top:2px;" id="tok-decoded-info">Loading current ~/.wokwi/user.tok...</div>
+    <main class="workspace setup-grid">
+      <!-- LEFT DOCK: EXTENSION VERSION, BUNDLE.WPK & MCP -->
+      <aside class="dock dock-left" style="padding:12px;">
+        <div class="panel-box">
+          <h3>
+            <span>1A. Wokwi VS Code Extension</span>
+            <span class="tag">Auto-Update Disabled</span>
+          </h3>
+          <input type="hidden" id="inst-ext-version" value="3.7.0" />
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+            <button id="ver-card-370" aria-pressed="true" onclick="selectExtVersion('3.7.0')" style="justify-content:space-between;padding:8px 10px;">
+              <span>Wokwi v3.7.0</span>
+              <span class="tag ok">Rec</span>
+            </button>
+            <button id="ver-card-410" aria-pressed="false" onclick="selectExtVersion('4.1.0')" style="justify-content:space-between;padding:8px 10px;">
+              <span>Wokwi v4.1.0</span>
+              <span class="tag">Latest</span>
+            </button>
+          </div>
+          <div style="font-size:11.5px;color:var(--muted);">
+            Both versions include the visual diagram editor unlock (<code>entry.js</code>), cross-platform <code>pio</code> fallback wrapper, and local MCP bridge (<code>127.0.0.1:47129/mcp</code>).
+          </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-success btn-lg" onclick="goToStep(3)">
-            Keep Current <code>user.tok</code> &amp; Continue to Step 3 (Build <code>wokwi.toml</code>) &rarr;
+
+        <div class="panel-box">
+          <h3>
+            <span>1B. Offline Simulator Bundle (<code>bundle.wpk</code>)</span>
+            <span class="tag ok" id="bundle-detected-badge">Bundled</span>
+          </h3>
+          <div class="field-row">
+            <label>Bundle Path</label>
+            <input type="text" id="inst-bundle" value="~/.wokwi/bundle.wpk" />
+          </div>
+          <div class="field-row">
+            <label>Override File</label>
+            <input type="file" id="bundle-file-picker" accept=".wpk,application/octet-stream" onchange="onPickBundleFile(event)" style="font-size:11px;" />
+          </div>
+        </div>
+
+        <div class="panel-box">
+          <h3><span>1C. Register Offline MCP Server</span></h3>
+          <div id="mcp-client-checks" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">
+            <label><input type="checkbox" value="t3" checked /> T3 Code</label>
+            <label><input type="checkbox" value="anthropic" checked /> Claude</label>
+            <label><input type="checkbox" value="opencode" checked /> OpenCode</label>
+            <label><input type="checkbox" value="codex" checked /> Codex</label>
+            <label><input type="checkbox" value="antigravity" checked /> Antigravity</label>
+            <label><input type="checkbox" value="vscode" checked /> VS Code</label>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:6px;">
+            <button class="primary" style="width:100%;" onclick="runStep1AndContinue()">
+              Install Extension, Bundle &amp; MCP
+            </button>
+          </div>
+          <div id="inst-toast" style="margin-top:8px;font-size:11.5px;color:var(--ok);display:none;"></div>
+        </div>
+      </aside>
+
+      <!-- CENTER VIEW: USER.TOK LICENSE & WINDOWS/CROSS-PLATFORM PIO .BIN FIXER -->
+      <section class="main-view" style="padding:14px;overflow:auto;">
+        <div class="panel-box">
+          <h3>
+            <span>Offline License Token (<code>~/.wokwi/user.tok</code>) — Internal Testing Auto-Loaded</span>
+            <span class="tag ok" id="step2-status-title">user@wokwi.com (Pro)</span>
+          </h3>
+          <div style="font-size:12px;color:var(--ok);margin-bottom:8px;" id="tok-decoded-info">Loading ~/.wokwi/user.tok...</div>
+
+          <div class="field-row">
+            <label>Pick <code>.tok</code> File</label>
+            <div style="display:flex;gap:6px;">
+              <input type="file" id="tok-file-picker" accept=".tok,text/plain" onchange="onPickTokFile(event)" style="flex:1;" />
+              <button class="primary" onclick="uploadPickedTokAndOverwrite(false)">Load Picked File</button>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label>Disk <code>.tok</code> Path</label>
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="tok-disk-path" placeholder="~/.wokwi/user.tok or /path/to/user.tok" style="flex:1;" />
+              <button onclick="overwriteTokFromPath(false)">Load Path</button>
+            </div>
+          </div>
+
+          <textarea id="tok-raw-editor" style="width:100%;height:110px;margin:6px 0;" oninput="updateDecodedTokPreview()"></textarea>
+
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="primary" onclick="overwriteTokFromEditor(false)">Save &amp; Overwrite <code>~/.wokwi/user.tok</code></button>
+            <button onclick="restoreDefaultTestingTok()">Restore Default Testing Token (<code>user@wokwi.com</code>)</button>
+            <button onclick="downloadFile('user.tok', document.getElementById('tok-raw-editor').value)">Export <code>user.tok</code></button>
+          </div>
+          <div id="tok-toast" style="margin-top:8px;font-size:11.5px;color:var(--ok);display:none;"></div>
+        </div>
+
+        <div class="panel-box">
+          <h3>
+            <span>Cross-Platform <code>pio</code> Wrapper &amp; Pre-Built ESP32-S3 <code>.bin</code> Provisioner (e.g. <code>XCasFW</code>)</span>
+            <span class="tag">Windows · macOS · Linux</span>
+          </h3>
+          <p style="margin:0 0 8px;font-size:12px;color:var(--muted);">
+            Patched Wokwi automatically provisions missing <code>bootloader.bin</code>, <code>partitions.bin</code>, and <code>firmware.bin</code> on simulation start. You can also populate any existing project folder (such as <code>XCasFW</code>) directly below:
+          </p>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="fix-proj-dir" placeholder="Path to XCasFW or ESP32 project folder (e.g. C:\...\ESP32Calc\XCasFW)" style="flex:1;" />
+            <button class="primary" onclick="fixExistingProjectBins()">Populate Pre-Built <code>.bin</code> Files</button>
+          </div>
+          <div id="fix-proj-toast" style="margin-top:8px;font-size:11.5px;color:var(--ok);display:none;"></div>
+        </div>
+      </section>
+
+      <!-- RIGHT DOCK: ENVIRONMENT READOUTS & ARCHITECTURE NOTES -->
+      <aside class="dock dock-right inspector">
+        <details open>
+          <summary>Environment Status</summary>
+          <div style="padding:8px 12px;font-size:12px;color:var(--muted);line-height:1.55;" id="step1-status-detail">
+            Detecting extension in ~/.vscode/extensions and bundle.wpk in ~/.wokwi...
+          </div>
+        </details>
+        <details open>
+          <summary>Included Offline Capabilities</summary>
+          <div style="padding:8px 12px;font-size:12px;color:var(--muted);line-height:1.55;">
+            &bull; <strong>VS Code Visual Editor Unlocked:</strong> Drag/move/add parts in both Simulator and Diagram Editor views.<br/>
+            &bull; <strong>Auto <code>.bin</code> Fallback:</strong> Works even without PlatformIO installed.<br/>
+            &bull; <strong>CAN Bus Simulation:</strong> Includes <code>chip-can_terminal</code> &amp; <code>chip-cjmcu_230</code> for ESP32-S3 TWAI testing.
+          </div>
+        </details>
+      </aside>
+    </main>
+  </div>
+
+  <!-- =========================================================================
+       PART 2: LAYOUT & PART CHANGING WORKSPACE (WITH ACTUAL WOKWI SVGS)
+       ========================================================================= -->
+  <div id="view-layout" style="display:flex;flex-direction:column;flex:1;min-height:0;" hidden>
+    <!-- CONTEXT TOOLBAR -->
+    <div class="toolbar" role="toolbar" aria-label="Layout and part tools">
+      <button class="primary" onclick="applyPreset('rc-car')">RC Car + CAN Preset</button>
+      <button onclick="applyPreset('esp32calc')">ESP32Calc Preset</button>
+      <button onclick="loadXcasfwIntoVisualEditor()">XCasFW 54-Key Layout</button>
+      <div class="divider"></div>
+      <button class="primary" onclick="visAddPushbutton()">
+        <svg class="icon"><use href="#i-plus"/></svg>
+        Add Pushbutton
+      </button>
+      <button onclick="visAddCanTerminal()">
+        <svg class="icon"><use href="#i-plus"/></svg>
+        Add CAN Terminal
+      </button>
+      <button onclick="visAddPartPrompt()">
+        <svg class="icon"><use href="#i-plus"/></svg>
+        Add Part...
+      </button>
+      <div class="divider"></div>
+      <button onclick="visZoom(0.85)" title="Zoom Out">&minus;</button>
+      <span id="vis-zoom-label" class="readout" style="min-width:42px;text-align:center;font-size:12px;">100%</span>
+      <button onclick="visZoom(1.18)" title="Zoom In">+</button>
+      <button onclick="visFitView()">Fit View</button>
+      <div class="divider"></div>
+      <input type="text" id="vis-file-path" value="./rc-car-wokwi/diagram.json" style="width:210px;" title="Target diagram.json path" />
+      <button onclick="loadVisualEditorFromDisk()">Load JSON</button>
+      <button class="ok-btn" onclick="saveGeneratedProject()">
+        <svg class="icon"><use href="#i-save"/></svg>
+        Write <code>wokwi.toml</code> + <code>diagram.json</code>
+      </button>
+      <span id="vis-part-count-badge" class="tag" style="margin-left:auto;">0 parts</span>
+    </div>
+
+    <main class="workspace">
+      <!-- LEFT DOCK: HARDWARE CATALOG COUNTS (N) & ACTIVE PARTS LIST -->
+      <aside class="dock dock-left">
+        <div class="dock-tabs" role="tablist">
+          <button id="left-tab-btn-parts" role="tab" aria-selected="true" onclick="switchLeftTab('parts')">Canvas Parts &amp; Existence</button>
+          <button id="left-tab-btn-catalog" role="tab" aria-selected="false" onclick="switchLeftTab('catalog')">Hardware Catalog (N)</button>
+        </div>
+
+        <!-- TAB 1: CANVAS PARTS LIST (SELECT / TOGGLE EXISTENCE) -->
+        <div id="left-tab-parts" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+          <div style="padding:6px 8px;border-bottom:1px solid var(--line);">
+            <input type="search" id="vis-filter-input" placeholder="Filter parts/buttons by ID, label, type..." oninput="visRenderPartsList()" style="width:100%;" />
+          </div>
+          <div id="vis-parts-list" style="flex:1;overflow:auto;"></div>
+        </div>
+
+        <!-- TAB 2: HARDWARE CATALOG QUANTITY (N) & CUSTOM IMPORTER -->
+        <div id="left-tab-catalog" style="display:flex;flex-direction:column;flex:1;min-height:0;" hidden>
+          <div id="elements-container" style="flex:1;overflow:auto;"></div>
+          <details style="border-top:1px solid var(--line);background:var(--surface);">
+            <summary style="padding:6px 10px;font-size:12px;font-weight:600;">+ Import Custom Chip / Part</summary>
+            <div style="padding:8px 10px;display:grid;gap:6px;">
+              <input type="text" id="imp-id" placeholder="Chip ID (e.g. ultrasonic_sr04)" />
+              <input type="text" id="imp-name" placeholder="Display Name" />
+              <input type="text" id="imp-type" placeholder="chip-ultrasonic_sr04" />
+              <input type="text" id="imp-pins" placeholder="Pins: VCC, GND, TRIG, ECHO" />
+              <input type="hidden" id="imp-specs" value="Custom imported element" />
+              <input type="hidden" id="imp-count" value="1" />
+              <input type="hidden" id="imp-path" value="" />
+              <button class="primary" onclick="importCustomElement()">Add to Catalog &amp; Diagram</button>
+            </div>
+          </details>
+        </div>
+      </aside>
+
+      <!-- CENTER MAIN VIEW: INTERACTIVE REAL WOKWI SVG STAGE -->
+      <section class="main-view">
+        <svg id="svg-stage" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Official Wokwi Breakout Through-Hole Pin -->
+            <g id="wokwi-hole">
+              <circle r="2.65" cx="0" cy="0" fill="#ffe680" />
+              <circle r="1.7" cx="0" cy="0" fill="#ffffff" />
+            </g>
+            <!-- Official Wokwi Servo Connector Pin -->
+            <g id="wokwi-servo-pin">
+              <rect x="0" y="-1.91" width="3.72" height="3.71" fill="#333" />
+              <rect fill="#ccc" x="0.33" y="-1.23" width="3.04" height="2.46" rx=".15" />
+            </g>
+          </defs>
+          <g id="svg-viewport">
+            <g id="svg-wires-layer"></g>
+            <g id="svg-parts-layer"></g>
+          </g>
+        </svg>
+        <div id="vis-toast" style="position:absolute;top:8px;left:10px;padding:4px 10px;border-radius:6px;background:var(--menu);border:1px solid var(--line);font-size:11.5px;color:var(--ok);display:none;"></div>
+        <div id="gen-toast" style="position:absolute;top:8px;right:10px;padding:4px 10px;border-radius:6px;background:var(--menu);border:1px solid var(--line);font-size:11.5px;color:var(--ok);display:none;"></div>
+      </section>
+
+      <!-- RIGHT DOCK: INSPECTOR (SELECTED PART / BUTTON + PROJECT TOML + RAILS) -->
+      <aside class="dock dock-right inspector">
+        <details open>
+          <summary>
+            <span>Selected Part / Button</span>
+            <span id="vis-sel-badge" class="tag">None</span>
+          </summary>
+          <div style="padding:6px 0;">
+            <label class="prop">
+              <span>Exists in JSON</span>
+              <input type="checkbox" id="insp-exists" checked onchange="visApplyInspector()" style="width:16px;height:16px;justify-self:start;" />
+              <span class="unit">active</span>
+            </label>
+            <label class="prop">
+              <span>Part ID</span>
+              <input type="text" id="insp-id" oninput="visApplyInspector()" />
+              <span class="unit">id</span>
+            </label>
+            <label class="prop">
+              <span>Wokwi Type</span>
+              <input type="text" id="insp-type" oninput="visApplyInspector()" />
+              <span class="unit"></span>
+            </label>
+            <label class="prop">
+              <span>Left (X)</span>
+              <input type="number" id="insp-left" step="5" oninput="visApplyInspector()" />
+              <span class="unit">px</span>
+            </label>
+            <label class="prop">
+              <span>Top (Y)</span>
+              <input type="number" id="insp-top" step="5" oninput="visApplyInspector()" />
+              <span class="unit">px</span>
+            </label>
+            <label class="prop">
+              <span>Rotation</span>
+              <select id="insp-rotate" onchange="visApplyInspector()">
+                <option value="0">0&deg;</option>
+                <option value="90">90&deg;</option>
+                <option value="180">180&deg;</option>
+                <option value="270">270&deg;</option>
+              </select>
+              <span class="unit">deg</span>
+            </label>
+            <label class="prop">
+              <span>Label</span>
+              <input type="text" id="insp-label" placeholder="SEND CAN, EXE..." oninput="visApplyInspector()" />
+              <span class="unit">txt</span>
+            </label>
+            <label class="prop">
+              <span>Color</span>
+              <select id="insp-color" onchange="visApplyInspector()">
+                <option value="">Default</option>
+                <option value="red">Red</option>
+                <option value="green">Green</option>
+                <option value="blue">Blue</option>
+                <option value="yellow">Yellow</option>
+                <option value="orange">Orange</option>
+                <option value="purple">Purple</option>
+                <option value="black">Black</option>
+                <option value="white">White</option>
+                <option value="grey">Grey</option>
+              </select>
+              <span class="unit">cap</span>
+            </label>
+            <label class="prop">
+              <span>Shortcut Key</span>
+              <input type="text" id="insp-key" placeholder="c, Enter, 1..." oninput="visApplyInspector()" />
+              <span class="unit">key</span>
+            </label>
+            <div class="prop">
+              <span>Wire Target</span>
+              <input type="text" id="insp-conn" placeholder="can_term:TRIG or esp:14" />
+              <button onclick="visUpdatePartConnection()" style="min-height:24px;padding:0 6px;">Wire</button>
+            </div>
+            <div style="display:flex;gap:6px;padding:6px 12px 2px;">
+              <button onclick="visDuplicateSelected()" style="flex:1;">Duplicate</button>
+              <button class="danger" onclick="visDeleteSelected()" style="flex:1;">Delete</button>
+            </div>
+          </div>
+        </details>
+
+        <details open>
+          <summary><span>Project &amp; <code>wokwi.toml</code> Settings</span></summary>
+          <div style="padding:6px 0;">
+            <label class="prop">
+              <span>Project Dir</span>
+              <input type="text" id="cfg-project-dir" value="./rc-car-wokwi" />
+              <span class="unit"></span>
+            </label>
+            <label class="prop">
+              <span>Firmware</span>
+              <input type="text" id="cfg-firmware" value="build/firmware.bin" oninput="regeneratePreviews()" />
+              <span class="unit">bin</span>
+            </label>
+            <label class="prop">
+              <span>ELF File</span>
+              <input type="text" id="cfg-elf" value="build/firmware.elf" oninput="regeneratePreviews()" />
+              <span class="unit">elf</span>
+            </label>
+            <label class="prop">
+              <span>RFC2217 Port</span>
+              <input type="number" id="cfg-rfc-port" value="4000" oninput="regeneratePreviews()" />
+              <span class="unit">tcp</span>
+            </label>
+            <label class="prop">
+              <span>GDB Port</span>
+              <input type="number" id="cfg-gdb-port" value="3333" oninput="regeneratePreviews()" />
+              <span class="unit">tcp</span>
+            </label>
+            <label class="prop">
+              <span>Motor Bus</span>
+              <select id="cfg-motor-v" onchange="regeneratePreviews()">
+                <option value="12">12 V (400 mA)</option>
+                <option value="24">24 V (200 mA)</option>
+              </select>
+              <span class="unit">V</span>
+            </label>
+            <label class="prop">
+              <span>Auto-Wire</span>
+              <select id="cfg-autowire" onchange="regeneratePreviews()">
+                <option value="yes">Enabled</option>
+                <option value="no">Disabled</option>
+              </select>
+              <span class="unit"></span>
+            </label>
+          </div>
+        </details>
+
+        <details open>
+          <summary>Electrical &amp; Power Rails</summary>
+          <div id="power-summary" style="padding:6px 12px;display:grid;gap:6px;font-size:11.5px;"></div>
+        </details>
+      </aside>
+
+      <!-- BOTTOM DOCK: SIMULATED CAN BUS TERMINAL | WOKWI.TOML | DIAGRAM.JSON -->
+      <section class="dock dock-bottom">
+        <div class="dock-tabs" role="tablist">
+          <button id="btm-tab-btn-can" role="tab" aria-selected="true" onclick="switchBottomTab('can')">
+            Simulated CAN Bus Terminal (<code>chip-can_terminal</code> &rarr; <code>CJMCU-230</code> &rarr; <code>ESP32-S3</code>)
+          </button>
+          <button id="btm-tab-btn-toml" role="tab" aria-selected="false" onclick="switchBottomTab('toml')">
+            Generated <code>wokwi.toml</code>
+          </button>
+          <button id="btm-tab-btn-diag" role="tab" aria-selected="false" onclick="switchBottomTab('diag')">
+            Generated <code>diagram.json</code>
           </button>
         </div>
-      </div>
 
-      <div class="grid-2">
-        <div>
-          <div class="card">
-            <h2>
-              <span>Step 2: Internal Testing <code>user.tok</code> Auto-Loaded (Or Pick Another If Wanted)</span>
-              <span class="badge badge-ok">Auto-Fetched: user@wokwi.com (Pro)</span>
-            </h2>
-            <p style="font-size:0.85rem;color:var(--muted);margin-top:0;">
-              The internal testing license (<code>user@wokwi.com</code>, Plan: <code>pro</code>, Expires: <code>99991231</code>) is automatically fetched and activated in <code>~/.wokwi/user.tok</code>. Click <strong>Continue to Step 3</strong> above, or pick a different <code>.tok</code> file below if you want to use another one:
-            </p>
-            <div class="form-grid">
-              <div class="form-group full">
-                <label>Option 1: Pick Another <code>.tok</code> File from Your Computer (Optional Override)</label>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                  <input type="file" id="tok-file-picker" accept=".tok,text/plain" onchange="onPickTokFile(event)" style="flex:1;" />
-                  <button class="btn btn-success" onclick="uploadPickedTokAndOverwrite(true)">Load Picked File &amp; Go to Step 3 &rarr;</button>
-                </div>
-              </div>
-              <div class="form-group full">
-                <label>Option 2: Or Load Another <code>.tok</code> from Disk Path</label>
-                <div style="display:flex;gap:8px;">
-                  <input type="text" id="tok-disk-path" placeholder="~/.wokwi/files/user.tok or /path/to/user.tok" style="flex:1;" />
-                  <button class="btn btn-primary" onclick="overwriteTokFromPath(true)">Load Path &amp; Go to Step 3 &rarr;</button>
-                </div>
-              </div>
-              <div class="form-group full">
-                <label>Option 3: Active / Editable <code>~/.wokwi/user.tok</code> Content (Pre-filled with Internal Testing Token)</label>
-                <textarea id="tok-raw-editor" class="code-box" style="height:135px;" oninput="updateDecodedTokPreview()" placeholder="# Wokwi License&#10;key=...&#10;ts=..."></textarea>
-              </div>
+        <!-- BOTTOM TAB 1: CAN BUS TERMINAL SIMULATOR -->
+        <div id="btm-tab-can" style="display:grid;grid-template-columns:460px minmax(0,1fr);gap:12px;padding:8px 12px;flex:1;min-height:0;overflow:auto;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              <button class="primary" onclick="sendSimulatedCanPreset(0x120, 0, 35, 65)">Steer Left 35&deg; + 65%</button>
+              <button onclick="sendSimulatedCanPreset(0x120, 0, 90, 80)">Center 90&deg; + 80%</button>
+              <button onclick="sendSimulatedCanPreset(0x120, 0, 145, 50)">Right 145&deg; + 50%</button>
+              <button class="danger" onclick="sendSimulatedCanPreset(0x100, 2, 90, 0)">Brake (0x100)</button>
+              <button onclick="sendSimulatedCanPreset(0x7DF, 3, 90, 0)">OBD Ping (0x7DF)</button>
             </div>
-
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn btn-primary" onclick="overwriteTokFromEditor(false)">Save &amp; Overwrite <code>~/.wokwi/user.tok</code></button>
-              <button class="btn" onclick="restoreDefaultTestingTok()">Restore Default Internal Testing <code>user.tok</code> (<code>user@wokwi.com</code>)</button>
-              <button class="btn" onclick="downloadFile('user.tok', document.getElementById('tok-raw-editor').value)">Export <code>user.tok</code></button>
+            <div style="display:grid;grid-template-columns:80px 1fr 75px 75px;gap:6px;align-items:center;">
+              <input type="text" id="can-sim-id" value="0x120" title="CAN ID" />
+              <select id="can-sim-cmd" title="Command Type">
+                <option value="0">0: Steer + Throttle</option>
+                <option value="1">1: Steer Servo Only</option>
+                <option value="2">2: Emergency Brake</option>
+                <option value="3">3: Diagnostic Ping</option>
+              </select>
+              <input type="number" id="can-sim-steer" value="90" min="0" max="180" title="Steering deg" />
+              <input type="number" id="can-sim-throttle" value="50" min="0" max="100" title="Throttle %" />
             </div>
-            <div id="tok-toast" class="status-toast"></div>
-
-            <div class="step-footer">
-              <button class="btn" onclick="goToStep(1)">&larr; Back to Step 1 (Extension &amp; Bundle)</button>
-              <button class="btn btn-success btn-lg" onclick="goToStep(3)">
-                Continue to Step 3: Choose Hardware &amp; Build <code>wokwi.toml</code> &rarr;
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="can-sim-hex" placeholder="Optional 8-byte hex payload (e.g. 00 5A 32 01 CA 4E 00 01)" style="flex:1;" />
+              <button class="primary" onclick="sendSimulatedCanFrame()">
+                <svg class="icon"><use href="#i-send"/></svg>
+                Send CAN
               </button>
             </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-family:var(--mono);">
+              <span id="can-last-tx">TX: ID=0x120</span>
+              <span id="can-last-act" style="color:var(--ok);">YB-P20M: 90&deg; | JGB37: 50%</span>
+              <span id="can-last-rx" style="color:var(--accent);">RX: ID=0x128 ACK</span>
+            </div>
           </div>
+          <textarea id="can-terminal-log" readonly style="width:100%;height:100%;background:var(--canvas);color:var(--ok);border-color:var(--line);font-size:11.5px;"></textarea>
         </div>
 
-        <div>
-          <div class="card">
-            <h2>Other Ways to Load <code>user.tok</code> Manually (Without an LLM)</h2>
-            <ul style="font-size:0.86rem;color:#e2e8f0;padding-left:20px;line-height:1.65;">
-              <li><strong>Inside VS Code:</strong> Press <code>Cmd+Shift+P</code> (macOS) or <code>Ctrl+Shift+P</code> (Windows/Linux) and run <strong><code>Wokwi: Load and Overwrite user.tok</code></strong>.</li>
-              <li><strong>Via CLI:</strong> Run <code>./install.sh --cli --load-user-tok /path/to/user.tok</code> (or <code>WokwiOfflineSetup.exe --cli --load-user-tok C:\path\to\user.tok</code>).</li>
-              <li><strong>Automatic Backup:</strong> Any previous <code>~/.wokwi/user.tok</code> is automatically backed up to <code>~/.wokwi/user.tok.bak</code> before overwriting.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ======================================================================= -->
-    <!-- STEP 3: CHOOSE HARDWARE & GENERATE WOKWI.TOML + DIAGRAM.JSON            -->
-    <!-- ======================================================================= -->
-    <div id="step-3" class="hidden">
-      <div class="grid-2">
-        <div>
-          <div class="card">
-            <h2>
-              <span>Step 3: Choose What Hardware to Add to <code>wokwi.toml</code> &amp; <code>diagram.json</code></span>
-              <span style="font-size:0.8rem;color:var(--muted)">Set Quantity N of Each</span>
-            </h2>
-            <div class="preset-bar">
-              <button class="btn btn-primary" onclick="applyPreset('rc-car')">Load RC Car Preset (Default)</button>
-              <button class="btn" onclick="applyPreset('esp32calc')">Load ESP32 Calculator Preset</button>
-              <button class="btn" onclick="applyPreset('zero')">Clear All (0)</button>
-            </div>
-            <div id="elements-container" class="elem-list"></div>
-
-            <div class="step-footer">
-              <button class="btn" onclick="goToStep(2)">&larr; Back to Step 2 (<code>user.tok</code>)</button>
-              <button class="btn btn-success btn-lg" onclick="saveGeneratedProject()">
-                Generate &amp; Write <code>wokwi.toml</code> + <code>diagram.json</code> to Disk
-              </button>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2>
-              <span>Optional: Import Custom Hardware Element / Chip</span>
-              <span class="badge">+ Custom Chip / Part</span>
-            </h2>
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Element ID / Chip Name (e.g. ultrasonic_sr04)</label>
-                <input type="text" id="imp-id" placeholder="custom_sensor" />
-              </div>
-              <div class="form-group">
-                <label>Display Name</label>
-                <input type="text" id="imp-name" placeholder="Custom Sensor / Actuator" />
-              </div>
-              <div class="form-group">
-                <label>Wokwi Type (chip-&lt;name&gt; or wokwi-&lt;part&gt;)</label>
-                <input type="text" id="imp-type" placeholder="chip-custom_sensor" />
-              </div>
-              <div class="form-group">
-                <label>Pins (comma-separated)</label>
-                <input type="text" id="imp-pins" placeholder="VCC, GND, SIG, OUT" />
-              </div>
-              <div class="form-group">
-                <label>Voltage Range / Notes</label>
-                <input type="text" id="imp-specs" placeholder="3.3V - 5V, 50mA max" />
-              </div>
-              <div class="form-group">
-                <label>Initial Quantity (N)</label>
-                <input type="number" id="imp-count" value="1" min="1" />
-              </div>
-              <div class="form-group full">
-                <label>Optional: Path to existing .chip.json / .chip.wasm / .chip.c on disk</label>
-                <input type="text" id="imp-path" placeholder="/path/to/my_custom.chip.json (optional)" />
-              </div>
-            </div>
-            <button class="btn btn-primary" onclick="importCustomElement()">+ Add Custom Element to List</button>
-          </div>
+        <!-- BOTTOM TAB 2: WOKWI.TOML -->
+        <div id="btm-tab-toml" style="padding:8px 12px;flex:1;min-height:0;display:flex;flex-direction:column;" hidden>
+          <textarea id="preview-toml" style="flex:1;width:100%;"></textarea>
         </div>
 
-        <div>
-          <div class="card">
-            <h2>Output Folder &amp; <code>wokwi.toml</code> Settings</h2>
-            <div class="form-grid">
-              <div class="form-group full">
-                <label>Target Project Directory (writes <code>wokwi.toml</code>, <code>diagram.json</code> &amp; copies <code>.chip.wasm</code> files)</label>
-                <input type="text" id="cfg-project-dir" value="./rc-car-wokwi" />
-              </div>
-              <div class="form-group">
-                <label>Firmware Path (in wokwi.toml)</label>
-                <input type="text" id="cfg-firmware" value="build/firmware.bin" oninput="regeneratePreviews()" />
-              </div>
-              <div class="form-group">
-                <label>ELF Path (in wokwi.toml)</label>
-                <input type="text" id="cfg-elf" value="build/firmware.elf" oninput="regeneratePreviews()" />
-              </div>
-              <div class="form-group">
-                <label>RFC2217 Serial Port</label>
-                <input type="number" id="cfg-rfc-port" value="4000" oninput="regeneratePreviews()" />
-              </div>
-              <div class="form-group">
-                <label>GDB Server Port</label>
-                <input type="number" id="cfg-gdb-port" value="3333" oninput="regeneratePreviews()" />
-              </div>
-              <div class="form-group">
-                <label>Motor Bus Voltage (JGB37-520)</label>
-                <select id="cfg-motor-v" onchange="regeneratePreviews()">
-                  <option value="12">12 V (120 mA no-load / 400 mA load)</option>
-                  <option value="24">24 V (50 mA no-load / 200 mA load)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Auto-Wire Power &amp; GPIO Signals</label>
-                <select id="cfg-autowire" onchange="regeneratePreviews()">
-                  <option value="yes">Yes — Wire to ESP32-S3 &amp; Power Rails</option>
-                  <option value="no">No — Place parts without wires</option>
-                </select>
-              </div>
-            </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn btn-success btn-lg" onclick="saveGeneratedProject()">Generate &amp; Write Project Files to Disk</button>
-              <button class="btn" onclick="downloadFile('wokwi.toml', document.getElementById('preview-toml').value)">Download wokwi.toml</button>
-              <button class="btn" onclick="downloadFile('diagram.json', document.getElementById('preview-diagram').value)">Download diagram.json</button>
-            </div>
-            <div id="gen-toast" class="status-toast"></div>
-          </div>
-
-          <div class="card">
-            <h2>Electrical &amp; Power Rail Summary (Live Calculation)</h2>
-            <div class="rail-box" id="power-summary"></div>
-            <div class="callout">
-              <strong>7V Buck Regulator Wiring Note (Sec. 7 of PDF):</strong><br/>
-              Connect <strong>12V–24V</strong> (JGB37-520 motor battery bus) to <code>VIN_POS</code> of the <strong>7V Regulator</strong>, and its <strong>7.0V</strong> output (<code>VOUT_POS</code>) to the <strong>YB-P20M Servos' VCC</strong> (rated 6.0–7.4V, &le;3.6A stall). Connect the servos' <code>PWM</code> and <code>FB</code> pins directly to the <strong>ESP32-S3 N16R8</strong> (3.3V logic) with a <strong>shared common GND</strong>.
-            </div>
-          </div>
-
-          <div class="card">
-            <h2>Generated <code>wokwi.toml</code> Preview</h2>
-            <textarea id="preview-toml" class="code-box"></textarea>
-          </div>
-
-          <div class="card">
-            <h2>
-              <span>Generated <code>diagram.json</code> Preview</span>
-              <button class="btn btn-primary" onclick="openVisualEditorWithCurrentDiagram()">
-                ✏️ Open in Visual Layout &amp; Button Editor (Step 4) &rarr;
-              </button>
-            </h2>
-            <textarea id="preview-diagram" class="code-box"></textarea>
-          </div>
+        <!-- BOTTOM TAB 3: DIAGRAM.JSON -->
+        <div id="btm-tab-diag" style="padding:8px 12px;flex:1;min-height:0;display:flex;flex-direction:column;" hidden>
+          <textarea id="preview-diagram" style="flex:1;width:100%;"></textarea>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
+  </div>
 
-    <!-- ======================================================================= -->
-    <!-- STEP 4: VISUAL LAYOUT & BUTTON EDITOR + SIMULATED CAN BUS TERMINAL      -->
-    <!-- ======================================================================= -->
-    <div id="step-4" class="hidden">
-      <div class="status-banner" style="background:rgba(56,189,248,0.11);border-color:rgba(56,189,248,0.4);">
-        <div>
-          <div style="font-weight:700;font-size:0.96rem;">Visual Layout &amp; Button Manager + RC Car CAN Bus Terminal Simulator</div>
-          <div style="font-size:0.82rem;color:#cbd5e1;margin-top:2px;">
-            Drag any button or component to move its <code>(left, top)</code> position, toggle whether a button/part exists, add new buttons/chips, or test sending CAN 2.0A messages to the ESP32-S3 RC Car setup. (Also unlocked directly inside VS Code's Wokwi Simulator &amp; Diagram Editor!)
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="loadStep3DiagramIntoVisualEditor()">🚗 Load RC Car + CAN Layout</button>
-          <button class="btn" onclick="loadXcasfwIntoVisualEditor()">🧮 Load XCasFW 54-Button Layout</button>
-          <button class="btn btn-success" onclick="saveVisualEditorToDisk()">💾 Save Layout to <code>diagram.json</code></button>
-        </div>
-      </div>
+  <!-- STATUS BAR: Live Readouts Only -->
+  <footer class="status" role="contentinfo">
+    <span class="readout" id="status-cursor">x 0 px · y 0 px</span>
+    <span class="readout" id="status-can-bus">CAN 2.0A · 500 kbps · TWAI GPIO4/GPIO5</span>
+    <span class="spacer"></span>
+    <span class="readout">MCP 127.0.0.1:47129</span>
+  </footer>
 
-      <div class="grid-2" style="grid-template-columns: 1.45fr 1fr;">
-        <!-- LEFT: INTERACTIVE 2D VISUAL CANVAS + CAN TERMINAL SIMULATOR -->
-        <div>
-          <div class="card">
-            <h2>
-              <span>Interactive 2D Visual Layout Canvas (Drag to Move, Click to Edit)</span>
-              <span class="badge badge-ok" id="vis-part-count-badge">0 parts</span>
-            </h2>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
-              <button class="btn btn-primary" onclick="visAddPushbutton()">+ Add Pushbutton (<code>wokwi-pushbutton</code>)</button>
-              <button class="btn" onclick="visAddCanTerminal()">+ Add CAN Terminal (<code>chip-can_terminal</code>)</button>
-              <button class="btn" onclick="visAddPartPrompt()">+ Add Other Part</button>
-              <span style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-                <button class="btn" style="padding:5px 10px;" onclick="visZoom(0.85)" title="Zoom Out">&minus;</button>
-                <span id="vis-zoom-label" style="font-size:0.8rem;color:var(--muted);min-width:46px;text-align:center;">100%</span>
-                <button class="btn" style="padding:5px 10px;" onclick="visZoom(1.18)" title="Zoom In">+</button>
-                <button class="btn" style="padding:5px 10px;" onclick="visFitView()">Fit All</button>
-              </span>
-            </div>
-
-            <div style="position:relative;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#080e1a;">
-              <canvas id="vis-canvas" width="880" height="540" style="width:100%;height:540px;display:block;cursor:grab;"></canvas>
-              <div style="position:absolute;bottom:8px;left:10px;background:rgba(15,23,42,0.88);border:1px solid var(--border);padding:4px 10px;border-radius:6px;font-size:0.75rem;color:#cbd5e1;pointer-events:none;">
-                <strong>Tip:</strong> Click &amp; drag any button/part to move &bull; Drag empty space to pan &bull; Scroll wheel to zoom &bull; Click part to edit or toggle existence
-              </div>
-            </div>
-
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;">
-              <input type="text" id="vis-file-path" value="./rc-car-wokwi/diagram.json" placeholder="Path to diagram.json or project folder" style="flex:1;" />
-              <button class="btn" onclick="loadVisualEditorFromDisk()">📂 Load from Disk</button>
-              <button class="btn btn-success" onclick="saveVisualEditorToDisk()">💾 Save to Disk &amp; Sync Step 3</button>
-              <button class="btn" onclick="downloadFile('diagram.json', JSON.stringify(visBuildExportDiagram(), null, 2))">⬇️ Download JSON</button>
-            </div>
-            <div id="vis-toast" class="status-toast"></div>
-          </div>
-
-          <!-- SIMULATED CAN BUS TERMINAL & ESP32 RC CAR TESTER -->
-          <div class="card">
-            <h2>
-              <span>Simulated CAN Bus Terminal (<code>chip-can_terminal</code> &rarr; <code>CJMCU-230</code> &rarr; <code>ESP32-S3</code>)</span>
-              <span class="badge badge-ok">500 kbps TWAI CAN 2.0A</span>
-            </h2>
-            <p style="font-size:0.83rem;color:var(--muted);margin-top:0;">
-              Test sending CAN bus frames from the <strong>Simulated CAN Bus Terminal</strong> element (<code>can_term</code>) across <code>CANH</code>/<code>CANL</code> through the <strong>CJMCU-230 (SN65HVD230)</strong> transceiver to the <strong>ESP32-S3 N16R8</strong> (<code>GPIO4</code> TX / <code>GPIO5</code> RX) and verify its actuator &amp; ACK response:
-            </p>
-            <div class="preset-bar">
-              <button class="btn btn-primary" onclick="sendSimulatedCanPreset(0x120, 0, 35, 65)">🚗 Steer Left (35&deg;) + 65% Throttle</button>
-              <button class="btn" onclick="sendSimulatedCanPreset(0x120, 0, 90, 80)">⬆️ Center (90&deg;) + 80% Throttle</button>
-              <button class="btn" onclick="sendSimulatedCanPreset(0x120, 0, 145, 50)">➡️ Steer Right (145&deg;) + 50% Throttle</button>
-              <button class="btn" style="border-color:var(--danger);color:#fca5a5;" onclick="sendSimulatedCanPreset(0x100, 2, 90, 0)">🛑 Emergency Brake (0x100)</button>
-              <button class="btn" onclick="sendSimulatedCanPreset(0x7DF, 3, 90, 0)">🔍 OBD-II Status Ping (0x7DF)</button>
-            </div>
-
-            <div class="form-grid" style="grid-template-columns: repeat(4, 1fr);">
-              <div class="form-group">
-                <label>CAN ID (Hex)</label>
-                <input type="text" id="can-sim-id" value="0x120" />
-              </div>
-              <div class="form-group">
-                <label>Command Type</label>
-                <select id="can-sim-cmd">
-                  <option value="0">0: Steer + Throttle</option>
-                  <option value="1">1: Steer Servo Only</option>
-                  <option value="2">2: Emergency Brake</option>
-                  <option value="3">3: Diagnostic Ping</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Steering Angle (0–180&deg;)</label>
-                <input type="number" id="can-sim-steer" value="90" min="0" max="180" />
-              </div>
-              <div class="form-group">
-                <label>Motor Throttle (0–100%)</label>
-                <input type="number" id="can-sim-throttle" value="50" min="0" max="100" />
-              </div>
-              <div class="form-group full" style="display:flex;flex-direction:row;gap:8px;align-items:center;">
-                <input type="text" id="can-sim-hex" placeholder="Optional custom 8-byte payload hex (e.g. 00 5A 32 01 CA 4E 00 01) — leave blank for auto" style="flex:1;" />
-                <button class="btn btn-success" onclick="sendSimulatedCanFrame()">📡 Send CAN Message &amp; Test ESP32 Response</button>
-              </div>
-            </div>
-
-            <div class="rail-box" style="margin-top:8px;">
-              <div class="rail-card">
-                <div class="rail-name">Last TX Frame (Terminal &rarr; Bus)</div>
-                <div class="rail-val" id="can-last-tx" style="font-size:0.82rem;font-family:monospace;">ID=0x120 DLC=8 [00 5A 32 01 CA 4E 00 01]</div>
-              </div>
-              <div class="rail-card">
-                <div class="rail-name">ESP32-S3 Servo &amp; Motor Response</div>
-                <div class="rail-val" id="can-last-act" style="font-size:0.86rem;color:#86efac;">YB-P20M: 90&deg; (1500 &micro;s) | JGB37: 50%</div>
-              </div>
-              <div class="rail-card">
-                <div class="rail-name">Last RX ACK (ESP32-S3 &rarr; Terminal)</div>
-                <div class="rail-val" id="can-last-rx" style="font-size:0.82rem;font-family:monospace;color:#c084fc;">ID=0x128 DLC=8 [AC 5A 32 01 0C E4 00 4F]</div>
-              </div>
-            </div>
-
-            <textarea id="can-terminal-log" class="code-box" style="height:155px;background:#050b14;color:#4ade80;border-color:#1e3a5f;" readonly></textarea>
-          </div>
-        </div>
-
-        <!-- RIGHT: SELECTED BUTTON / PART INSPECTOR & EXISTENCE MANAGER -->
-        <div>
-          <div class="card">
-            <h2>
-              <span>Selected Button / Component Inspector</span>
-              <span class="badge" id="vis-sel-badge">Click any part</span>
-            </h2>
-            <div class="form-grid">
-              <div class="form-group full" style="background:var(--panel-alt);padding:10px 12px;border-radius:8px;border:1px solid var(--border);flex-direction:row;justify-content:space-between;align-items:center;">
-                <div>
-                  <div style="font-weight:700;font-size:0.9rem;">Part / Button Exists in Config</div>
-                  <div style="font-size:0.76rem;color:var(--muted);">Uncheck to omit this button/part from <code>diagram.json</code> without losing its layout coordinates</div>
-                </div>
-                <input type="checkbox" id="insp-exists" checked onchange="visApplyInspector()" style="width:20px;height:20px;cursor:pointer;" />
-              </div>
-              <div class="form-group">
-                <label>Part ID (<code>id</code>)</label>
-                <input type="text" id="insp-id" oninput="visApplyInspector()" />
-              </div>
-              <div class="form-group">
-                <label>Wokwi Type (<code>type</code>)</label>
-                <input type="text" id="insp-type" oninput="visApplyInspector()" />
-              </div>
-              <div class="form-group">
-                <label>Left / X Position (px)</label>
-                <input type="number" id="insp-left" step="5" oninput="visApplyInspector()" />
-              </div>
-              <div class="form-group">
-                <label>Top / Y Position (px)</label>
-                <input type="number" id="insp-top" step="5" oninput="visApplyInspector()" />
-              </div>
-              <div class="form-group">
-                <label>Button / Part Label (<code>attrs.label</code>)</label>
-                <input type="text" id="insp-label" placeholder="e.g. SEND CAN, EXE, SHIFT" oninput="visApplyInspector()" />
-              </div>
-              <div class="form-group">
-                <label>Button Color (<code>attrs.color</code>)</label>
-                <select id="insp-color" onchange="visApplyInspector()">
-                  <option value="">Default</option>
-                  <option value="purple">Purple</option>
-                  <option value="green">Green</option>
-                  <option value="red">Red</option>
-                  <option value="blue">Blue</option>
-                  <option value="yellow">Yellow</option>
-                  <option value="orange">Orange</option>
-                  <option value="black">Black</option>
-                  <option value="white">White</option>
-                  <option value="grey">Grey</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Keyboard Shortcut Key (<code>attrs.key</code>)</label>
-                <input type="text" id="insp-key" placeholder="e.g. c, Enter, a, 1" oninput="visApplyInspector()" />
-              </div>
-              <div class="form-group">
-                <label>Rotation (deg)</label>
-                <select id="insp-rotate" onchange="visApplyInspector()">
-                  <option value="0">0&deg;</option>
-                  <option value="90">90&deg;</option>
-                  <option value="180">180&deg;</option>
-                  <option value="270">270&deg;</option>
-                </select>
-              </div>
-              <div class="form-group full">
-                <label>Primary Signal Connection Target (e.g. <code>can_term:TRIG</code> or <code>esp:14</code>)</label>
-                <div style="display:flex;gap:8px;">
-                  <input type="text" id="insp-conn" placeholder="e.g. can_term:TRIG or esp:14" style="flex:1;" />
-                  <button class="btn btn-primary" onclick="visUpdatePartConnection()">Connect Pin</button>
-                </div>
-              </div>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-              <button class="btn" onclick="visDuplicateSelected()">📋 Duplicate Part</button>
-              <button class="btn" style="border-color:var(--danger);color:#fca5a5;" onclick="visDeleteSelected()">🗑️ Delete Part Permanently</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2>
-              <span>All Buttons &amp; Components in Layout (Click to Select / Toggle Existence)</span>
-            </h2>
-            <div style="margin-bottom:8px;">
-              <input type="text" id="vis-filter-input" placeholder="Filter by ID, label, or type (e.g. btn, servo, can)..." oninput="visRenderPartsList()" style="width:100%;" />
-            </div>
-            <div id="vis-parts-list" style="max-height:460px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
+  <div id="app-toast" class="toast" role="status" aria-live="polite"></div>
 
   <script>
     let catalog = null;
     let counts = {};
-    let currentStep = 1;
+    let currentMode = 'setup';
 
     const FALLBACK_CATALOG = __CATALOG_JSON_PLACEHOLDER__;
 
@@ -1021,57 +995,79 @@
       'ts=1779483231117',
     ].join('\n');
 
+    function showToast(msg) {
+      const t = document.getElementById('app-toast');
+      if (!t) return;
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('show'), 3200);
+    }
+
     async function init() {
       document.getElementById('tok-raw-editor').value = DEFAULT_INTERNAL_TESTING_USER_TOK;
       updateDecodedTokPreview();
       try {
         const res = await fetch('/api/catalog');
-        if (res.ok) {
-          catalog = await res.json();
-        } else {
-          catalog = FALLBACK_CATALOG;
-        }
+        catalog = res.ok ? await res.json() : FALLBACK_CATALOG;
       } catch {
         catalog = FALLBACK_CATALOG;
       }
+      visInitSvgStage();
       applyPreset(catalog.defaultPreset || 'rc-car');
       await refreshEnvironmentStatus();
       await loadCurrentUserTok();
+      sendSimulatedCanPreset(0x120, 0, 90, 50);
 
       const stepParam = new URLSearchParams(window.location.search).get('step');
-      if (stepParam === '2') goToStep(2);
-      else if (stepParam === '3') goToStep(3);
-      else if (stepParam === '4') goToStep(4);
-      else goToStep(1);
+      const modeParam = new URLSearchParams(window.location.search).get('mode');
+      if (modeParam === 'layout' || stepParam === '3' || stepParam === '4') {
+        switchMainMode('layout');
+      } else {
+        switchMainMode('setup');
+      }
     }
 
-    function goToStep(step) {
-      currentStep = step;
-      for (const s of [1, 2, 3, 4]) {
-        const el = document.getElementById(`step-${s}`);
-        if (el) el.classList.toggle('hidden', s !== step);
-        const tab = document.getElementById(`nav-step-${s}`);
-        if (tab) {
-          tab.classList.toggle('active', s === step);
-          tab.classList.toggle('done', s < step);
-        }
-      }
-      if (step === 4) {
-        if (!visState.initialized) {
-          visInitCanvas();
+    function switchMainMode(mode) {
+      currentMode = mode === 'layout' ? 'layout' : 'setup';
+      const isSetup = currentMode === 'setup';
+      document.getElementById('view-setup').hidden = !isSetup;
+      document.getElementById('view-layout').hidden = isSetup;
+      document.getElementById('mode-btn-setup').setAttribute('aria-selected', String(isSetup));
+      document.getElementById('mode-btn-layout').setAttribute('aria-selected', String(!isSetup));
+      if (!isSetup) {
+        if (!visState.parts.length) {
           loadStep3DiagramIntoVisualEditor();
-          sendSimulatedCanPreset(0x120, 0, 90, 50);
         } else {
           visDraw();
         }
       }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goToStep(step) {
+      if (step === 3 || step === 4) switchMainMode('layout');
+      else switchMainMode('setup');
+    }
+
+    function switchLeftTab(tab) {
+      const isParts = tab === 'parts';
+      document.getElementById('left-tab-parts').hidden = !isParts;
+      document.getElementById('left-tab-catalog').hidden = isParts;
+      document.getElementById('left-tab-btn-parts').setAttribute('aria-selected', String(isParts));
+      document.getElementById('left-tab-btn-catalog').setAttribute('aria-selected', String(!isParts));
+    }
+
+    function switchBottomTab(tab) {
+      for (const k of ['can', 'toml', 'diag']) {
+        document.getElementById(`btm-tab-${k}`).hidden = k !== tab;
+        document.getElementById(`btm-tab-btn-${k}`).setAttribute('aria-selected', String(k === tab));
+      }
     }
 
     function selectExtVersion(ver) {
       document.getElementById('inst-ext-version').value = ver;
-      document.getElementById('ver-card-370').classList.toggle('selected', ver === '3.7.0');
-      document.getElementById('ver-card-410').classList.toggle('selected', ver === '4.1.0');
+      document.getElementById('ver-card-370').setAttribute('aria-pressed', String(ver === '3.7.0'));
+      document.getElementById('ver-card-410').setAttribute('aria-pressed', String(ver === '4.1.0'));
     }
 
     async function refreshEnvironmentStatus() {
@@ -1079,7 +1075,6 @@
         const res = await fetch('/api/status');
         if (!res.ok) return;
         const st = await res.json();
-
         const hdrBadge = document.getElementById('hdr-ext-badge');
         const s1Title = document.getElementById('step1-status-title');
         const s1Detail = document.getElementById('step1-status-detail');
@@ -1087,32 +1082,19 @@
 
         if (st.installedVer) {
           selectExtVersion(st.installedVer);
-          hdrBadge.textContent = `Installed: Wokwi v${st.installedVer}` + (st.cacheReady ? ' (Offline Bundle Ready)' : '');
-          s1Title.textContent = `Wokwi v${st.installedVer} Extension Installed` + (st.cacheReady ? ' & Offline Bundle Extracted (.cache/entry.js Ready)' : '');
+          hdrBadge.textContent = `Wokwi v${st.installedVer}` + (st.cacheReady ? ' · Offline Ready' : '');
+          s1Title.textContent = `Wokwi v${st.installedVer} installed` + (st.cacheReady ? ' (.cache/entry.js extracted)' : '');
         } else {
-          hdrBadge.textContent = 'Extension Not Installed Yet — Run Step 1';
-          s1Title.textContent = 'Step 1 Ready: Install Wokwi Offline Extension & Extract Bundle';
+          hdrBadge.textContent = 'Not Installed';
         }
-
         if (st.detectedBundle) {
           document.getElementById('inst-bundle').value = st.detectedBundle;
           const mb = (st.bundleSize / (1024 * 1024)).toFixed(1);
-          bundleBadge.textContent = `Found: ${st.detectedBundle} (${mb} MB)`;
-          bundleBadge.className = 'badge badge-ok';
-          s1Detail.textContent = `Detected offline bundle at ${st.detectedBundle} (${mb} MB). Click the green button below to install/update, or skip to Step 2/3.`;
-        } else {
-          bundleBadge.textContent = 'Pick bundle.wpk or enter path';
+          bundleBadge.textContent = `${mb} MB`;
+          s1Detail.textContent = `Extension: v${st.installedVer || 'none'} | Bundle: ${st.detectedBundle} (${mb} MB) | Cache Ready: ${st.cacheReady ? 'Yes' : 'No'}`;
         }
-
         if (st.detectedTok) {
           document.getElementById('tok-disk-path').value = st.detectedTok;
-          const m = st.tokMetadata || {};
-          const s2Title = document.getElementById('step2-status-title');
-          if (m.name || m.email) {
-            s2Title.textContent = `Active License Found (${st.detectedTok}) — Ready for Offline Simulation!`;
-          } else {
-            s2Title.textContent = `License File Found at ${st.detectedTok}`;
-          }
         }
       } catch {}
     }
@@ -1121,7 +1103,7 @@
       const file = event.target.files && event.target.files[0];
       if (!file) return;
       const badge = document.getElementById('bundle-detected-badge');
-      badge.textContent = `Uploading ${file.name}...`;
+      badge.textContent = 'Uploading...';
       try {
         const buf = await file.arrayBuffer();
         const res = await fetch('/api/upload-bundle', {
@@ -1132,12 +1114,11 @@
         const out = await res.json();
         if (out.ok) {
           document.getElementById('inst-bundle').value = out.bundlePath;
-          const mb = (out.size / (1024 * 1024)).toFixed(1);
-          badge.textContent = `Loaded: ${out.bundlePath} (${mb} MB)`;
-          badge.className = 'badge badge-ok';
+          badge.textContent = `${(out.size / (1024 * 1024)).toFixed(1)} MB`;
+          showToast('Uploaded custom bundle.wpk');
         }
       } catch (err) {
-        badge.textContent = 'Upload failed: ' + err.message;
+        badge.textContent = 'Error';
       }
     }
 
@@ -1147,7 +1128,7 @@
       const checked = Array.from(document.querySelectorAll('#mcp-client-checks input:checked')).map((c) => c.value);
       const toast = document.getElementById('inst-toast');
       toast.style.display = 'block';
-      toast.textContent = `Installing Wokwi v${extVersion} extension & extracting offline bundle...`;
+      toast.textContent = `Installing Wokwi v${extVersion} & extracting bundle.wpk...`;
       try {
         const res = await fetch('/api/run-setup', {
           method: 'POST',
@@ -1155,11 +1136,11 @@
           body: JSON.stringify({ extVersion, bundlePath, licenseInput: '', mcpTargets: checked }),
         });
         const out = await res.json();
-        toast.textContent = out.message || 'Step 1 completed!';
+        toast.textContent = out.message || 'Setup completed!';
+        showToast('Installed Wokwi extension & extracted bundle.wpk');
         await refreshEnvironmentStatus();
-        setTimeout(() => goToStep(2), 650);
       } catch (err) {
-        toast.textContent = 'Error connecting to local setup server: ' + err.message;
+        toast.textContent = 'Error: ' + err.message;
       }
     }
 
@@ -1176,41 +1157,40 @@
       }
       renderElements();
       regeneratePreviews();
+      loadStep3DiagramIntoVisualEditor();
     }
 
     function changeQty(id, delta) {
       counts[id] = Math.max(0, (counts[id] || 0) + delta);
       renderElements();
       regeneratePreviews();
+      loadStep3DiagramIntoVisualEditor();
     }
 
     function setQty(id, val) {
       counts[id] = Math.max(0, parseInt(val, 10) || 0);
       renderElements();
       regeneratePreviews();
+      loadStep3DiagramIntoVisualEditor();
     }
 
     function renderElements() {
       const container = document.getElementById('elements-container');
+      if (!container) return;
       container.innerHTML = '';
       for (const el of catalog.elements) {
         const n = counts[el.id] || 0;
         const row = document.createElement('div');
-        row.className = 'elem-row' + (n > 0 ? ' active-row' : '');
+        row.className = 'elem-item' + (n > 0 ? ' active' : '');
         row.innerHTML = `
-          <div class="elem-info">
-            <div class="elem-title">
-              <span>${el.name}</span>
-              <span class="elem-cat">${el.category || 'Component'}</span>
-              <code style="font-size:0.75rem;color:#93c5fd;">${el.wokwiType}</code>
-            </div>
-            <div class="elem-specs">${(el.specs && el.specs.notes) || ''}</div>
-            <div class="elem-pins">Pins: [${(el.pins || []).join(', ')}]</div>
+          <div style="min-width:0;flex:1;">
+            <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${el.name}</div>
+            <div style="font-size:11px;color:var(--muted);"><code>${el.wokwiType}</code> · [${(el.pins || []).slice(0, 5).join(', ')}]</div>
           </div>
-          <div class="qty-ctrl">
-            <button class="qty-btn" onclick="changeQty('${el.id}', -1)">-</button>
-            <input class="qty-input" type="number" min="0" value="${n}" onchange="setQty('${el.id}', this.value)" />
-            <button class="qty-btn" onclick="changeQty('${el.id}', 1)">+</button>
+          <div class="qty-stepper">
+            <button onclick="changeQty('${el.id}', -1)">&minus;</button>
+            <input type="number" min="0" value="${n}" onchange="setQty('${el.id}', this.value)" />
+            <button onclick="changeQty('${el.id}', 1)">+</button>
           </div>
         `;
         container.appendChild(row);
@@ -1264,12 +1244,14 @@
 
         for (let i = 1; i <= n; i++) {
           const partId = n === 1 ? el.idPrefix : `${el.idPrefix}_${i}`;
-          const top = row * 150;
-          const left = col * 240;
-          col++;
-          if (col >= 4) {
-            col = 0;
-            row++;
+          const top = el.isBoard ? 20 : row * 135;
+          const left = el.isBoard ? 0 : 190 + col * 195;
+          if (!el.isBoard) {
+            col++;
+            if (col >= 3) {
+              col = 0;
+              row++;
+            }
           }
 
           const attrs = { ...(el.attrs || {}) };
@@ -1392,25 +1374,13 @@
       const servoStallA = (nServos * 3.6).toFixed(1);
       const motorNoLoadMa = nMotors * (motorV === 24 ? 50 : 120);
       const motorLoadMa = nMotors * (motorV === 24 ? 200 : 400);
-      const canIoMa = nCan * 11;
 
       const summaryEl = document.getElementById('power-summary');
+      if (!summaryEl) return;
       summaryEl.innerHTML = `
-        <div class="rail-card">
-          <div class="rail-name">7.0V Servo Rail (${nServos}x YB-P20M)</div>
-          <div class="rail-val">&le; ${servoStallA} A stall</div>
-          <div style="font-size:0.74rem;color:var(--muted)">6–7.4V | 7V Buck count: ${nReg7v}</div>
-        </div>
-        <div class="rail-card">
-          <div class="rail-name">${motorV}V Motor Bus (${nMotors}x JGB37-520)</div>
-          <div class="rail-val">${motorNoLoadMa} mA no-load</div>
-          <div style="font-size:0.74rem;color:var(--muted)">Load/Stall spec: ${motorLoadMa} | ${nMosfet}x IRF520</div>
-        </div>
-        <div class="rail-card">
-          <div class="rail-name">3.3V Logic &amp; CAN (${nCan}x CJMCU-230)</div>
-          <div class="rail-val">&ge; 500 mA supply</div>
-          <div style="font-size:0.74rem;color:var(--muted)">ESP32-S3 IO max: 1500mA | CAN IO: &plusmn;${canIoMa}mA</div>
-        </div>
+        <div style="display:flex;justify-content:space-between;"><span>7.0V Servo Rail (${nServos}x YB-P20M):</span><strong class="num" style="color:var(--accent);">&le; ${servoStallA} A stall (${nReg7v}x Buck)</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span>${motorV}V Motor Bus (${nMotors}x JGB37):</span><strong class="num">${motorNoLoadMa}mA idle / ${motorLoadMa}mA load (${nMosfet}x IRF520)</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span>3.3V MCU &amp; CAN (${nCan}x CJMCU):</span><strong class="num" style="color:var(--ok);">&ge; 500 mA supply, &plusmn;${nCan * 11} mA CAN</strong></div>
       `;
     }
 
@@ -1427,14 +1397,7 @@
       const name = document.getElementById('imp-name').value.trim() || id;
       const wokwiType = document.getElementById('imp-type').value.trim() || `chip-${id}`;
       const pinsRaw = document.getElementById('imp-pins').value.trim();
-      const specsNotes = document.getElementById('imp-specs').value.trim() || 'User-imported custom element';
-      const initialCount = Math.max(1, parseInt(document.getElementById('imp-count').value, 10) || 1);
-      const diskPath = document.getElementById('imp-path').value.trim();
-
-      if (!id) {
-        alert('Please enter an Element ID / Chip Name.');
-        return;
-      }
+      if (!id) return;
 
       const pins = pinsRaw ? pinsRaw.split(',').map((s) => s.trim()).filter(Boolean) : ['VCC', 'GND', 'SIG'];
       const isChip = wokwiType.startsWith('chip-');
@@ -1447,44 +1410,38 @@
         wokwiType,
         ...(chipName ? { chipName, chipBinary: `${chipName}.chip.wasm`, chipJson: `${chipName}.chip.json` } : {}),
         idPrefix: id,
-        defaultCount: initialCount,
+        defaultCount: 1,
         attrs: {},
         pins,
         signalPin: pins.find((p) => !['VCC', 'GND'].includes(p.toUpperCase())) || pins[0],
         powerPin: pins.find((p) => p.toUpperCase().includes('VCC') || p.toUpperCase().includes('VIN')) || null,
         gndPin: pins.find((p) => p.toUpperCase().includes('GND')) || null,
         powerRail: '3V3',
-        specs: { notes: specsNotes },
-        importDiskPath: diskPath || null,
+        specs: { notes: 'Custom imported element' },
       };
 
       try {
-        const res = await fetch('/api/import-element', {
+        await fetch('/api/import-element', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newElem),
         });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.element) Object.assign(newElem, data.element);
-        }
       } catch {}
 
-      const existingIdx = catalog.elements.findIndex((e) => e.id === id);
-      if (existingIdx >= 0) {
-        catalog.elements[existingIdx] = newElem;
-      } else {
-        catalog.elements.push(newElem);
-      }
-      counts[id] = initialCount;
+      catalog.elements.push(newElem);
+      counts[id] = 1;
       renderElements();
       regeneratePreviews();
+      loadStep3DiagramIntoVisualEditor();
+      showToast(`Added custom element ${name}`);
     }
 
     async function saveGeneratedProject() {
       const targetDir = document.getElementById('cfg-project-dir').value.trim();
-      const { toml, diagram, usedChips } = buildTomlAndDiagram();
-      const toast = document.getElementById('gen-toast');
+      const { toml, usedChips } = buildTomlAndDiagram();
+      const diagObj = visBuildExportDiagram();
+      const diagramStr = JSON.stringify(diagObj, null, 2) + '\n';
+      document.getElementById('preview-diagram').value = diagramStr;
       try {
         const res = await fetch('/api/generate-project', {
           method: 'POST',
@@ -1492,28 +1449,25 @@
           body: JSON.stringify({
             targetDir,
             toml: document.getElementById('preview-toml').value || toml,
-            diagram: document.getElementById('preview-diagram').value || diagram,
+            diagram: diagramStr,
             usedChips,
             counts,
           }),
         });
         const out = await res.json();
-        toast.style.display = 'block';
         if (out.ok) {
-          toast.textContent = `Saved wokwi.toml, diagram.json, and [${(out.copiedChips || []).join(', ')}] to ${out.targetDir}`;
+          showToast(`Saved wokwi.toml & diagram.json to ${out.targetDir}`);
         } else {
-          toast.textContent = `Error: ${out.error}`;
+          showToast(`Error: ${out.error}`);
         }
-      } catch (err) {
-        toast.style.display = 'block';
-        toast.textContent = 'Running in standalone browser mode — downloading files directly.';
+      } catch {
         downloadFile('wokwi.toml', document.getElementById('preview-toml').value);
-        downloadFile('diagram.json', document.getElementById('preview-diagram').value);
+        downloadFile('diagram.json', diagramStr);
       }
     }
 
     function decodeTokMetadataClient(rawText) {
-      if (!rawText || !rawText.trim()) return 'No user.tok loaded yet — pick a .tok file below or enter a path';
+      if (!rawText || !rawText.trim()) return 'No user.tok loaded';
       let keyVal = rawText.trim();
       const m = rawText.match(/^\s*key\s*=\s*(.+)$/m);
       if (m) keyVal = m[1].trim();
@@ -1524,14 +1478,10 @@
         const nulIdx = bin.indexOf('\0');
         if (nulIdx > 0) {
           const qs = new URLSearchParams(bin.slice(0, nulIdx));
-          const name = qs.get('n') || 'Unknown';
-          const email = qs.get('e') || 'Unknown';
-          const plan = qs.get('p') || 'Unknown';
-          const exp = qs.get('x') || 'N/A';
-          return `User: ${name} <${email}> | Plan: ${plan} | Expires: ${exp}`;
+          return `User: ${qs.get('n') || 'Unknown'} <${qs.get('e') || 'Unknown'}> · Plan: ${qs.get('p') || 'pro'} · Expires: ${qs.get('x') || '99991231'}`;
         }
       } catch {}
-      return 'Custom / Unparsed key format (ready to write to ~/.wokwi/user.tok)';
+      return 'Custom key ready for ~/.wokwi/user.tok';
     }
 
     function updateDecodedTokPreview() {
@@ -1547,20 +1497,13 @@
         if (data.content && data.content.trim()) {
           document.getElementById('tok-raw-editor').value = data.content;
           updateDecodedTokPreview();
-        } else {
-          document.getElementById('tok-raw-editor').value = DEFAULT_INTERNAL_TESTING_USER_TOK;
-          updateDecodedTokPreview();
         }
-      } catch {
-        document.getElementById('tok-raw-editor').value = DEFAULT_INTERNAL_TESTING_USER_TOK;
-        updateDecodedTokPreview();
-      }
+      } catch {}
     }
 
     async function restoreDefaultTestingTok() {
       document.getElementById('tok-raw-editor').value = DEFAULT_INTERNAL_TESTING_USER_TOK;
       updateDecodedTokPreview();
-      const toast = document.getElementById('tok-toast');
       try {
         const res = await fetch('/api/user-tok', {
           method: 'POST',
@@ -1568,13 +1511,9 @@
           body: JSON.stringify({ restoreDefault: true, backup: true }),
         });
         const out = await res.json();
-        toast.style.display = 'block';
-        toast.textContent = out.message || 'Restored default internal testing user.tok (user@wokwi.com, Plan: pro)';
+        showToast(out.message || 'Restored default testing user.tok');
         await refreshEnvironmentStatus();
-      } catch {
-        toast.style.display = 'block';
-        toast.textContent = 'Loaded default internal testing user.tok into editor.';
-      }
+      } catch {}
     }
 
     function onPickTokFile(event) {
@@ -1591,13 +1530,8 @@
     async function uploadPickedTokAndOverwrite(advance) {
       const fileInput = document.getElementById('tok-file-picker');
       const file = fileInput.files && fileInput.files[0];
-      if (!file && !document.getElementById('tok-raw-editor').value.trim()) {
-        alert('Please pick a .tok file first.');
-        return;
-      }
       if (file) {
-        const text = await file.text();
-        document.getElementById('tok-raw-editor').value = text;
+        document.getElementById('tok-raw-editor').value = await file.text();
         updateDecodedTokPreview();
       }
       await overwriteTokFromEditor(advance);
@@ -1605,11 +1539,7 @@
 
     async function overwriteTokFromPath(advance) {
       const filePath = document.getElementById('tok-disk-path').value.trim();
-      const toast = document.getElementById('tok-toast');
-      if (!filePath) {
-        alert('Please enter a file path on disk.');
-        return;
-      }
+      if (!filePath) return;
       try {
         const res = await fetch('/api/user-tok', {
           method: 'POST',
@@ -1617,31 +1547,19 @@
           body: JSON.stringify({ filePath, backup: true }),
         });
         const out = await res.json();
-        toast.style.display = 'block';
         if (out.ok) {
           if (out.content) {
             document.getElementById('tok-raw-editor').value = out.content;
             updateDecodedTokPreview();
           }
-          toast.textContent = out.message || `Overwrote ~/.wokwi/user.tok from ${filePath}`;
-          await refreshEnvironmentStatus();
-          if (advance) setTimeout(() => goToStep(3), 500);
-        } else {
-          toast.textContent = 'Error: ' + (out.error || 'Failed to overwrite user.tok');
+          showToast(out.message || 'Loaded user.tok');
         }
-      } catch (err) {
-        toast.style.display = 'block';
-        toast.textContent = 'Error communicating with local setup server: ' + err.message;
-      }
+      } catch {}
     }
 
     async function overwriteTokFromEditor(advance) {
       const content = document.getElementById('tok-raw-editor').value;
-      const toast = document.getElementById('tok-toast');
-      if (!content.trim()) {
-        alert('user.tok content is empty.');
-        return;
-      }
+      if (!content.trim()) return;
       try {
         const res = await fetch('/api/user-tok', {
           method: 'POST',
@@ -1649,21 +1567,10 @@
           body: JSON.stringify({ content, backup: true }),
         });
         const out = await res.json();
-        toast.style.display = 'block';
         if (out.ok) {
-          if (out.content) {
-            document.getElementById('tok-raw-editor').value = out.content;
-            updateDecodedTokPreview();
-          }
-          toast.textContent = out.message || 'Successfully overwrote ~/.wokwi/user.tok!';
-          await refreshEnvironmentStatus();
-          if (advance) setTimeout(() => goToStep(3), 500);
-        } else {
-          toast.textContent = 'Error: ' + (out.error || 'Failed to overwrite user.tok');
+          showToast(out.message || 'Saved ~/.wokwi/user.tok');
         }
-      } catch (err) {
-        toast.style.display = 'block';
-        toast.textContent = 'Running in browser-only mode — downloading user.tok so you can place it in ~/.wokwi/user.tok.';
+      } catch {
         downloadFile('user.tok', content);
       }
     }
@@ -1678,11 +1585,7 @@
 
     async function fixExistingProjectBins() {
       const targetDir = document.getElementById('fix-proj-dir').value.trim();
-      const toast = document.getElementById('fix-proj-toast');
-      if (!targetDir) {
-        alert('Please enter the path to the project folder (e.g. XCasFW).');
-        return;
-      }
+      if (!targetDir) return;
       try {
         const res = await fetch('/api/fix-project', {
           method: 'POST',
@@ -1690,37 +1593,22 @@
           body: JSON.stringify({ targetDir }),
         });
         const out = await res.json();
-        toast.style.display = 'block';
-        if (out.ok) {
-          toast.textContent = out.message + ' (' + (out.provisioned || []).join(', ') + ')';
-        } else {
-          toast.textContent = 'Error: ' + (out.error || 'Failed to populate .bin files');
-        }
-      } catch (err) {
-        toast.style.display = 'block';
-        toast.textContent = 'Error communicating with local setup server: ' + err.message;
-      }
+        showToast(out.ok ? out.message : ('Error: ' + out.error));
+      } catch {}
     }
 
     async function launchTUI() {
-      const toast = document.getElementById('inst-toast');
       try {
         const res = await fetch('/api/launch-tui', { method: 'POST' });
         const out = await res.json();
-        if (toast) {
-          toast.style.display = 'block';
-          toast.textContent = out.ok ? out.message : ('TUI Launch Error: ' + (out.error || 'Failed to open terminal'));
-        }
-        if (!out.ok) {
-          alert(out.error || 'Could not launch terminal automatically. Run ./install.sh --tui or WokwiOfflineSetup.exe --tui.');
-        }
-      } catch (err) {
-        alert('To run TUI mode, execute ./install.sh --tui (macOS/Linux) or WokwiOfflineSetup.exe --tui (Windows).');
+        showToast(out.ok ? out.message : (out.error || 'Run ./install.sh --tui'));
+      } catch {
+        showToast('Run ./install.sh --tui or WokwiOfflineSetup.exe --tui');
       }
     }
 
     // =========================================================================
-    // STEP 4: INTERACTIVE VISUAL LAYOUT & BUTTON EDITOR + CAN BUS SIMULATOR
+    // INTERACTIVE REAL WOKWI SVG STAGE & PART / BUTTON MANAGER
     // =========================================================================
     const visState = {
       initialized: false,
@@ -1729,59 +1617,243 @@
       baseDiagram: { version: 1, author: 'Wokwi Offline Suite', editor: 'wokwi' },
       selectedIndex: -1,
       draggingIndex: -1,
-      dragOffsetX: 0,
-      dragOffsetY: 0,
+      dragStartWorldX: 0,
+      dragStartWorldY: 0,
+      partStartLeft: 0,
+      partStartTop: 0,
       panning: false,
       panStartX: 0,
       panStartY: 0,
-      panX: 80,
-      panY: 50,
-      zoom: 1.0,
+      panX: 40,
+      panY: 25,
+      zoom: 0.92,
       lastCanSteer: 90,
       lastCanThrottle: 50,
     };
 
+    const CHIP_PIN_MAP = {
+      'chip-yb_p20m': ['PWM', 'VCC', 'GND', 'FB'],
+      'chip-jgb37_520': ['M1', 'M2', 'GND', 'C1', 'C2', 'VCC'],
+      'chip-cjmcu_230': ['D', 'GND', 'VCC', 'R', 'VREF', 'CANL', 'CANH', 'RS'],
+      'chip-can_terminal': ['CANH', 'CANL', 'CANTX', 'CANRX', 'TRIG', 'VCC', 'GND'],
+      'chip-irf520_pwm': ['SIG', 'VCC', 'GND', 'VIN', 'VPLUS', 'VMINUS'],
+      'chip-ip5306': ['VIN', 'BAT', 'VOUT', 'GND', 'KEY', 'LED1', 'LED2', 'LED3', 'LED4'],
+      'chip-reg_7v': ['VIN_POS', 'VIN_NEG', 'VOUT_POS', 'VOUT_NEG', 'EN'],
+      'chip-weact_213_bw': ['BUSY', 'RST', 'DC', 'CS', 'CLK', 'DIN', 'VCC', 'GND'],
+    };
+
     function visGetPartDimensions(p) {
       const t = (p.type || '').toLowerCase();
-      if (t.includes('pushbutton')) return { w: 58, h: 42 };
-      if (t.includes('esp32')) return { w: 125, h: 170 };
-      if (t.includes('weact_213_bw') || t.includes('epd')) return { w: 130, h: 190 };
-      if (t.includes('can_terminal')) return { w: 165, h: 86 };
-      if (t.includes('cjmcu_230')) return { w: 120, h: 66 };
-      if (t.includes('yb_p20m')) return { w: 115, h: 64 };
-      if (t.includes('jgb37_520')) return { w: 125, h: 68 };
-      if (t.includes('microsd')) return { w: 96, h: 68 };
-      return { w: 120, h: 68 };
+      if (t.includes('pushbutton')) return { w: 67, h: 48 };
+      if (t.includes('esp32')) return { w: 108, h: 280 };
+      if (t.includes('weact_213_bw')) return { w: 138, h: 256 };
+      if (t.includes('can_terminal')) return { w: 162, h: 98 };
+      if (t.includes('yb_p20m') || t.includes('servo')) return { w: 145, h: 96 };
+      if (t.includes('microsd')) return { w: 84, h: 72 };
+      const pins = CHIP_PIN_MAP[p.type] || ['VCC', 'GND', 'IN', 'OUT'];
+      const half = Math.max(Math.ceil(pins.length / 2), 2);
+      return { w: 136, h: Math.max(54, half * 16 + 16) };
     }
 
     function visColorHex(name) {
       const map = {
-        purple: '#9333ea',
-        green: '#16a34a',
-        red: '#dc2626',
-        blue: '#2563eb',
-        yellow: '#ca8a04',
-        orange: '#ea580c',
-        black: '#1e293b',
-        white: '#e2e8f0',
+        red: '#e53935',
+        green: '#2fb344',
+        blue: '#1e88e5',
+        yellow: '#fdd835',
+        orange: '#fb8c00',
+        purple: '#8e24aa',
+        black: '#22262c',
+        white: '#f1f5f9',
         grey: '#64748b',
         gray: '#64748b',
         cyan: '#06b6d4',
         magenta: '#d946ef',
       };
-      return map[(name || '').toLowerCase()] || '#38bdf8';
+      return map[(name || '').toLowerCase()] || '#e53935';
     }
 
-    function visInitCanvas() {
+    function escXml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Build genuine Wokwi SVG markup for each part type
+    function buildWokwiPartSvgInner(p, idx) {
+      const t = (p.type || '').toLowerCase();
+      const dim = visGetPartDimensions(p);
+
+      // 1. Official Wokwi ESP32-S3-DevKitC-1 SVG Board Graphic
+      if (t.includes('esp32')) {
+        return `
+          <image href="/api/board-svg?board=esp32-s3-devkitc-1" x="0" y="0" width="${dim.w}" height="${dim.h}" preserveAspectRatio="xMidYMid meet" />
+          <text x="${dim.w / 2}" y="${dim.h + 13}" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(p.id)}</text>
+        `;
+      }
+
+      // 2. Official Wokwi Pushbutton SVG Graphic (@wokwi/elements PushbuttonElement)
+      if (t.includes('pushbutton')) {
+        const col = visColorHex((p.attrs && p.attrs.color) || 'red');
+        const gradId = `pb-grad-${idx}`;
+        const lbl = (p.attrs && p.attrs.label) || p.id;
+        return `
+          <svg x="0" y="0" width="67" height="45" viewBox="-3 0 18 12">
+            <defs>
+              <linearGradient id="${gradId}" x1="0" x2="1" y1="0" y2="1">
+                <stop stop-color="#ffffff" offset="0" />
+                <stop stop-color="${col}" offset="0.35" />
+                <stop stop-color="${col}" offset="0.6" />
+                <stop stop-color="#111111" offset="1" />
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="12" height="12" rx="0.44" ry="0.44" fill="#464646" />
+            <rect x="0.75" y="0.75" width="10.5" height="10.5" rx="0.211" ry="0.211" fill="#eaeaea" />
+            <g fill="#1b1b1b">
+              <circle cx="1.767" cy="1.7916" r="0.37" />
+              <circle cx="10.161" cy="1.7916" r="0.37" />
+              <circle cx="10.161" cy="10.197" r="0.37" />
+              <circle cx="1.767" cy="10.197" r="0.37" />
+            </g>
+            <g fill="#999">
+              <path d="m12.365 2.426c0.06 0 0.108 0.047 0.108 0.105v0.387h2.217c0.12 0 0.217 0.094 0.217 0.21v0.507c0 0.117-0.097 0.21-0.217 0.21h-2.217v0.401c0 0.058-0.048 0.105-0.108 0.105h-0.368v-1.926z"/>
+              <path d="m12.365 7.5c0.06 0 0.108 0.047 0.108 0.105v0.387h2.217c0.12 0 0.217 0.094 0.217 0.21v0.507c0 0.117-0.097 0.21-0.217 0.21h-2.217v0.401c0 0.058-0.048 0.105-0.108 0.105h-0.368v-1.926z"/>
+              <path d="m-0.351 4.353c-0.06 0-0.108-0.047-0.108-0.105v-0.387h-2.217c-0.12 0-0.217-0.094-0.217-0.21v-0.507c0-0.117 0.097-0.21 0.217-0.21h2.217v-0.401c0-0.058 0.048-0.105 0.108-0.105h0.368v1.926z"/>
+              <path d="m-0.351 9.427c-0.06 0-0.108-0.047-0.108-0.105v-0.387h-2.217c-0.12 0-0.217-0.094-0.217-0.21v-0.507c0-0.117 0.097-0.21 0.217-0.21h2.217v-0.401c0-0.058 0.048-0.105 0.108-0.105h0.368v1.926z"/>
+            </g>
+            <circle cx="6" cy="6" r="3.822" fill="url(#${gradId})" />
+            <circle cx="6" cy="6" r="2.9" fill="${col}" stroke="#2f2f2f" stroke-opacity="0.47" stroke-width="0.08" />
+          </svg>
+          <text x="33.5" y="55" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(lbl)}</text>
+        `;
+      }
+
+      // 3. Official Wokwi Servo SVG Graphic (@wokwi/elements ServoElement) for YB-P20M
+      if (t.includes('yb_p20m') || t.includes('servo')) {
+        const deg = visState.lastCanSteer ?? 90;
+        const hornRot = deg - 90;
+        return `
+          <svg x="0" y="0" width="${dim.w}" height="${dim.h}" viewBox="0 0 170.08 119.55">
+            <g stroke-width="2.7" fill="none">
+              <path stroke="#b44200" d="m 83.32,56.6 c0,0 -32.99,0.96 -43.32,0 -6.20,-0.58 -10.60,-6.20 -14.87,-6.31" />
+              <path stroke="#ff2300" d="m83.326 59.6h-62.971" />
+              <path stroke="#f47b00" d="m 83.32,62.6 c0,0 -32.60,-0.61 -43.33,-0.15 -6.87,0.29 -12.01,6.82 -14.77,6.73" />
+            </g>
+            <rect fill="#555" y="45.5" width="25.71" height="28" rx="1.5" />
+            <use href="#wokwi-servo-pin" x="4.7" y="50.06" />
+            <use href="#wokwi-servo-pin" x="4.7" y="59.66" />
+            <use href="#wokwi-servo-pin" x="4.7" y="69.26" />
+            <rect fill="#374151" x="50" y="51.5" width="118" height="16.5" rx="2" />
+            <rect fill="#4b5563" x="64.255" y="37.911" width="90.241" height="43.725" rx="5.33" stroke="#9ca3af" stroke-width="1" />
+            <circle fill="#9ca3af" cx="91.467" cy="59.773" r="18.6" />
+            <g transform="translate(91.467 59.773) rotate(${hornRot}) translate(-91.467 -59.773)">
+              <rect x="85.5" y="14" width="12" height="91" rx="6" fill="#e5e8ed" stroke="#475569" stroke-width="1.2" />
+              <circle cx="91.467" cy="22" r="2.2" fill="#334155" />
+              <circle cx="91.467" cy="30" r="2.2" fill="#334155" />
+              <circle cx="91.467" cy="89" r="2.2" fill="#334155" />
+              <circle cx="91.467" cy="97" r="2.2" fill="#334155" />
+            </g>
+            <circle fill="#64748b" cx="91.467" cy="59.773" r="7.5" />
+            <circle fill="#e2e8f0" cx="91.467" cy="59.773" r="4.5" />
+          </svg>
+          <text x="${dim.w / 2}" y="${dim.h + 11}" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(p.id)} (${deg}&deg;)</text>
+        `;
+      }
+
+      // 4. Official Wokwi MicroSD Card SVG Graphic (@wokwi/elements MicrosdCardElement)
+      if (t.includes('microsd')) {
+        return `
+          <svg x="0" y="0" width="${dim.w}" height="${dim.h}" viewBox="0 0 22 19">
+            <rect x="0.2" y="0.2" width="21.5" height="18.5" rx="0.8" fill="#1e293b" stroke="#94a3b8" stroke-width="0.25" />
+            <rect x="4.08" y="0.4" width="10.7" height="17.8" rx="0.77" fill="#262626" />
+            <rect x="1.5" y="2.2" width="13.2" height="15.2" rx="0.4" fill="#cbd5e1" />
+            <text font-family="sans-serif" fill="#ffffff" font-size="1.55px">
+              <tspan x="15.8" y="2.9">CD</tspan>
+              <tspan x="15.8" y="5.4">DO</tspan>
+              <tspan x="15.2" y="7.9">GND</tspan>
+              <tspan x="15.3" y="10.5">SCK</tspan>
+              <tspan x="15.3" y="13.0">VCC</tspan>
+              <tspan x="16.2" y="15.5">DI</tspan>
+              <tspan x="16.0" y="18.0">CS</tspan>
+            </text>
+            <g fill="#fff" stroke="#ffe680" stroke-width="0.45">
+              <circle cx="20.1" cy="2.48" r="0.75" />
+              <circle cx="20.1" cy="4.99" r="0.75" />
+              <circle cx="20.1" cy="7.53" r="0.75" />
+              <circle cx="20.1" cy="10.1" r="0.75" />
+              <circle cx="20.1" cy="12.6" r="0.75" />
+              <circle cx="20.1" cy="15.2" r="0.75" />
+              <circle cx="20.1" cy="17.7" r="0.75" />
+            </g>
+          </svg>
+          <text x="${dim.w / 2}" y="${dim.h + 12}" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(p.id)}</text>
+        `;
+      }
+
+      // 5. Official Wokwi Breakout Custom Chip PCB Graphic (sPe: #087f45 PCB + #wokwi-hole gold pads + display)
+      const pins = CHIP_PIN_MAP[p.type] || ['VCC', 'GND', 'IN', 'OUT'];
+      const half = Math.max(Math.ceil(pins.length / 2), 2);
+      const holesSvg = pins.map((pinName, i) => {
+        const isRight = i >= half;
+        const rowIdx = isRight ? (i - half) : i;
+        const hx = isRight ? (dim.w - 8) : 8;
+        const hy = 14 + rowIdx * 15;
+        const tx = isRight ? (dim.w - 15) : 15;
+        const anchor = isRight ? 'end' : 'start';
+        return `
+          <use href="#wokwi-hole" x="${hx}" y="${hy}" />
+          <text x="${tx}" y="${hy + 3}" text-anchor="${anchor}" fill="#e2fbe8" font-size="8.5" font-family="monospace">${escXml(pinName)}</text>
+        `;
+      }).join('');
+
+      let centerScreenSvg = '';
+      if (p.type === 'chip-can_terminal') {
+        const steerW = Math.round(((visState.lastCanSteer || 90) / 180) * 84);
+        const throtW = Math.round(((visState.lastCanThrottle || 50) / 100) * 84);
+        centerScreenSvg = `
+          <rect x="34" y="22" width="94" height="54" rx="3" fill="#090d14" stroke="#38bdf8" stroke-width="1" />
+          <text x="81" y="33" text-anchor="middle" fill="#ff6b6b" font-size="8" font-family="monospace" font-weight="bold">CAN 0x120 TERM</text>
+          <text x="39" y="44" fill="#9be3bd" font-size="7.5" font-family="monospace">STR:${visState.lastCanSteer}&deg; THR:${visState.lastCanThrottle}%</text>
+          <rect x="39" y="49" width="84" height="5" rx="1" fill="#1e293b" />
+          <rect x="39" y="49" width="${steerW}" height="5" rx="1" fill="#ff6b6b" />
+          <rect x="39" y="57" width="84" height="5" rx="1" fill="#1e293b" />
+          <rect x="39" y="57" width="${throtW}" height="5" rx="1" fill="#2fc49a" />
+          <text x="39" y="71" fill="#94a3b8" font-size="7" font-family="monospace">ACK:0x128 OK</text>
+        `;
+      } else if (p.type === 'chip-weact_213_bw') {
+        centerScreenSvg = `
+          <rect x="24" y="24" width="${dim.w - 48}" height="${dim.h - 38}" rx="3" fill="#f8fafc" stroke="#334155" stroke-width="2" />
+          <text x="${dim.w / 2}" y="${dim.h / 2 - 8}" text-anchor="middle" fill="#0f172a" font-size="10" font-family="monospace" font-weight="bold">WeAct 2.13"</text>
+          <text x="${dim.w / 2}" y="${dim.h / 2 + 8}" text-anchor="middle" fill="#334155" font-size="9" font-family="monospace">128x250 EPD</text>
+        `;
+      } else {
+        const shortType = p.type.replace(/^chip-/, '').toUpperCase();
+        centerScreenSvg = `
+          <rect x="39" y="${dim.h / 2 - 13}" width="${dim.w - 78}" height="26" rx="3" fill="#181b20" stroke="#334155" stroke-width="0.8" />
+          <text x="${dim.w / 2}" y="${dim.h / 2 + 3}" text-anchor="middle" fill="#ffffff" font-size="7.5" font-weight="700" font-family="monospace">${escXml(shortType)}</text>
+        `;
+      }
+
+      return `
+        <rect x="0" y="0" width="${dim.w}" height="${dim.h}" rx="5" fill="#087f45" stroke="#0ca65a" stroke-width="1.2" />
+        ${holesSvg}
+        ${centerScreenSvg}
+        <text x="${dim.w / 2}" y="${dim.h + 12}" text-anchor="middle" fill="#e5e8ed" font-size="10" font-weight="600">${escXml(p.id)}</text>
+      `;
+    }
+
+    function visInitSvgStage() {
       if (visState.initialized) return;
       visState.initialized = true;
-      const canvas = document.getElementById('vis-canvas');
-      if (!canvas) return;
+      const stage = document.getElementById('svg-stage');
+      if (!stage) return;
 
       const toWorld = (clientX, clientY) => {
-        const rect = canvas.getBoundingClientRect();
-        const sx = (clientX - rect.left) * (canvas.width / rect.width);
-        const sy = (clientY - rect.top) * (canvas.height / rect.height);
+        const rect = stage.getBoundingClientRect();
+        const sx = clientX - rect.left;
+        const sy = clientY - rect.top;
         return {
           x: (sx - visState.panX) / visState.zoom,
           y: (sy - visState.panY) / visState.zoom,
@@ -1790,40 +1862,36 @@
         };
       };
 
-      canvas.addEventListener('mousedown', (e) => {
+      stage.addEventListener('mousedown', (e) => {
         const pt = toWorld(e.clientX, e.clientY);
-        let hit = -1;
-        for (let i = visState.parts.length - 1; i >= 0; i--) {
-          const p = visState.parts[i];
-          const dim = visGetPartDimensions(p);
-          const px = Number(p.left) || 0;
-          const py = Number(p.top) || 0;
-          if (pt.x >= px && pt.x <= px + dim.w && pt.y >= py && pt.y <= py + dim.h) {
-            hit = i;
-            break;
+        const partGroup = e.target.closest('.wokwi-part-group');
+        if (partGroup) {
+          const idx = parseInt(partGroup.getAttribute('data-idx'), 10);
+          if (!isNaN(idx) && visState.parts[idx]) {
+            visSelectPart(idx);
+            visState.draggingIndex = idx;
+            visState.dragStartWorldX = pt.x;
+            visState.dragStartWorldY = pt.y;
+            visState.partStartLeft = Number(visState.parts[idx].left) || 0;
+            visState.partStartTop = Number(visState.parts[idx].top) || 0;
+            e.stopPropagation();
+            return;
           }
         }
-        if (hit >= 0) {
-          visSelectPart(hit);
-          visState.draggingIndex = hit;
-          visState.dragOffsetX = pt.x - (Number(visState.parts[hit].left) || 0);
-          visState.dragOffsetY = pt.y - (Number(visState.parts[hit].top) || 0);
-          canvas.style.cursor = 'grabbing';
-        } else {
-          visState.panning = true;
-          visState.panStartX = pt.sx - visState.panX;
-          visState.panStartY = pt.sy - visState.panY;
-          canvas.style.cursor = 'grabbing';
-        }
+        visState.panning = true;
+        visState.panStartX = pt.sx - visState.panX;
+        visState.panStartY = pt.sy - visState.panY;
       });
 
       window.addEventListener('mousemove', (e) => {
-        if (visState.draggingIndex < 0 && !visState.panning) return;
         const pt = toWorld(e.clientX, e.clientY);
+        const curEl = document.getElementById('status-cursor');
+        if (curEl) curEl.textContent = `x ${Math.round(pt.x)} px · y ${Math.round(pt.y)} px`;
+
         if (visState.draggingIndex >= 0) {
           const p = visState.parts[visState.draggingIndex];
-          p.left = Math.round((pt.x - visState.dragOffsetX) / 5) * 5;
-          p.top = Math.round((pt.y - visState.dragOffsetY) / 5) * 5;
+          p.left = Math.round((visState.partStartLeft + (pt.x - visState.dragStartWorldX)) / 5) * 5;
+          p.top = Math.round((visState.partStartTop + (pt.y - visState.dragStartWorldY)) / 5) * 5;
           if (visState.selectedIndex === visState.draggingIndex) {
             document.getElementById('insp-left').value = p.left;
             document.getElementById('insp-top').value = p.top;
@@ -1833,7 +1901,7 @@
         } else if (visState.panning) {
           visState.panX = pt.sx - visState.panStartX;
           visState.panY = pt.sy - visState.panStartY;
-          visDraw();
+          visUpdateViewportTransform();
         }
       });
 
@@ -1843,31 +1911,34 @@
         }
         visState.draggingIndex = -1;
         visState.panning = false;
-        canvas.style.cursor = 'grab';
       });
 
-      canvas.addEventListener('wheel', (e) => {
+      stage.addEventListener('wheel', (e) => {
         e.preventDefault();
-        const factor = e.deltaY < 0 ? 1.1 : 0.9;
-        visZoom(factor);
+        visZoom(e.deltaY < 0 ? 1.1 : 0.9);
       }, { passive: false });
+    }
+
+    function visUpdateViewportTransform() {
+      const vp = document.getElementById('svg-viewport');
+      if (vp) {
+        vp.setAttribute('transform', `translate(${visState.panX}, ${visState.panY}) scale(${visState.zoom})`);
+      }
+      const lbl = document.getElementById('vis-zoom-label');
+      if (lbl) lbl.textContent = Math.round(visState.zoom * 100) + '%';
     }
 
     function visZoom(factor) {
       visState.zoom = Math.min(2.5, Math.max(0.25, visState.zoom * factor));
-      const lbl = document.getElementById('vis-zoom-label');
-      if (lbl) lbl.textContent = Math.round(visState.zoom * 100) + '%';
-      visDraw();
+      visUpdateViewportTransform();
     }
 
     function visFitView() {
-      if (!visState.parts.length) {
-        visState.panX = 80;
-        visState.panY = 50;
-        visState.zoom = 1.0;
-        visDraw();
-        return;
-      }
+      const stage = document.getElementById('svg-stage');
+      if (!stage || !visState.parts.length) return;
+      const rect = stage.getBoundingClientRect();
+      const sw = rect.width || 800;
+      const sh = rect.height || 500;
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       for (const p of visState.parts) {
         const d = visGetPartDimensions(p);
@@ -1876,19 +1947,62 @@
         if (x < minX) minX = x;
         if (y < minY) minY = y;
         if (x + d.w > maxX) maxX = x + d.w;
-        if (y + d.h > maxY) maxY = y + d.h;
+        if (y + d.h + 18 > maxY) maxY = y + d.h + 18;
       }
-      const canvas = document.getElementById('vis-canvas');
       const bw = Math.max(200, maxX - minX + 80);
       const bh = Math.max(200, maxY - minY + 80);
-      const zx = canvas.width / bw;
-      const zy = canvas.height / bh;
-      visState.zoom = Math.min(1.35, Math.max(0.3, Math.min(zx, zy)));
-      visState.panX = (canvas.width - (maxX - minX) * visState.zoom) / 2 - minX * visState.zoom;
-      visState.panY = (canvas.height - (maxY - minY) * visState.zoom) / 2 - minY * visState.zoom;
-      const lbl = document.getElementById('vis-zoom-label');
-      if (lbl) lbl.textContent = Math.round(visState.zoom * 100) + '%';
-      visDraw();
+      visState.zoom = Math.min(1.25, Math.max(0.32, Math.min(sw / bw, sh / bh)));
+      visState.panX = (sw - (maxX - minX) * visState.zoom) / 2 - minX * visState.zoom;
+      visState.panY = (sh - (maxY - minY) * visState.zoom) / 2 - minY * visState.zoom;
+      visUpdateViewportTransform();
+    }
+
+    function visDraw() {
+      visUpdateViewportTransform();
+      const wiresLayer = document.getElementById('svg-wires-layer');
+      const partsLayer = document.getElementById('svg-parts-layer');
+      if (!wiresLayer || !partsLayer) return;
+
+      const partMap = new Map();
+      visState.parts.forEach((p) => partMap.set(p.id, p));
+
+      const wirePaths = [];
+      for (const conn of visState.connections) {
+        if (!Array.isArray(conn) || conn.length < 2) continue;
+        const p1Id = String(conn[0]).split(':')[0];
+        const p2Id = String(conn[1]).split(':')[0];
+        const p1 = partMap.get(p1Id);
+        const p2 = partMap.get(p2Id);
+        if (!p1 || !p2 || p1._exists === false || p2._exists === false) continue;
+        const d1 = visGetPartDimensions(p1);
+        const d2 = visGetPartDimensions(p2);
+        const x1 = (Number(p1.left) || 0) + d1.w / 2;
+        const y1 = (Number(p1.top) || 0) + d1.h / 2;
+        const x2 = (Number(p2.left) || 0) + d2.w / 2;
+        const y2 = (Number(p2.top) || 0) + d2.h / 2;
+        const stroke = visColorHex(conn[2] || 'green');
+        wirePaths.push(
+          `<path d="M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-opacity="0.55" stroke-linejoin="round" />`
+        );
+      }
+      wiresLayer.innerHTML = wirePaths.join('');
+
+      const partGroups = visState.parts.map((p, idx) => {
+        const dim = visGetPartDimensions(p);
+        const x = Number(p.left) || 0;
+        const y = Number(p.top) || 0;
+        const rot = Number(p.rotate) || 0;
+        const isSel = idx === visState.selectedIndex;
+        const exists = p._exists !== false;
+        const opacity = exists ? '1' : '0.28';
+        return `
+          <g class="wokwi-part-group ${isSel ? 'selected' : ''}" data-idx="${idx}" transform="translate(${x}, ${y}) rotate(${rot}, ${dim.w / 2}, ${dim.h / 2})" style="opacity:${opacity}">
+            <rect class="part-selection-outline" x="-4" y="-4" width="${dim.w + 8}" height="${dim.h + 22}" rx="6" fill="transparent" stroke="transparent" />
+            ${buildWokwiPartSvgInner(p, idx)}
+          </g>
+        `;
+      });
+      partsLayer.innerHTML = partGroups.join('');
     }
 
     function visLoadDiagramObject(diag) {
@@ -1903,44 +2017,27 @@
         _exists: p._exists !== false,
       }));
       visState.connections = Array.isArray(diag.connections) ? diag.connections.map((c) => [...c]) : [];
-      visFitView();
-      if (visState.parts.length > 0) {
-        visSelectPart(0);
-      } else {
-        visSelectPart(-1);
-      }
-      visRenderPartsList();
+      visSelectPart(visState.parts.length > 0 ? 0 : -1);
+      setTimeout(() => visFitView(), 30);
       visSyncToStep3Preview();
-    }
-
-    function openVisualEditorWithCurrentDiagram() {
-      goToStep(4);
-      loadStep3DiagramIntoVisualEditor();
     }
 
     function loadStep3DiagramIntoVisualEditor() {
       try {
-        const raw = document.getElementById('preview-diagram').value;
-        const parsed = JSON.parse(raw);
-        visLoadDiagramObject(parsed);
-      } catch {
         const { diagram } = buildTomlAndDiagram();
         visLoadDiagramObject(JSON.parse(diagram));
-      }
+      } catch {}
     }
 
     async function loadXcasfwIntoVisualEditor() {
-      const toast = document.getElementById('vis-toast');
       try {
         const res = await fetch('/api/xcasfw-diagram');
         const diag = await res.json();
         visLoadDiagramObject(diag);
         document.getElementById('vis-file-path').value = '~/Documents/ESP32Calc/ESP32Calc/XCasFW/diagram.json';
-        toast.style.display = 'block';
-        toast.textContent = `Loaded XCasFW calculator layout (${visState.parts.length} parts & buttons). Drag any button to move or toggle existence!`;
+        showToast(`Loaded XCasFW layout (${visState.parts.length} parts & buttons)`);
       } catch (err) {
-        toast.style.display = 'block';
-        toast.textContent = 'Failed to load XCasFW layout: ' + err.message;
+        showToast('Failed to load XCasFW layout');
       }
     }
 
@@ -1981,7 +2078,7 @@
       const badge = document.getElementById('vis-part-count-badge');
       if (badge) {
         const en = visState.parts.filter((p) => p._exists !== false).length;
-        badge.textContent = `${en} active / ${visState.parts.length} total parts`;
+        badge.textContent = `${en} / ${visState.parts.length} parts`;
       }
     }
 
@@ -1989,13 +2086,13 @@
       visState.selectedIndex = idx;
       const badge = document.getElementById('vis-sel-badge');
       if (idx < 0 || idx >= visState.parts.length) {
-        if (badge) badge.textContent = 'None selected';
+        if (badge) badge.textContent = 'None';
         visDraw();
         visRenderPartsList();
         return;
       }
       const p = visState.parts[idx];
-      if (badge) badge.textContent = `${p.id} (${p.type})`;
+      if (badge) badge.textContent = p.id;
       document.getElementById('insp-exists').checked = p._exists !== false;
       document.getElementById('insp-id').value = p.id || '';
       document.getElementById('insp-type').value = p.type || '';
@@ -2006,7 +2103,6 @@
       document.getElementById('insp-key').value = (p.attrs && p.attrs.key) || '';
       document.getElementById('insp-rotate').value = String(Number(p.rotate) || 0);
 
-      // Find first non-GND connection for this part
       const conn = visState.connections.find((c) => {
         if (!Array.isArray(c) || c.length < 2) return false;
         const a = String(c[0]);
@@ -2065,6 +2161,7 @@
       visState.connections.push([`${p.id}:${pinName}`, target, 'magenta', ['v0']]);
       visSyncToStep3Preview();
       visDraw();
+      showToast(`Connected ${p.id}:${pinName} -> ${target}`);
     }
 
     function visAddPushbutton() {
@@ -2073,25 +2170,21 @@
       const newBtn = {
         type: 'wokwi-pushbutton',
         id: `btn_${n}`,
-        left: 60 + ((n * 70) % 420),
-        top: -80,
+        left: 190 + ((n * 80) % 360),
+        top: -70,
         rotate: 0,
-        attrs: { color: 'purple', label: `BTN ${n}`, key: String(n % 10) },
+        attrs: { color: 'red', label: `BTN ${n}`, key: String(n % 10) },
         _exists: true,
       };
       visState.parts.push(newBtn);
       const mcu = visState.parts.find((p) => (p.type || '').includes('esp32'));
       const canTerm = visState.parts.find((p) => p.type === 'chip-can_terminal');
-      if (mcu) {
-        visState.connections.push([`${newBtn.id}:2.l`, `${mcu.id}:GND.1`, 'black', ['v0']]);
-      }
-      if (canTerm) {
-        visState.connections.push([`${newBtn.id}:1.r`, `${canTerm.id}:TRIG`, 'magenta', ['v0']]);
-      } else if (mcu) {
-        visState.connections.push([`${newBtn.id}:1.r`, `${mcu.id}:14`, 'green', ['v0']]);
-      }
+      if (mcu) visState.connections.push([`${newBtn.id}:2.l`, `${mcu.id}:GND.1`, 'black', ['v0']]);
+      if (canTerm) visState.connections.push([`${newBtn.id}:1.r`, `${canTerm.id}:TRIG`, 'magenta', ['v0']]);
+      else if (mcu) visState.connections.push([`${newBtn.id}:1.r`, `${mcu.id}:14`, 'green', ['v0']]);
       visSelectPart(visState.parts.length - 1);
       visSyncToStep3Preview();
+      showToast(`Added ${newBtn.id}`);
     }
 
     function visAddCanTerminal() {
@@ -2101,16 +2194,15 @@
         n++;
         id = `can_term_${n}`;
       }
-      const newTerm = {
+      visState.parts.push({
         type: 'chip-can_terminal',
         id,
-        left: 240,
-        top: -110,
+        left: 200,
+        top: -115,
         rotate: 0,
         attrs: {},
         _exists: true,
-      };
-      visState.parts.push(newTerm);
+      });
       const mcu = visState.parts.find((p) => (p.type || '').includes('esp32'));
       const cjmcu = visState.parts.find((p) => p.type === 'chip-cjmcu_230');
       if (cjmcu) {
@@ -2122,29 +2214,26 @@
       if (mcu) {
         visState.connections.push(
           [`${id}:CANTX`, `${mcu.id}:5`, 'purple', ['v0']],
-          [`${id}:CANRX`, `${mcu.id}:4`, 'cyan', ['v0']],
-          [`${id}:GND`, `${mcu.id}:GND.1`, 'black', ['v0']],
-          [`${id}:VCC`, `${mcu.id}:3V3.1`, 'red', ['v0']]
+          [`${id}:CANRX`, `${mcu.id}:4`, 'cyan', ['v0']]
         );
       }
-      counts['can_terminal'] = (counts['can_terminal'] || 0) + 1;
-      renderElements();
       visSelectPart(visState.parts.length - 1);
       visSyncToStep3Preview();
+      showToast(`Added ${id}`);
     }
 
     function visAddPartPrompt() {
-      const type = prompt('Enter Wokwi part type (e.g. wokwi-pushbutton, wokwi-led, chip-can_terminal, chip-yb_p20m):', 'wokwi-pushbutton');
+      const type = prompt('Enter Wokwi part type (e.g. wokwi-pushbutton, chip-can_terminal, chip-yb_p20m, wokwi-microsd-card):', 'wokwi-pushbutton');
       if (!type) return;
       const id = prompt('Enter unique part ID:', 'part_' + (visState.parts.length + 1));
       if (!id) return;
       visState.parts.push({
         type: type.trim(),
         id: id.trim(),
-        left: 100,
-        top: 100,
+        left: 160,
+        top: 60,
         rotate: 0,
-        attrs: type.includes('pushbutton') ? { color: 'green', label: id.trim() } : {},
+        attrs: type.includes('pushbutton') ? { color: 'red', label: id.trim() } : {},
         _exists: true,
       });
       visSelectPart(visState.parts.length - 1);
@@ -2155,16 +2244,14 @@
       const idx = visState.selectedIndex;
       if (idx < 0 || idx >= visState.parts.length) return;
       const src = visState.parts[idx];
-      let copyId = src.id + '_copy';
+      let copyId = src.id + '_2';
       let n = 2;
-      while (visState.parts.some((p) => p.id === copyId)) {
-        copyId = `${src.id}_${n++}`;
-      }
+      while (visState.parts.some((p) => p.id === copyId)) copyId = `${src.id}_${++n}`;
       visState.parts.push({
         ...src,
         id: copyId,
-        left: (Number(src.left) || 0) + 40,
-        top: (Number(src.top) || 0) + 40,
+        left: (Number(src.left) || 0) + 35,
+        top: (Number(src.top) || 0) + 35,
         attrs: { ...(src.attrs || {}) },
         _exists: true,
       });
@@ -2204,170 +2291,31 @@
         const lbl = (p.attrs && p.attrs.label) || '';
         const text = `${p.id} ${p.type} ${lbl}`.toLowerCase();
         if (q && !text.includes(q)) return;
-        const row = document.createElement('div');
         const isSel = idx === visState.selectedIndex;
         const exists = p._exists !== false;
-        row.style.cssText = `display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;border:1px solid ${isSel ? '#38bdf8' : '#334155'};background:${isSel ? 'rgba(56,189,248,0.14)' : 'var(--panel-alt)'};opacity:${exists ? '1' : '0.48'};`;
+        const row = document.createElement('div');
+        row.className = 'elem-item' + (isSel ? ' active' : '');
+        row.style.cursor = 'pointer';
+        row.style.opacity = exists ? '1' : '0.45';
         row.onclick = () => visSelectPart(idx);
         row.innerHTML = `
-          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-            <input type="checkbox" ${exists ? 'checked' : ''} onclick="event.stopPropagation();visTogglePartExists(${idx})" title="Toggle whether this button/part exists in diagram.json" />
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
+            <input type="checkbox" ${exists ? 'checked' : ''} onclick="event.stopPropagation();visTogglePartExists(${idx})" />
             <div style="min-width:0;">
-              <div style="font-weight:700;font-size:0.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                ${p.id} ${lbl ? `<span style="color:#38bdf8;">[${lbl}]</span>` : ''}
+              <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                ${escXml(p.id)} ${lbl ? `<span style="color:var(--accent);">[${escXml(lbl)}]</span>` : ''}
               </div>
-              <div style="font-size:0.72rem;color:var(--muted);">
-                <code>${p.type}</code> &bull; (${p.left}, ${p.top})
-              </div>
+              <div style="font-size:11px;color:var(--muted);" class="num"><code>${escXml(p.type)}</code> · (${p.left}, ${p.top})</div>
             </div>
           </div>
-          <span style="font-size:0.72rem;padding:2px 6px;border-radius:4px;background:#0f172a;color:${exists ? '#86efac' : '#fca5a5'};">
-            ${exists ? 'Exists' : 'Hidden'}
-          </span>
+          <span class="tag ${exists ? 'ok' : ''}">${exists ? 'On' : 'Off'}</span>
         `;
         container.appendChild(row);
       });
     }
 
-    function visDraw() {
-      const canvas = document.getElementById('vis-canvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Background grid
-      ctx.save();
-      ctx.translate(visState.panX, visState.panY);
-      ctx.scale(visState.zoom, visState.zoom);
-
-      ctx.strokeStyle = 'rgba(51, 65, 85, 0.35)';
-      ctx.lineWidth = 1 / visState.zoom;
-      const step = 40;
-      for (let x = -400; x <= 1600; x += step) {
-        ctx.beginPath();
-        ctx.moveTo(x, -400);
-        ctx.lineTo(x, 1400);
-        ctx.stroke();
-      }
-      for (let y = -400; y <= 1400; y += step) {
-        ctx.beginPath();
-        ctx.moveTo(-400, y);
-        ctx.lineTo(1600, y);
-        ctx.stroke();
-      }
-
-      // Draw wire connections between active parts
-      const partMap = new Map();
-      visState.parts.forEach((p) => partMap.set(p.id, p));
-
-      for (const conn of visState.connections) {
-        if (!Array.isArray(conn) || conn.length < 2) continue;
-        const p1Id = String(conn[0]).split(':')[0];
-        const p2Id = String(conn[1]).split(':')[0];
-        const p1 = partMap.get(p1Id);
-        const p2 = partMap.get(p2Id);
-        if (!p1 || !p2 || p1._exists === false || p2._exists === false) continue;
-        const d1 = visGetPartDimensions(p1);
-        const d2 = visGetPartDimensions(p2);
-        const x1 = (Number(p1.left) || 0) + d1.w / 2;
-        const y1 = (Number(p1.top) || 0) + d1.h / 2;
-        const x2 = (Number(p2.left) || 0) + d2.w / 2;
-        const y2 = (Number(p2.top) || 0) + d2.h / 2;
-
-        ctx.strokeStyle = visColorHex(conn[2] || 'green');
-        ctx.globalAlpha = 0.55;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1.0;
-
-      // Draw parts & buttons
-      visState.parts.forEach((p, idx) => {
-        const dim = visGetPartDimensions(p);
-        const x = Number(p.left) || 0;
-        const y = Number(p.top) || 0;
-        const isSel = idx === visState.selectedIndex;
-        const exists = p._exists !== false;
-        const isBtn = (p.type || '').includes('pushbutton');
-        const isCanTerm = p.type === 'chip-can_terminal';
-        const isMcu = (p.type || '').includes('esp32');
-
-        ctx.save();
-        if (!exists) ctx.globalAlpha = 0.32;
-
-        // Card body
-        ctx.fillStyle = isMcu ? '#172554' : isCanTerm ? '#0c192c' : isBtn ? '#1e293b' : '#111827';
-        ctx.strokeStyle = isSel ? '#38bdf8' : isCanTerm ? '#a855f7' : isMcu ? '#60a5fa' : '#475569';
-        ctx.lineWidth = isSel ? 3 : 1.5;
-        ctx.beginPath();
-        ctx.roundRect(x, y, dim.w, dim.h, isBtn ? 8 : 6);
-        ctx.fill();
-        ctx.stroke();
-
-        if (isBtn) {
-          // Draw tactile pushbutton cap
-          const btnColor = visColorHex((p.attrs && p.attrs.color) || 'purple');
-          ctx.fillStyle = btnColor;
-          ctx.beginPath();
-          ctx.arc(x + 17, y + dim.h / 2, 10, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = '#f8fafc';
-          ctx.lineWidth = 1;
-          ctx.stroke();
-
-          const label = (p.attrs && p.attrs.label) || p.id;
-          ctx.fillStyle = '#f8fafc';
-          ctx.font = 'bold 10px -apple-system, sans-serif';
-          ctx.fillText(String(label).slice(0, 7), x + 31, y + dim.h / 2 + 3);
-        } else if (isCanTerm) {
-          // Simulated CAN Bus Terminal screen preview
-          ctx.fillStyle = '#a855f7';
-          ctx.font = 'bold 10px monospace';
-          ctx.fillText('CAN BUS TERMINAL (0x120)', x + 8, y + 15);
-          ctx.fillStyle = '#050b14';
-          ctx.fillRect(x + 8, y + 21, dim.w - 16, 46);
-          ctx.fillStyle = '#4ade80';
-          ctx.font = '9px monospace';
-          ctx.fillText(`TX->ESP32 Steer:${visState.lastCanSteer}°`, x + 12, y + 35);
-          ctx.fillText(`RX<-ACK  Throt:${visState.lastCanThrottle}%`, x + 12, y + 48);
-          // Mini steering & throttle bars
-          ctx.fillStyle = '#a855f7';
-          ctx.fillRect(x + 12, y + 54, ((visState.lastCanSteer || 90) / 180) * (dim.w - 28), 4);
-          ctx.fillStyle = '#22c55e';
-          ctx.fillRect(x + 12, y + 60, ((visState.lastCanThrottle || 50) / 100) * (dim.w - 28), 4);
-          ctx.fillStyle = '#94a3b8';
-          ctx.font = '9px sans-serif';
-          ctx.fillText(`${p.id} (${x}, ${y})`, x + 8, y + 80);
-        } else {
-          ctx.fillStyle = '#38bdf8';
-          ctx.font = 'bold 11px -apple-system, sans-serif';
-          ctx.fillText(String(p.id).slice(0, 18), x + 8, y + 18);
-          ctx.fillStyle = '#cbd5e1';
-          ctx.font = '9.5px monospace';
-          ctx.fillText(String(p.type).replace(/^(chip-|board-|wokwi-)/, '').slice(0, 19), x + 8, y + 34);
-          ctx.fillStyle = '#94a3b8';
-          ctx.font = '9px sans-serif';
-          ctx.fillText(`(${x}, ${y})`, x + 8, y + 50);
-        }
-
-        if (!exists) {
-          ctx.fillStyle = '#ef4444';
-          ctx.font = 'bold 9px sans-serif';
-          ctx.fillText('DISABLED', x + 4, y + dim.h - 4);
-        }
-        ctx.restore();
-      });
-
-      ctx.restore();
-    }
-
     async function loadVisualEditorFromDisk() {
       const filePath = document.getElementById('vis-file-path').value.trim();
-      const toast = document.getElementById('vis-toast');
       try {
         const res = await fetch('/api/diagram-file', {
           method: 'POST',
@@ -2375,38 +2323,13 @@
           body: JSON.stringify({ action: 'load', path: filePath }),
         });
         const out = await res.json();
-        toast.style.display = 'block';
         if (out.ok && out.diagram) {
           visLoadDiagramObject(out.diagram);
-          toast.textContent = `Loaded ${out.path} (${visState.parts.length} parts)`;
+          showToast(`Loaded ${out.path}`);
         } else {
-          toast.textContent = 'Error: ' + (out.error || 'Could not load diagram.json');
+          showToast('Error: ' + (out.error || 'Could not load diagram.json'));
         }
-      } catch (err) {
-        toast.style.display = 'block';
-        toast.textContent = 'Error loading diagram.json: ' + err.message;
-      }
-    }
-
-    async function saveVisualEditorToDisk() {
-      const filePath = document.getElementById('vis-file-path').value.trim() || './rc-car-wokwi/diagram.json';
-      const diag = visBuildExportDiagram();
-      visSyncToStep3Preview();
-      const toast = document.getElementById('vis-toast');
-      try {
-        const res = await fetch('/api/diagram-file', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'save', path: filePath, diagram: diag }),
-        });
-        const out = await res.json();
-        toast.style.display = 'block';
-        toast.textContent = out.ok ? out.message : ('Error: ' + out.error);
-      } catch (err) {
-        toast.style.display = 'block';
-        toast.textContent = 'Saved to Step 3 preview & downloading diagram.json.';
-        downloadFile('diagram.json', JSON.stringify(diag, null, 2));
-      }
+      } catch {}
     }
 
     function sendSimulatedCanPreset(canId, cmdType, steer, throttle) {
@@ -2438,18 +2361,14 @@
         });
         const out = await res.json();
         if (out.ok) {
-          document.getElementById('can-last-tx').textContent = out.txFrame;
-          document.getElementById('can-last-act').textContent = `YB-P20M: ${out.steeringDeg}° (${out.servoPulseUs} µs) | JGB37: ${out.throttlePct}% (${out.motorDuty}/255)`;
-          document.getElementById('can-last-rx').textContent = out.rxAckFrame;
+          document.getElementById('can-last-tx').textContent = `TX: ${out.txFrame}`;
+          document.getElementById('can-last-act').textContent = `YB-P20M: ${out.steeringDeg}° (${out.servoPulseUs} µs) | JGB37: ${out.throttlePct}%`;
+          document.getElementById('can-last-rx').textContent = `RX: ${out.rxAckFrame}`;
           const logBox = document.getElementById('can-terminal-log');
           const stamp = new Date().toLocaleTimeString();
-          const block = [`=== [${stamp}] CAN Bus Frame Injection Test ===`, ...(out.trace || []), ''].join('\n');
-          logBox.value = block + (logBox.value ? '\n' + logBox.value : '');
+          logBox.value = [`=== [${stamp}] CAN 2.0A Bus Injection ===`, ...(out.trace || []), ''].join('\n') + (logBox.value ? '\n' + logBox.value : '');
         }
-      } catch (err) {
-        const logBox = document.getElementById('can-terminal-log');
-        logBox.value = `[CAN-TERMINAL TX] ID=0x${canId.toString(16).toUpperCase()} Steer=${steeringDeg}deg Throttle=${throttlePct}% -> ESP32-S3 ACK OK\n` + logBox.value;
-      }
+      } catch {}
     }
 
     init();
